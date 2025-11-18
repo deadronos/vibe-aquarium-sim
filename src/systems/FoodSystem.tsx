@@ -1,27 +1,16 @@
 import { useFrame } from '@react-three/fiber'
-import { Vector3 } from 'three'
 import { world } from '../store'
 
-const gravity = new Vector3(0, -2, 0)
-const temp = new Vector3()
-
 export const FoodSystem = () => {
-  useFrame((_, delta) => {
+  useFrame(() => {
     const food = world.with('food', 'position', 'velocity')
-    
-    for (const entity of food) {
-        // Apply gravity
-        entity.velocity!.add(gravity.clone().multiplyScalar(delta))
-        
-        // Move
-        temp.copy(entity.velocity!).multiplyScalar(delta)
-        entity.position.add(temp)
-        
-        // Floor collision
-        if (entity.position.y < -2.8) {
-            entity.position.y = -2.8
-            entity.velocity!.set(0, 0, 0)
-        }
+
+    // Keep loop to avoid unused variable warning if we want to keep the system structure
+    // or just comment it out if truly empty.
+    // For now, let's just iterate to show intent, but we can remove 'entity' usage if needed.
+    for (const _ of food) {
+      // Physics handled by Rapier
+      // We can add logic here later if we want to despawn food or something
     }
   })
   return null

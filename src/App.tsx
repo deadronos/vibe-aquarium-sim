@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Physics } from '@react-three/rapier'
+import { Physics, RigidBody, RapierRigidBody } from '@react-three/rapier'
 import { Vector3, Group } from 'three'
 import { Tank } from './components/Tank'
 import { Fish } from './components/Fish'
@@ -34,9 +34,9 @@ const SpawnFish = () => {
 
 const FeedPlane = () => {
   return (
-    <mesh 
-      rotation={[-Math.PI / 2, 0, 0]} 
-      position={[0, 0, 0]} 
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
       onClick={(e) => {
         e.stopPropagation()
         store.add({
@@ -53,16 +53,29 @@ const FeedPlane = () => {
 }
 
 const Food = ({ entity }: { entity: Entity }) => {
-    const ref = useRef<Group>(null)
-    useFrame(() => {
-        if (ref.current) ref.current.position.copy(entity.position)
-    })
-    return (
-        <mesh ref={ref}>
-            <sphereGeometry args={[0.1]} />
-            <meshStandardMaterial color="brown" />
-        </mesh>
-    )
+  const rigidBody = useRef<RapierRigidBody>(null)
+
+  // Sync physics position back to ECS
+  useFrame(() => {
+    if (rigidBody.current) {
+      const pos = rigidBody.current.translation()
+      entity.position.set(pos.x, pos.y, pos.z)
+    }
+  })
+
+  return (
+    <RigidBody
+      ref={rigidBody}
+      position={entity.position}
+      colliders="ball"
+      restitution={0.5}
+    >
+      <mesh>
+        <sphereGeometry args={[0.1]} />
+        <meshStandardMaterial color="brown" />
+      </mesh>
+    </RigidBody>
+  )
 }
 
 function App() {
@@ -73,24 +86,23 @@ function App() {
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
         <OrbitControls makeDefault />
-        
-        <Physics debug={false}>
-            <Tank />
+
+        <Physics debug={true}>
+          <Tank />
+          <ECS.Entities in={world.with('fish')}>
+            {entity => <Fish entity={entity} />}
+          </ECS.Entities>
+
+          <ECS.Entities in={world.with('food')}>
+            {entity => <Food entity={entity} />}
+          </ECS.Entities>
         </Physics>
-        
+
         <BoidsSystem />
         <FoodSystem />
         <SpawnFish />
         <FeedPlane />
-        
-        <ECS.Entities in={world.with('fish')}>
-            {entity => <Fish entity={entity} />}
-        </ECS.Entities>
-        
-        <ECS.Entities in={world.with('food')}>
-            {entity => <Food entity={entity} />}
-        </ECS.Entities>
-        
+
         <gridHelper args={[20, 20]} position={[0, -3.01, 0]} />
       </Canvas>
     </div>
