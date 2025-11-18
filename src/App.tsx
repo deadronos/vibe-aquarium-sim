@@ -87,7 +87,7 @@ function App() {
         <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
         <OrbitControls makeDefault />
 
-        <Physics debug={true}>
+        <Physics debug={false} gravity={[0, -9.81, 0]}>
           <Tank />
           <ECS.Entities in={world.with('fish')}>
             {entity => <Fish entity={entity} />}
