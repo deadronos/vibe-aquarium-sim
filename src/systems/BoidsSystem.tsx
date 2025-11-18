@@ -20,6 +20,10 @@ export const BoidsSystem = () => {
 
         // Simple O(N^2) loop for now (<1000 entities is fine)
         for (const entity of entities) {
+            // Initialize steering force if needed
+            if (!entity.steeringForce) entity.steeringForce = new Vector3()
+            entity.steeringForce.set(0, 0, 0)
+
             sep.set(0, 0, 0)
             ali.set(0, 0, 0)
             coh.set(0, 0, 0)
@@ -51,10 +55,10 @@ export const BoidsSystem = () => {
                 coh.divideScalar(count).sub(entity.position).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce)
             }
 
-            // Apply forces
-            entity.velocity!.add(sep.multiplyScalar(separationWeight))
-            entity.velocity!.add(ali.multiplyScalar(alignmentWeight))
-            entity.velocity!.add(coh.multiplyScalar(cohesionWeight))
+            // Accumulate forces into steeringForce
+            entity.steeringForce.add(sep.multiplyScalar(separationWeight))
+            entity.steeringForce.add(ali.multiplyScalar(alignmentWeight))
+            entity.steeringForce.add(coh.multiplyScalar(cohesionWeight))
 
             // Seek Food
             const foodEntities = world.with('food', 'position')
@@ -72,14 +76,11 @@ export const BoidsSystem = () => {
             if (closestFood) {
                 // Strong force towards food
                 v1.copy(closestFood.position).sub(entity.position).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce * 3)
-                entity.velocity!.add(v1)
+                entity.steeringForce.add(v1)
             }
 
-            // Limit speed
-            entity.velocity!.clampLength(0, maxSpeed)
-
             // Note: Position update is now handled by Rapier physics in Fish.tsx
-            // We only calculate velocity here.
+            // We only calculate steering forces here.
         }
     })
 

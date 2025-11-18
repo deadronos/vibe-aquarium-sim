@@ -14,8 +14,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   useFrame(() => {
     if (!rigidBody.current || !entity.velocity || !group.current) return
 
-    // 1. Apply velocity from BoidsSystem to RigidBody
-    rigidBody.current.setLinvel(entity.velocity, true)
+    // 1. Apply steering force from BoidsSystem
+    if (entity.steeringForce) {
+      rigidBody.current.applyImpulse(entity.steeringForce, true)
+      entity.steeringForce.set(0, 0, 0)
+    }
 
     // 2. CRITICAL: Read the ACTUAL velocity resulting from physics (collisions)
     // If the fish hit a wall, 'actualVel' will be stopped or bounced.
@@ -45,7 +48,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       friction={0}
       restitution={0.5}
       linearDamping={2}
-      gravityScale={0}
+      gravityScale={1}
       ccd={true}
     >
       <group ref={group}>

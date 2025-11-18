@@ -6,6 +6,7 @@ export type Entity = {
   id?: number
   position: Vector3
   velocity?: Vector3
+  steeringForce?: Vector3
   
   // Tags
   fish?: boolean
