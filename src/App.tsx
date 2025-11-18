@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Physics, RigidBody, RapierRigidBody } from '@react-three/rapier'
-import { Vector3, Group } from 'three'
+import { Vector3 } from 'three'
 import { Tank } from './components/Tank'
+import { Water } from './components/Water'
 import { Fish } from './components/Fish'
 import { BoidsSystem } from './systems/BoidsSystem'
 import { FoodSystem } from './systems/FoodSystem'
@@ -89,6 +90,7 @@ function App() {
 
         <Physics debug={false} gravity={[0, -9.81, 0]}>
           <Tank />
+          <Water />
           <ECS.Entities in={world.with('fish')}>
             {entity => <Fish entity={entity} />}
           </ECS.Entities>

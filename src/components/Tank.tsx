@@ -72,21 +72,6 @@ export const Tank = () => {
         {/* Thicker right wall collider */}
         <CuboidCollider args={[0.5, 3, 3]} position={[5.5, 0, 0]} />
       </RigidBody>
-
-      {/* Top Wall (Water Surface) */}
-      <RigidBody type="fixed">
-        <mesh position={[0, 3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[10, 6]} />
-          <meshPhysicalMaterial
-            color="#88ccff"
-            transparent
-            opacity={0.2}
-            side={2} // Double side
-          />
-        </mesh>
-        {/* Thicker top wall collider */}
-        <CuboidCollider args={[5, 0.5, 3]} position={[0, 3.5, 0]} />
-      </RigidBody>
     </group>
   )
 }
