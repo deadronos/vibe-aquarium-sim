@@ -52,7 +52,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       ccd={true}
     >
       <group ref={group}>
-        <FishModel />
+        <FishModel entity={entity} />
       </group>
     </RigidBody>
   )
