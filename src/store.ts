@@ -7,15 +7,20 @@ export type Entity = {
   position: Vector3
   velocity?: Vector3
   steeringForce?: Vector3
-  
+
   // Tags
   fish?: boolean
   food?: boolean
-  
+
   // Boids properties
   separation?: number
   alignment?: number
   cohesion?: number
+
+  // AI State
+  hunger?: number
+  boredom?: number
+  state?: 'roam' | 'seek'
 }
 
 export const world = new World<Entity>()

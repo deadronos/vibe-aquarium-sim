@@ -47,8 +47,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       enabledRotations={[false, false, false]}
       friction={0}
       restitution={0.5}
-      linearDamping={2}
-      gravityScale={1}
+      linearDamping={5}
+      gravityScale={0}
       ccd={true}
     >
       <group ref={group}>
