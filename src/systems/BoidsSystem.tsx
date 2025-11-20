@@ -2,177 +2,165 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { world } from '../store'
 
-const separationWeight = 2.0
-const alignmentWeight = 1.0
-const cohesionWeight = 1.0
 const maxSpeed = 1.0
-const maxForce = 0.01
-const boundsHalfSize = 5 // Keep fish within -5 to 5
-const boundsWeight = 0.5
+const maxForce = 0.05
+
+// Tank dimensions (half extents) align with Tank.tsx colliders
+const boundsHalfSizeX = 5
+const boundsHalfSizeY = 3
+const boundsHalfSizeZ = 3
+const boundsWeight = 1.0
+const boundsMargin = 0.75
+const boundsSoftFactor = 0.5
+const boundsStrongFactor = 3.0
+const waterSurfaceLimit = 2.0
+
+// Depth preference
+const preferredDepth = -1.0
+const depthAttractStrength = 1.2
+
+// Hunger and state
 const hungerThreshold = 50
 const hungerRate = 0.05
 
+// Wander behavior
+const wanderSpeed = 0.6
+const wanderRetargetMin = 1.5
+const wanderRetargetMax = 3.5
+
+// Fixed-step integration
+const fixedDelta = 1 / 60
+const maxSubSteps = 4
+
 // Temp vectors to avoid GC
-const sep = new Vector3()
-const ali = new Vector3()
-const coh = new Vector3()
-const v1 = new Vector3()
+const temp = new Vector3()
+const desiredVel = new Vector3()
+const boundsPush = new Vector3()
+const depthPull = new Vector3()
+const foodDir = new Vector3()
+const stepForce = new Vector3()
+let accumulator = 0
 
 export const BoidsSystem = () => {
-    useFrame(() => {
-        const entities = world.with('fish', 'position', 'velocity')
+  useFrame((_, delta) => {
+    accumulator += delta
+    const subSteps = Math.min(maxSubSteps, Math.floor(accumulator / fixedDelta))
+    if (subSteps === 0) return
+    accumulator -= subSteps * fixedDelta
 
-        // Simple O(N^2) loop for now (<1000 entities is fine)
-        for (const entity of entities) {
-            // Initialize steering force if needed
-            if (!entity.steeringForce) entity.steeringForce = new Vector3()
-            entity.steeringForce.set(0, 0, 0)
+    const fish = world.with('fish', 'position', 'velocity')
+    const food = world.with('food', 'position')
 
-            sep.set(0, 0, 0)
-            ali.set(0, 0, 0)
-            coh.set(0, 0, 0)
+    // Ensure required components exist
+    for (const entity of fish) {
+      if (!entity.steeringForce) entity.steeringForce = new Vector3()
+      entity.steeringForce.set(0, 0, 0)
+      if (!entity.wanderDir) entity.wanderDir = new Vector3()
+      if (entity.wanderTimer === undefined) entity.wanderTimer = 0
+      if (entity.hunger === undefined) entity.hunger = 0
+      if (entity.boredom === undefined) entity.boredom = 0
+      if (!entity.state) entity.state = 'roam'
+    }
 
-            // --- AI & State Machine ---
+    for (let step = 0; step < subSteps; step++) {
+      for (const entity of fish) {
+        stepForce.set(0, 0, 0)
 
-            // Init props
-            if (entity.hunger === undefined) entity.hunger = 0
-            if (entity.boredom === undefined) entity.boredom = 0
-            if (!entity.state) entity.state = 'roam'
-
-            // Update Hunger
-            entity.hunger += hungerRate
-
-            // State Transitions
-            if (entity.state === 'roam') {
-                if (entity.hunger > hungerThreshold) {
-                    entity.state = 'seek'
-                }
-            } else if (entity.state === 'seek') {
-                if (entity.hunger <= 0) {
-                    entity.state = 'roam'
-                }
-            }
-
-            // --- Forces ---
-
-            // 1. Bounds Constraint (Keep in tank)
-            // Soft bounds: steer back when getting close to edge
-            // Hard bounds: strong push when outside
-            const margin = 1.0
-            const softFactor = 0.5
-            const strongFactor = 2.0
-
-            // X Bounds
-            if (Math.abs(entity.position.x) > boundsHalfSize - margin) {
-                if (Math.abs(entity.position.x) > boundsHalfSize) {
-                    // Outside: Strong force
-                    v1.set(-Math.sign(entity.position.x), 0, 0).multiplyScalar(boundsWeight * strongFactor)
-                } else {
-                    // Inside margin: Soft force
-                    // dist from safe zone (bounds - margin)
-                    const dist = Math.abs(entity.position.x) - (boundsHalfSize - margin)
-                    v1.set(-Math.sign(entity.position.x), 0, 0).multiplyScalar(dist * softFactor)
-                }
-                entity.steeringForce.add(v1)
-            }
-
-            // Y Bounds
-            if (Math.abs(entity.position.y) > boundsHalfSize - margin) {
-                if (Math.abs(entity.position.y) > boundsHalfSize) {
-                    v1.set(0, -Math.sign(entity.position.y), 0).multiplyScalar(boundsWeight * strongFactor)
-                } else {
-                    const dist = Math.abs(entity.position.y) - (boundsHalfSize - margin)
-                    v1.set(0, -Math.sign(entity.position.y), 0).multiplyScalar(dist * softFactor)
-                }
-                entity.steeringForce.add(v1)
-            }
-
-            // Z Bounds
-            if (Math.abs(entity.position.z) > boundsHalfSize - margin) {
-                if (Math.abs(entity.position.z) > boundsHalfSize) {
-                    v1.set(0, 0, -Math.sign(entity.position.z)).multiplyScalar(boundsWeight * strongFactor)
-                } else {
-                    const dist = Math.abs(entity.position.z) - (boundsHalfSize - margin)
-                    v1.set(0, 0, -Math.sign(entity.position.z)).multiplyScalar(dist * softFactor)
-                }
-                entity.steeringForce.add(v1)
-            }
-
-            // Extra floor/ceiling check if needed
-            if (entity.position.y > 2) {
-                v1.set(0, -1, 0).multiplyScalar(boundsWeight)
-                entity.steeringForce.add(v1)
-            }
-
-            let count = 0
-
-            for (const other of entities) {
-                if (entity === other) continue
-
-                const dist = entity.position.distanceTo(other.position)
-
-                if (dist > 0 && dist < 2) { // Perception radius
-                    // Separation
-                    v1.copy(entity.position).sub(other.position).normalize().divideScalar(dist)
-                    sep.add(v1)
-
-                    // Alignment
-                    ali.add(other.velocity!)
-
-                    // Cohesion
-                    coh.add(other.position)
-
-                    count++
-                }
-            }
-
-            // 2. Flocking (Sep/Ali/Coh)
-            // Only apply full flocking if roaming. If seeking, reduce cohesion/alignment so they can break away.
-            const flockMultiplier = entity.state === 'seek' ? 0.2 : 1.0
-
-            if (count > 0) {
-                sep.divideScalar(count).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce)
-                ali.divideScalar(count).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce)
-                coh.divideScalar(count).sub(entity.position).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce)
-            }
-
-            // Accumulate forces into steeringForce
-            entity.steeringForce.add(sep.multiplyScalar(separationWeight))
-            entity.steeringForce.add(ali.multiplyScalar(alignmentWeight * flockMultiplier))
-            entity.steeringForce.add(coh.multiplyScalar(cohesionWeight * flockMultiplier))
-
-            // 3. Seek Food
-            if (entity.state === 'seek') {
-                const foodEntities = world.with('food', 'position')
-                let closestFood = null
-                let closestDist = Infinity
-
-                for (const food of foodEntities) {
-                    const d = entity.position.distanceTo(food.position)
-                    if (d < closestDist) {
-                        closestDist = d
-                        closestFood = food
-                    }
-                }
-
-                if (closestFood) {
-                    // Strong force towards food
-                    v1.copy(closestFood.position).sub(entity.position).normalize().multiplyScalar(maxSpeed).sub(entity.velocity!).clampLength(0, maxForce * 3)
-                    entity.steeringForce.add(v1)
-
-                    // Eat food if close
-                    if (closestDist < 0.5) {
-                        entity.hunger = 0
-                        entity.state = 'roam'
-                        // Ideally remove food here, but we might need a separate system or method for that.
-                        // For now, just reset hunger so they stop seeking this specific piece (or all food).
-                        // To actually remove food, we need to modify the world.
-                        world.remove(closestFood)
-                    }
-                }
-            }
+        // Hunger/state
+        entity.hunger += hungerRate * fixedDelta
+        if (entity.state === 'roam' && entity.hunger > hungerThreshold) {
+          entity.state = 'seek'
+        } else if (entity.state === 'seek' && entity.hunger <= 0) {
+          entity.state = 'roam'
         }
-    })
 
-    return null
+        // Bounds push
+        if (Math.abs(entity.position.x) > boundsHalfSizeX - boundsMargin) {
+          const outside = Math.abs(entity.position.x) > boundsHalfSizeX
+          const dist = Math.abs(entity.position.x) - (boundsHalfSizeX - boundsMargin)
+          boundsPush
+            .set(-Math.sign(entity.position.x), 0, 0)
+            .multiplyScalar(
+              boundsWeight * (outside ? boundsStrongFactor : dist * boundsSoftFactor)
+            )
+          stepForce.add(boundsPush)
+        }
+        if (Math.abs(entity.position.y) > boundsHalfSizeY - boundsMargin) {
+          const outside = Math.abs(entity.position.y) > boundsHalfSizeY
+          const dist = Math.abs(entity.position.y) - (boundsHalfSizeY - boundsMargin)
+          boundsPush
+            .set(0, -Math.sign(entity.position.y), 0)
+            .multiplyScalar(
+              boundsWeight * (outside ? boundsStrongFactor : dist * boundsSoftFactor)
+            )
+          stepForce.add(boundsPush)
+        }
+        if (Math.abs(entity.position.z) > boundsHalfSizeZ - boundsMargin) {
+          const outside = Math.abs(entity.position.z) > boundsHalfSizeZ
+          const dist = Math.abs(entity.position.z) - (boundsHalfSizeZ - boundsMargin)
+          boundsPush
+            .set(0, 0, -Math.sign(entity.position.z))
+            .multiplyScalar(
+              boundsWeight * (outside ? boundsStrongFactor : dist * boundsSoftFactor)
+            )
+          stepForce.add(boundsPush)
+        }
+
+        // Surface guard
+        if (entity.position.y > waterSurfaceLimit) {
+          boundsPush.set(0, -1, 0).multiplyScalar(boundsWeight * boundsStrongFactor)
+          stepForce.add(boundsPush)
+        }
+
+        // Depth pull toward preferred band
+        depthPull.set(0, preferredDepth - entity.position.y, 0).multiplyScalar(depthAttractStrength)
+        stepForce.add(depthPull)
+
+        // Wander retarget
+        entity.wanderTimer! -= fixedDelta
+        if (entity.wanderTimer! <= 0) {
+          temp
+            .set(Math.random() - 0.5, Math.random() - 0.8, Math.random() - 0.5)
+            .normalize()
+            .multiplyScalar(wanderSpeed)
+          entity.wanderDir!.copy(temp)
+          entity.wanderTimer = wanderRetargetMin + Math.random() * (wanderRetargetMax - wanderRetargetMin)
+        }
+
+        // Wander steering (match desired velocity)
+        desiredVel.copy(entity.wanderDir!)
+        temp.copy(desiredVel).sub(entity.velocity!).clampLength(0, maxForce)
+        stepForce.add(temp)
+
+        // Food seeking
+        if (entity.state === 'seek') {
+          let closestFood = null
+          let closestDist = Infinity
+          for (const f of food) {
+            const d = entity.position.distanceTo(f.position)
+            if (d < closestDist) {
+              closestDist = d
+              closestFood = f
+            }
+          }
+          if (closestFood) {
+            foodDir.copy(closestFood.position).sub(entity.position).normalize().multiplyScalar(maxSpeed)
+            temp.copy(foodDir).sub(entity.velocity!).clampLength(0, maxForce * 2.5)
+            stepForce.add(temp)
+            if (closestDist < 0.5) {
+              entity.hunger = 0
+              entity.state = 'roam'
+              world.remove(closestFood)
+            }
+          }
+        }
+
+        // Convert per-second force to impulse for fixed step
+        stepForce.multiplyScalar(fixedDelta)
+        entity.steeringForce.add(stepForce)
+      }
+    }
+  })
+
+  return null
 }

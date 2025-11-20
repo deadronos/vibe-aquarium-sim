@@ -72,6 +72,22 @@ export const Tank = () => {
         {/* Thicker right wall collider */}
         <CuboidCollider args={[0.5, 3, 3]} position={[5.5, 0, 0]} />
       </RigidBody>
+
+      {/* Top Lid (thin glass) */}
+      <RigidBody type="fixed">
+        <mesh position={[0, 3, 0]}>
+          <boxGeometry args={[10, 0.1, 6]} />
+          <meshPhysicalMaterial
+            transmission={0.9}
+            roughness={0}
+            thickness={0.2}
+            color="#aaddff"
+            transparent
+            opacity={0.2}
+          />
+        </mesh>
+        <CuboidCollider args={[5, 0.1, 3]} position={[0, 3.05, 0]} />
+      </RigidBody>
     </group>
   )
 }

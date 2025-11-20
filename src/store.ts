@@ -16,6 +16,8 @@ export type Entity = {
   separation?: number
   alignment?: number
   cohesion?: number
+  wanderDir?: Vector3
+  wanderTimer?: number
 
   // AI State
   hunger?: number

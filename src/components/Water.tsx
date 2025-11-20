@@ -7,11 +7,16 @@ import { calculateBuoyancyAndDrag } from '../utils/fluidPhysics'
 
 const velocity = new Vector3()
 const totalForce = new Vector3()
+const gravity = 9.81
+// Slightly under-neutral buoyancy so fish naturally sink away from the lid.
+const buoyancyStrength = 0.3
+
+const dragFactor = 2.5
 
 export const Water = () => {
   const submergedBodies = useRef<Set<RapierRigidBody>>(new Set())
 
-  useFrame((_state, _delta) => {
+  useFrame(() => {
     for (const body of submergedBodies.current) {
       if (!body) continue
 
@@ -22,9 +27,9 @@ export const Water = () => {
       calculateBuoyancyAndDrag(
         mass,
         velocity,
-        9.81,
-        1.2,
-        2.0,
+        gravity,
+        buoyancyStrength,
+        dragFactor,
         totalForce
       )
 

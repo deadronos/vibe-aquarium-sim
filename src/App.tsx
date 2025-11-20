@@ -23,9 +23,9 @@ const SpawnFish = () => {
           (Math.random() - 0.5) * 4
         ),
         velocity: new Vector3(
-          (Math.random() - 0.5) * 2,
-          (Math.random() - 0.5) * 2,
-          (Math.random() - 0.5) * 2
+          (Math.random() - 0.5) * 0.2,
+          (Math.random() - 0.5) * 0.2,
+          (Math.random() - 0.5) * 0.2
         )
       })
     }
