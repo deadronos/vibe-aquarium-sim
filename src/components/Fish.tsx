@@ -11,30 +11,31 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null)
   const group = useRef<Group>(null)
 
+  // 1. Sync Physics -> ECS (Before Boids)
+  // We want to capture the result of the previous frame's physics step (collisions, etc.)
+  useFrame(() => {
+    if (!rigidBody.current || !entity.velocity) return
+
+    const actualVel = rigidBody.current.linvel()
+    entity.velocity.set(actualVel.x, actualVel.y, actualVel.z)
+
+    const pos = rigidBody.current.translation()
+    entity.position.set(pos.x, pos.y, pos.z)
+  }, -1)
+
+  // 2. Sync ECS -> Physics (After Boids)
+  // After BoidsSystem has run (priority 0) and updated entity.velocity, we apply it to physics.
   useFrame(() => {
     if (!rigidBody.current || !entity.velocity || !group.current) return
 
-    // 1. Apply velocity from BoidsSystem to RigidBody
     rigidBody.current.setLinvel(entity.velocity, true)
 
-    // 2. CRITICAL: Read the ACTUAL velocity resulting from physics (collisions)
-    // If the fish hit a wall, 'actualVel' will be stopped or bounced.
-    const actualVel = rigidBody.current.linvel()
-
-    // 3. Update the Entity's velocity to match reality
-    // This ensures the Boid logic knows it has been stopped/deflected
-    entity.velocity.set(actualVel.x, actualVel.y, actualVel.z)
-
-    // 4. Sync ECS position from RigidBody (physics is the source of truth for position)
-    const pos = rigidBody.current.translation()
-    entity.position.set(pos.x, pos.y, pos.z)
-
-    // 5. Visual rotation (face velocity)
+    // Visual rotation (face velocity)
     if (entity.velocity.lengthSq() > 0.001) {
       vec.copy(entity.position).add(entity.velocity)
       group.current.lookAt(vec)
     }
-  })
+  }, 1)
 
   return (
     <RigidBody
