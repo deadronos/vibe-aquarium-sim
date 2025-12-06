@@ -44,6 +44,8 @@ let accumulator = 0
 export const BoidsSystem = () => {
   useFrame((_, delta) => {
     accumulator += delta
+    // Clamp accumulator to prevent death spiral on large lag spikes
+    if (accumulator > 0.2) accumulator = 0.2
     const subSteps = Math.min(maxSubSteps, Math.floor(accumulator / fixedDelta))
     if (subSteps === 0) return
     accumulator -= subSteps * fixedDelta
