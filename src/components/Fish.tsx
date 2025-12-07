@@ -6,6 +6,7 @@ import type { Entity } from '../store'
 import { FishModel } from './FishModel'
 
 const vec = new Vector3()
+const maxSpeed = 1.2
 
 export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null)
@@ -27,10 +28,17 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     // 2. CRITICAL: Read the ACTUAL velocity resulting from physics (collisions)
     // If the fish hit a wall, 'actualVel' will be stopped or bounced.
     const actualVel = rigidBody.current.linvel()
+    const speed = Math.hypot(actualVel.x, actualVel.y, actualVel.z)
 
-    // 3. Update the Entity's velocity to match reality
-    // This ensures the Boid logic knows it has been stopped/deflected
-    entity.velocity.set(actualVel.x, actualVel.y, actualVel.z)
+    // Clamp speed to avoid excessive upward momentum from buoyancy/bounces
+    if (speed > maxSpeed) {
+      const scale = maxSpeed / speed
+      vec.set(actualVel.x, actualVel.y, actualVel.z).multiplyScalar(scale)
+      rigidBody.current.setLinvel({ x: vec.x, y: vec.y, z: vec.z }, true)
+      entity.velocity.set(vec.x, vec.y, vec.z)
+    } else {
+      entity.velocity.set(actualVel.x, actualVel.y, actualVel.z)
+    }
 
     // 4. Sync ECS position from RigidBody (physics is the source of truth for position)
     const pos = rigidBody.current.translation()
@@ -48,10 +56,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       ref={rigidBody}
       position={entity.position}
       colliders="ball"
+      density={2}
       enabledRotations={[false, false, false]}
       friction={0}
-      restitution={0.5}
-      linearDamping={0.5}
+      restitution={0.05}
+      linearDamping={1.1}
       gravityScale={1}
       ccd={true}
     >

@@ -2,8 +2,8 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { world } from '../store'
 
-const maxSpeed = 1.0
-const maxForce = 5.0
+const maxSpeed = 1.2
+const maxForce = 13.0
 
 // Tank dimensions (half extents) align with Tank.tsx colliders
 const boundsHalfSizeX = 5
@@ -13,18 +13,18 @@ const boundsWeight = 1.0
 const boundsMargin = 0.75
 const boundsSoftFactor = 2.0
 const boundsStrongFactor = 10.0
-const waterSurfaceLimit = 1.5
+const waterSurfaceLimit = 1.2
 
 // Depth preference
-const preferredDepth = -1.5
-const depthAttractStrength = 3.0
+const preferredDepth = -2.5
+const depthAttractStrength = 6.0
 
 // Hunger and state
 const hungerThreshold = 50
 const hungerRate = 0.05
 
 // Wander behavior
-const wanderSpeed = 0.6
+const wanderSpeed = 0.85
 const wanderRetargetMin = 1.5
 const wanderRetargetMax = 3.5
 
@@ -46,9 +46,8 @@ export const BoidsSystem = () => {
     accumulator += delta
     // Clamp accumulator to prevent death spiral on large lag spikes
     if (accumulator > 0.2) accumulator = 0.2
-    const subSteps = Math.min(maxSubSteps, Math.floor(accumulator / fixedDelta))
-    if (subSteps === 0) return
-    accumulator -= subSteps * fixedDelta
+    const subSteps = Math.max(1, Math.min(maxSubSteps, Math.round(accumulator / fixedDelta) || 1))
+    accumulator = Math.max(0, accumulator - subSteps * fixedDelta)
 
     const fish = world.with('fish', 'position', 'velocity')
     const food = world.with('food', 'position')

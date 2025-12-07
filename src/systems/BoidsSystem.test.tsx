@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
 import { BoidsSystem } from './BoidsSystem'
 import { world } from '../store'
 import { Vector3 } from 'three'
@@ -31,7 +30,7 @@ describe('BoidsSystem', () => {
       steeringForce: new Vector3()
     })
 
-    render(<BoidsSystem />)
+    BoidsSystem()
     const frameCallback = useFrameMock.mock.calls[0][0]
 
     // 1. Simulate a HUGE lag spike (e.g. 5 seconds)
