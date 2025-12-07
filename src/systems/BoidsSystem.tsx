@@ -3,7 +3,7 @@ import { Vector3 } from 'three'
 import { world } from '../store'
 
 const maxSpeed = 1.0
-const maxForce = 0.05
+const maxForce = 5.0
 
 // Tank dimensions (half extents) align with Tank.tsx colliders
 const boundsHalfSizeX = 5
@@ -11,8 +11,8 @@ const boundsHalfSizeY = 3
 const boundsHalfSizeZ = 3
 const boundsWeight = 1.0
 const boundsMargin = 0.75
-const boundsSoftFactor = 0.5
-const boundsStrongFactor = 3.0
+const boundsSoftFactor = 2.0
+const boundsStrongFactor = 10.0
 const waterSurfaceLimit = 2.0
 
 // Depth preference

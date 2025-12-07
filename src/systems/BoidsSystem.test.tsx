@@ -50,19 +50,19 @@ describe('BoidsSystem', () => {
     frameCallback({}, 1/60)
 
     // Logic:
-    // Force per step = 3.0 (boundsStrongFactor) * 1.0 (weight) = 3.0.
-    // Impulse per step = 3.0 * (1/60) = 0.05.
-    // Max steps = 4. Max Impulse = 0.2.
-    // Normal steps = 1. Normal Impulse = 0.05.
+    // Force per step = 10.0 (boundsStrongFactor) * 1.0 (weight) = 10.0.
+    // Impulse per step = 10.0 * (1/60) = 0.166.
+    // Max steps = 4. Max Impulse = 0.666.
+    // Normal steps = 1. Normal Impulse = 0.166.
 
-    // If bug exists (spiral), we are still catching up, so subSteps = 4. Impulse = 0.2.
-    // If fixed (clamped), accumulator is gone, so subSteps = 1. Impulse = 0.05.
+    // If bug exists (spiral), we are still catching up, so subSteps = 4. Impulse = 0.666.
+    // If fixed (clamped), accumulator is gone, so subSteps = 1. Impulse = 0.166.
 
     const forceX = Math.abs(fish.steeringForce!.x)
 
     // We assert that the system has recovered from the lag spike
-    // So force should be close to single step impulse (0.05)
-    // If it's > 0.15, it means it's still running 4 steps.
-    expect(forceX).toBeLessThan(0.15)
+    // So force should be close to single step impulse (0.166)
+    // If it's > 0.5, it means it's still running 4 steps.
+    expect(forceX).toBeLessThan(0.5)
   })
 })

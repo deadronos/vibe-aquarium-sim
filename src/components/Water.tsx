@@ -8,10 +8,11 @@ import { calculateBuoyancyAndDrag } from '../utils/fluidPhysics'
 const velocity = new Vector3()
 const totalForce = new Vector3()
 const gravity = 9.81
-// Slightly under-neutral buoyancy so fish naturally sink away from the lid.
-const buoyancyStrength = 0.3
+// Near-neutral buoyancy so fish hover (0.9 makes them sink slowly if passive)
+const buoyancyStrength = 0.9
 
-const dragFactor = 2.5
+// Drag scaling factor (applied as force = -v * factor * mass)
+const dragFactor = 2.0
 
 export const Water = () => {
   const submergedBodies = useRef<Set<RapierRigidBody>>(new Set())
@@ -40,9 +41,9 @@ export const Water = () => {
   return (
     <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
       {/* Sensor collider for fluid detection */}
-      <CuboidCollider 
-        args={[5, 2.5, 3]} 
-        sensor={true} 
+      <CuboidCollider
+        args={[5, 2.5, 3]}
+        sensor={true}
         onIntersectionEnter={(payload) => {
           if (payload.other.rigidBody) {
             submergedBodies.current.add(payload.other.rigidBody)
@@ -54,7 +55,7 @@ export const Water = () => {
           }
         }}
       />
-      
+
       {/* Visual representation */}
       <mesh>
         <boxGeometry args={[10, 5, 6]} />

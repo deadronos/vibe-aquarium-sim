@@ -16,8 +16,8 @@ export const calculateBuoyancyAndDrag = (
   tempBuoyancy.set(0, mass * gravity * buoyancyStrength, 0)
 
   // Drag: Opposite to velocity
-  // Force = -velocity * dragFactor
-  tempDrag.copy(velocity).multiplyScalar(-dragFactor)
+  // Force = -velocity * dragFactor * mass (to scale with size)
+  tempDrag.copy(velocity).multiplyScalar(-dragFactor * mass)
 
   // Combine
   resultForce.copy(tempBuoyancy).add(tempDrag)
