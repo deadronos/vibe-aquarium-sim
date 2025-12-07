@@ -9,9 +9,9 @@ const velocity = new Vector3()
 const totalForce = new Vector3()
 const gravity = 9.81
 // Slightly under-neutral buoyancy so fish naturally sink away from the lid.
-const buoyancyStrength = 0.9
+const buoyancyStrength = 0.3
 
-const dragFactor = 0.2
+const dragFactor = 2.5
 
 export const Water = () => {
   const submergedBodies = useRef<Set<RapierRigidBody>>(new Set())
@@ -40,9 +40,9 @@ export const Water = () => {
   return (
     <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
       {/* Sensor collider for fluid detection */}
-      <CuboidCollider
-        args={[5, 2.5, 3]}
-        sensor={true}
+      <CuboidCollider 
+        args={[5, 2.5, 3]} 
+        sensor={true} 
         onIntersectionEnter={(payload) => {
           if (payload.other.rigidBody) {
             submergedBodies.current.add(payload.other.rigidBody)
@@ -54,7 +54,7 @@ export const Water = () => {
           }
         }}
       />
-
+      
       {/* Visual representation */}
       <mesh>
         <boxGeometry args={[10, 5, 6]} />
