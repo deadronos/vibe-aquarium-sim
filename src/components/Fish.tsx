@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Vector3, Group } from 'three'
-import { RigidBody, RapierRigidBody } from '@react-three/rapier'
+import { RigidBody, RapierRigidBody, BallCollider } from '@react-three/rapier'
 import type { Entity } from '../store'
 import { FishModel } from './FishModel'
 
@@ -43,14 +43,15 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     <RigidBody
       ref={rigidBody}
       position={entity.position}
-      colliders="ball"
+      colliders={false}
       enabledRotations={[false, false, false]}
       friction={0}
       restitution={0.5}
-      linearDamping={8}
+      linearDamping={4}
       gravityScale={1}
       ccd={true}
     >
+      <BallCollider args={[0.2]} />
       <group ref={group}>
         <FishModel entity={entity} />
       </group>
