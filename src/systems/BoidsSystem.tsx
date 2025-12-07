@@ -13,11 +13,11 @@ const boundsWeight = 1.0
 const boundsMargin = 0.75
 const boundsSoftFactor = 2.0
 const boundsStrongFactor = 10.0
-const waterSurfaceLimit = 2.0
+const waterSurfaceLimit = 1.5
 
 // Depth preference
-const preferredDepth = -1.0
-const depthAttractStrength = 1.2
+const preferredDepth = -1.5
+const depthAttractStrength = 3.0
 
 // Hunger and state
 const hungerThreshold = 50

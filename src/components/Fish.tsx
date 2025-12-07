@@ -14,10 +14,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   useFrame(() => {
     if (!rigidBody.current || !entity.velocity || !group.current) return
 
+    const mass = rigidBody.current.mass()
+
     // 1. Apply steering force from BoidsSystem
     if (entity.steeringForce) {
       // Scale by mass so steeringForce acts as acceleration
-      const mass = rigidBody.current.mass()
       vec.copy(entity.steeringForce).multiplyScalar(mass)
       rigidBody.current.applyImpulse(vec, true)
       entity.steeringForce.set(0, 0, 0)

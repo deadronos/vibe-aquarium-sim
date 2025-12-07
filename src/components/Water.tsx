@@ -8,8 +8,9 @@ import { calculateBuoyancyAndDrag } from '../utils/fluidPhysics'
 const velocity = new Vector3()
 const totalForce = new Vector3()
 const gravity = 9.81
-// Near-neutral buoyancy so fish hover (0.9 makes them sink slowly if passive)
-const buoyancyStrength = 0.9
+// Buoyancy strength 0.2 ensures fish sink naturally but can be lifted by boid steering.
+// Values > 0.4 tend to cause unstable "uplift" in this configuration.
+const buoyancyStrength = 0.2
 
 // Drag scaling factor (applied as force = -v * factor * mass)
 const dragFactor = 2.0
@@ -39,25 +40,28 @@ export const Water = () => {
   })
 
   return (
-    <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
-      {/* Sensor collider for fluid detection */}
-      <CuboidCollider
-        args={[5, 2.5, 3]}
-        sensor={true}
-        onIntersectionEnter={(payload) => {
-          if (payload.other.rigidBody) {
-            submergedBodies.current.add(payload.other.rigidBody)
-          }
-        }}
-        onIntersectionExit={(payload) => {
-          if (payload.other.rigidBody) {
-            submergedBodies.current.delete(payload.other.rigidBody)
-          }
-        }}
-      />
+    <>
+      {/* Physics Sensor Only */}
+      <RigidBody type="fixed" colliders={false} position={[0, -0.5, 0]}>
+        <CuboidCollider
+          args={[5, 2.5, 3]}
+          sensor={true}
+          isSensor={true}
+          onIntersectionEnter={(payload) => {
+            if (payload.other.rigidBody) {
+              submergedBodies.current.add(payload.other.rigidBody)
+            }
+          }}
+          onIntersectionExit={(payload) => {
+            if (payload.other.rigidBody) {
+              submergedBodies.current.delete(payload.other.rigidBody)
+            }
+          }}
+        />
+      </RigidBody>
 
-      {/* Visual representation */}
-      <mesh>
+      {/* Visual Only (No Physics) */}
+      <mesh position={[0, -0.5, 0]}>
         <boxGeometry args={[10, 5, 6]} />
         <MeshTransmissionMaterial
           backside
@@ -74,6 +78,6 @@ export const Water = () => {
           color="#44aaff"
         />
       </mesh>
-    </RigidBody>
+    </>
   )
 }
