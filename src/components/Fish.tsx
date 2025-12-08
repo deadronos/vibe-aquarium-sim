@@ -18,7 +18,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // Clone scene
   const clone = useMemo(() => scene.clone(), [scene]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!rigidBody.current) return;
 
     // 1. Sync Physics -> ECS (Source of Truth)
@@ -31,7 +31,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     }
 
     // 2. Apply Boids Forces (ECS -> Physics)
-    if (entity.steeringForce) {
+     if (entity.steeringForce) {
        // Apply as impulse (Force * dt)
        tempVec.copy(entity.steeringForce).multiplyScalar(delta);
        rigidBody.current.applyImpulse(tempVec, true);
