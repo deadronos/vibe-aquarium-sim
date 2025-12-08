@@ -91,8 +91,9 @@ export const Fish = ({ entity }: { entity: Entity }) => {
         position={entity.position}
         colliders="ball"
         enabledRotations={[false, false, false]}
-        linearDamping={0.8}
+        linearDamping={0.5}
         gravityScale={0}
+        ccd
     >
       <primitive
         ref={modelRef}

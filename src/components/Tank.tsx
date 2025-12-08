@@ -7,7 +7,7 @@ export const Tank = () => {
   const width = 4;
   const height = 2;
   const depth = 2;
-  const thickness = 0.1;
+  const thickness = 0.5;
 
   return (
     <group>

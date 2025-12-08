@@ -10,10 +10,12 @@ const diff = new Vector3();
 const steer = new Vector3();
 
 // Adjusted for 4m x 2m x 2m tank and 12cm fish
-const NEIGHBOR_DIST = 0.8;
-const SEPARATION_DIST = 0.3;
-const MAX_SPEED = 1.5;
-const MAX_FORCE = 2.0;
+// 1 unit = 1 meter. Fish is ~0.12m.
+// Cruising speed ~2-3 body lengths/s => ~0.3 - 0.4 m/s
+const NEIGHBOR_DIST = 0.6;
+const SEPARATION_DIST = 0.25;
+const MAX_SPEED = 0.4;
+const MAX_FORCE = 0.5;
 
 export const BoidsSystem = () => {
   useFrame(() => {
@@ -93,12 +95,12 @@ export const BoidsSystem = () => {
       steer.set(0, 0, 0);
       let boundForce = false;
 
-      if (x < -1.8) { steer.x += 1; boundForce = true; }
-      if (x > 1.8)  { steer.x -= 1; boundForce = true; }
-      if (y < -0.8) { steer.y += 1; boundForce = true; }
-      if (y > 0.8)  { steer.y -= 1; boundForce = true; }
-      if (z < -0.8) { steer.z += 1; boundForce = true; }
-      if (z > 0.8)  { steer.z -= 1; boundForce = true; }
+      if (x < -1.7) { steer.x += 1; boundForce = true; }
+      if (x > 1.7)  { steer.x -= 1; boundForce = true; }
+      if (y < -0.7) { steer.y += 1; boundForce = true; }
+      if (y > 0.7)  { steer.y -= 1; boundForce = true; }
+      if (z < -0.7) { steer.z += 1; boundForce = true; }
+      if (z > 0.7)  { steer.z -= 1; boundForce = true; }
 
       if (boundForce) {
           steer.normalize().multiplyScalar(MAX_SPEED);
