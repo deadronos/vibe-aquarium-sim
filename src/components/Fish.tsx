@@ -32,7 +32,9 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
     // 2. Apply Boids Forces (ECS -> Physics)
     if (entity.steeringForce) {
-       rigidBody.current.applyImpulse(entity.steeringForce, true);
+       // Apply as impulse (Force * dt)
+       tempVec.copy(entity.steeringForce).multiplyScalar(delta);
+       rigidBody.current.applyImpulse(tempVec, true);
     }
 
     // 3. Orientation (Visual only)
@@ -55,7 +57,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       <primitive
         ref={modelRef}
         object={clone}
-        scale={0.5}
+        scale={1.0}
       />
     </RigidBody>
   );

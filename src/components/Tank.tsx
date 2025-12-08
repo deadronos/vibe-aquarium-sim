@@ -2,46 +2,56 @@ import { RigidBody } from "@react-three/rapier";
 import { Box, Text } from "@react-three/drei";
 
 export const Tank = () => {
+  // Tank Dimensions: 4m wide, 2m high, 2m deep
+  // Extents: X[-2, 2], Y[-1, 1], Z[-1, 1]
+  const width = 4;
+  const height = 2;
+  const depth = 2;
+  const thickness = 0.1;
+
   return (
     <group>
       {/* Floor */}
-      <RigidBody type="fixed" position={[0, -10, 0]} restitution={0.2} friction={1}>
-        <Box args={[30, 1, 30]}>
+      <RigidBody type="fixed" position={[0, -height/2 - thickness/2, 0]} restitution={0.2} friction={1}>
+        <Box args={[width + thickness*2, thickness, depth + thickness*2]}>
            <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
         </Box>
       </RigidBody>
 
-      {/* Ceiling */}
-      <RigidBody type="fixed" position={[0, 10, 0]}>
-         <Box args={[30, 1, 30]} visible={false} />
+      {/* Ceiling (Invisible barrier) */}
+      <RigidBody type="fixed" position={[0, height/2 + thickness/2, 0]}>
+         <Box args={[width, thickness, depth]} visible={false} />
       </RigidBody>
 
-      {/* Walls */}
-      <RigidBody type="fixed" position={[0, 0, 15]}>
-         <Box args={[30, 20, 1]}>
-             <meshStandardMaterial color="#aaddff" transparent opacity={0.1} />
+      {/* Back Wall */}
+      <RigidBody type="fixed" position={[0, 0, -depth/2 - thickness/2]}>
+         <Box args={[width + thickness*2, height, thickness]}>
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
-      <RigidBody type="fixed" position={[0, 0, -15]}>
-         <Box args={[30, 20, 1]}>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.1} />
+      {/* Front Wall */}
+      <RigidBody type="fixed" position={[0, 0, depth/2 + thickness/2]}>
+         <Box args={[width + thickness*2, height, thickness]}>
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
-      <RigidBody type="fixed" position={[15, 0, 0]}>
-         <Box args={[1, 20, 30]}>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.1} />
+      {/* Right Wall */}
+      <RigidBody type="fixed" position={[width/2 + thickness/2, 0, 0]}>
+         <Box args={[thickness, height, depth]}>
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
-      <RigidBody type="fixed" position={[-15, 0, 0]}>
-         <Box args={[1, 20, 30]}>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.1} />
+      {/* Left Wall */}
+      <RigidBody type="fixed" position={[-width/2 - thickness/2, 0, 0]}>
+         <Box args={[thickness, height, depth]}>
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
-      <Text position={[0, 5, -14]} fontSize={1} color="white">
+      <Text position={[0, -height/2 + 0.2, -depth/2 + 0.1]} fontSize={0.3} color="white" anchorY="bottom">
         Vibe Aquarium
       </Text>
     </group>

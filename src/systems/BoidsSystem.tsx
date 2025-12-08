@@ -9,10 +9,11 @@ const coh = new Vector3();
 const diff = new Vector3();
 const steer = new Vector3();
 
-const NEIGHBOR_DIST = 4;
-const SEPARATION_DIST = 1.5;
-const MAX_SPEED = 4;
-const MAX_FORCE = 0.2;
+// Adjusted for 4m x 2m x 2m tank and 12cm fish
+const NEIGHBOR_DIST = 0.8;
+const SEPARATION_DIST = 0.3;
+const MAX_SPEED = 1.5;
+const MAX_FORCE = 2.0;
 
 export const BoidsSystem = () => {
   useFrame(() => {
@@ -81,15 +82,27 @@ export const BoidsSystem = () => {
       ali.multiplyScalar(1.0);
       coh.multiplyScalar(1.0);
 
-      // Sum forces into steeringForce
-      // IMPORTANT: We overwrite steeringForce here, assuming this is the only system writing to it per frame for boids
       entity.steeringForce.set(0,0,0).add(sep).add(ali).add(coh);
 
-      // Boundary / Centering (soft bounds)
-      const distFromCenter = entity.position.length();
-      if (distFromCenter > 8) {
-          steer.copy(entity.position).multiplyScalar(-1).normalize().multiplyScalar(MAX_SPEED);
-          steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 3);
+      // Soft Boundary (Sphere approx for now, or box)
+      // Tank is box (-2,2), (-1,1), (-1,1)
+      const x = entity.position.x;
+      const y = entity.position.y;
+      const z = entity.position.z;
+
+      steer.set(0, 0, 0);
+      let boundForce = false;
+
+      if (x < -1.8) { steer.x += 1; boundForce = true; }
+      if (x > 1.8)  { steer.x -= 1; boundForce = true; }
+      if (y < -0.8) { steer.y += 1; boundForce = true; }
+      if (y > 0.8)  { steer.y -= 1; boundForce = true; }
+      if (z < -0.8) { steer.z += 1; boundForce = true; }
+      if (z > 0.8)  { steer.z -= 1; boundForce = true; }
+
+      if (boundForce) {
+          steer.normalize().multiplyScalar(MAX_SPEED);
+          steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 2);
           entity.steeringForce.add(steer);
       }
     }

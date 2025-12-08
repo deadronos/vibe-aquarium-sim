@@ -11,20 +11,20 @@ import { Vector3 } from "three";
 
 const Spawner = () => {
     useEffect(() => {
-        // Spawn 50 fish
-        for (let i = 0; i < 50; i++) {
+        // Spawn 30 fish
+        for (let i = 0; i < 30; i++) {
             world.add({
                 isFish: true,
                 isBoid: true,
                 position: new Vector3(
-                    (Math.random() - 0.5) * 15,
-                    (Math.random() - 0.5) * 10,
-                    (Math.random() - 0.5) * 15
+                    (Math.random() - 0.5) * 3.5, // Spread across width
+                    (Math.random() - 0.5) * 1.5, // Spread across height
+                    (Math.random() - 0.5) * 1.5  // Spread across depth
                 ),
                 velocity: new Vector3(
-                    (Math.random() - 0.5) * 2,
-                    (Math.random() - 0.5) * 2,
-                    (Math.random() - 0.5) * 2
+                    (Math.random() - 0.5) * 1,
+                    (Math.random() - 0.5) * 1,
+                    (Math.random() - 0.5) * 1
                 ),
                 steeringForce: new Vector3()
             });
@@ -35,13 +35,13 @@ const Spawner = () => {
 
 function App() {
   return (
-    <Canvas camera={{ position: [0, 5, 25], fov: 60 }} shadows>
-      <color attach="background" args={['#001133']} />
+    <Canvas camera={{ position: [0, 0, 4.5], fov: 50 }} shadows>
+      <color attach="background" args={['#000510']} />
 
       <Physics gravity={[0, 0, 0]}>
-          <ambientLight intensity={0.5} />
-          <spotLight position={[20, 20, 10]} angle={0.3} penumbra={1} intensity={2} castShadow />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} />
+          <ambientLight intensity={0.3} />
+          <spotLight position={[2, 4, 2]} angle={0.5} penumbra={1} intensity={3} castShadow />
+          <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
 
           <Tank />
 
@@ -53,7 +53,7 @@ function App() {
           </ECS.Entities>
       </Physics>
 
-      <OrbitControls />
+      <OrbitControls target={[0, 0, 0]} />
     </Canvas>
   )
 }
