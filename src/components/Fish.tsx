@@ -3,7 +3,7 @@ import { RigidBody, RapierRigidBody } from "@react-three/rapier";
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Entity } from "../store";
-import { Vector3, Quaternion, Group } from "three";
+import { Vector3, Quaternion, Group, SRGBColorSpace, Mesh, Material, Color } from "three";
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const tempVec = new Vector3();
@@ -15,8 +15,48 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
   const modelRef = useRef<Group>(null);
 
-  // Clone scene
-  const clone = useMemo(() => scene.clone(), [scene]);
+  // Clone scene and enable shadows + ensure texture color encoding
+  const clone = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse((child: any) => {
+      if ((child as Mesh).isMesh) {
+        (child as Mesh).castShadow = true;
+        (child as Mesh).receiveShadow = true;
+
+        // If there's a texture map ensure sRGB encoding for correct color
+        const material = (child as Mesh).material as Material | Material[] | undefined;
+        if (material) {
+          // Support both arrays and single material
+          const mats = Array.isArray(material) ? material : [material];
+            for (const m of mats) {
+            const matAny = m as any;
+            if (matAny.map) {
+              // Newer three.js versions use `colorSpace` instead of `encoding`.
+              // Use SRGBColorSpace so color textures display correctly.
+              matAny.map.colorSpace = SRGBColorSpace;
+              if (typeof matAny.map.needsUpdate !== 'undefined') matAny.map.needsUpdate = true;
+            }
+            // Debug dev logs to ensure materials are correct
+            if (import.meta.env.DEV) {
+              try {
+                // eslint-disable-next-line no-console
+                console.log('Fish material:', matAny.name || matAny.type, matAny.color?.getHexString ? `#${matAny.color.getHexString()}` : matAny.color, matAny);
+              } catch (e) {}
+              // If there's no texture map and the material has a color, tint it slightly for visibility
+              try {
+                if (!matAny.map && matAny.color) {
+                  const tint = new Color(0xffb07f);
+                  (matAny.color as Color).lerp(tint, 0.55);
+                }
+              } catch (e) {}
+            }
+            if (typeof matAny.needsUpdate !== 'undefined') matAny.needsUpdate = true;
+          }
+        }
+      }
+    });
+    return c;
+  }, [scene]);
 
   useFrame((_, delta) => {
     if (!rigidBody.current) return;

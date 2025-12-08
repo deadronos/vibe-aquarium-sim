@@ -12,8 +12,8 @@ export const Tank = () => {
   return (
     <group>
       {/* Floor */}
-      <RigidBody type="fixed" position={[0, -height/2 - thickness/2, 0]} restitution={0.2} friction={1}>
-        <Box args={[width + thickness*2, thickness, depth + thickness*2]}>
+         <RigidBody type="fixed" position={[0, -height/2 - thickness/2, 0]} restitution={0.2} friction={1}>
+            <Box args={[width + thickness*2, thickness, depth + thickness*2]} receiveShadow>
            <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
         </Box>
       </RigidBody>
@@ -25,28 +25,28 @@ export const Tank = () => {
 
       {/* Back Wall */}
       <RigidBody type="fixed" position={[0, 0, -depth/2 - thickness/2]}>
-         <Box args={[width + thickness*2, height, thickness]}>
+             <Box args={[width + thickness*2, height, thickness]} receiveShadow>
             <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
       {/* Front Wall */}
       <RigidBody type="fixed" position={[0, 0, depth/2 + thickness/2]}>
-         <Box args={[width + thickness*2, height, thickness]}>
+             <Box args={[width + thickness*2, height, thickness]} receiveShadow>
             <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
       {/* Right Wall */}
       <RigidBody type="fixed" position={[width/2 + thickness/2, 0, 0]}>
-         <Box args={[thickness, height, depth]}>
+             <Box args={[thickness, height, depth]} receiveShadow>
             <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
 
       {/* Left Wall */}
       <RigidBody type="fixed" position={[-width/2 - thickness/2, 0, 0]}>
-         <Box args={[thickness, height, depth]}>
+             <Box args={[thickness, height, depth]} receiveShadow>
             <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
          </Box>
       </RigidBody>
