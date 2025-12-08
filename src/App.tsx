@@ -19,7 +19,7 @@ const SpawnFish = () => {
         fish: true,
         position: new Vector3(
           (Math.random() - 0.5) * 8,
-          (Math.random() - 0.5) * 4,
+          Math.random() * 1 - 2, // Spawn between -2 and -1 (above floor -3)
           (Math.random() - 0.5) * 4
         ),
         velocity: new Vector3(
