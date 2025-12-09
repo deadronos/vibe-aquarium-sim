@@ -2,7 +2,7 @@
 
 ## In Progress
 
-(no active in-progress tasks)
+- [TASK004] Fix fish motion after decoupling physics/rendering - Investigating collider loss and restoring movement
 
 ## Pending
 

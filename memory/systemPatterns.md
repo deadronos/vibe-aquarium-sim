@@ -7,10 +7,10 @@
 
 ## Source-of-truth loop (guideline)
 
-1. Systems (e.g. `BoidsSystem`) compute desired physics changes (velocity, impulses, forces) and *queue* those changes on the ECS entity (for example `steeringForce` or `externalForce`).
-	- Systems MUST NOT call Rapier methods directly (for example `applyImpulse`, `addForce`, `setLinvel`) — calling Rapier from inside systems or event callbacks can cause WASM re-entry and unsafe aliasing errors.
+1. Systems (e.g. `BoidsSystem`) compute desired physics changes (velocity, impulses, forces) and _queue_ those changes on the ECS entity (for example `steeringForce` or `externalForce`).
+   - Systems MUST NOT call Rapier methods directly (for example `applyImpulse`, `addForce`, `setLinvel`) — calling Rapier from inside systems or event callbacks can cause WASM re-entry and unsafe aliasing errors.
 2. Rapier integrates the physics world and resolves collisions/contacts.
-	- Components that own `RigidBody` wrappers (for example `Fish.tsx`) are responsible for applying queued forces/impulses to the `RigidBody` at a safe point (e.g. in `useFrame`), avoiding calling Rapier from systems or Rapier event callbacks.
+   - Components that own `RigidBody` wrappers (for example `Fish.tsx`) are responsible for applying queued forces/impulses to the `RigidBody` at a safe point (e.g. in `useFrame`), avoiding calling Rapier from systems or Rapier event callbacks.
 3. Components (e.g. `Fish`) read the `RigidBody` state in `useFrame` and write the resulting transform back into ECS for rendering and UI.
 
 ## Key rules

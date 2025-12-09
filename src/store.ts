@@ -18,6 +18,8 @@ export type Entity = {
   rigidBodyHandle?: number;
   // Accumulated external forces (e.g. water drag) scheduled by systems — applied by component
   externalForce?: Vector3;
+  // Target velocity for direct velocity control (avoids impulse re-entrancy issues)
+  targetVelocity?: Vector3;
 
   // Boids / Steering
   steeringForce?: Vector3; // The force calculated by BoidsSystem to be applied to the RigidBody
