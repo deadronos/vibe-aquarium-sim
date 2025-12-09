@@ -9,6 +9,8 @@ export const Tank = () => {
   const height = 2;
   const depth = 2;
   const thickness = 0.5;
+  // Thin glass walls (meters) — 0.012 is approximately 1/2 inch
+  const wallThickness = 0.012;
 
   return (
     <group>
@@ -30,8 +32,8 @@ export const Tank = () => {
       </RigidBody>
 
       {/* Back Wall */}
-      <RigidBody type="fixed" position={[0, 0, -depth / 2 - thickness / 2]}>
-        <Box args={[width + thickness * 2, height, thickness]} receiveShadow>
+      <RigidBody type="fixed" position={[0, 0, -depth / 2 - wallThickness / 2]}>
+        <Box args={[width + wallThickness * 2, height, wallThickness]} receiveShadow>
           <MeshTransmissionMaterial
             color="#aaddff"
             samples={8}
@@ -48,8 +50,8 @@ export const Tank = () => {
       </RigidBody>
 
       {/* Front Wall */}
-      <RigidBody type="fixed" position={[0, 0, depth / 2 + thickness / 2]}>
-        <Box args={[width + thickness * 2, height, thickness]} receiveShadow>
+      <RigidBody type="fixed" position={[0, 0, depth / 2 + wallThickness / 2]}>
+        <Box args={[width + wallThickness * 2, height, wallThickness]} receiveShadow>
           <MeshTransmissionMaterial
             color="#aaddff"
             samples={8}
@@ -66,8 +68,8 @@ export const Tank = () => {
       </RigidBody>
 
       {/* Right Wall */}
-      <RigidBody type="fixed" position={[width / 2 + thickness / 2, 0, 0]}>
-        <Box args={[thickness, height, depth]} receiveShadow>
+      <RigidBody type="fixed" position={[width / 2 + wallThickness / 2, 0, 0]}>
+        <Box args={[wallThickness, height, depth]} receiveShadow>
           <MeshTransmissionMaterial
             color="#aaddff"
             samples={8}
@@ -84,8 +86,8 @@ export const Tank = () => {
       </RigidBody>
 
       {/* Left Wall */}
-      <RigidBody type="fixed" position={[-width / 2 - thickness / 2, 0, 0]}>
-        <Box args={[thickness, height, depth]} receiveShadow>
+      <RigidBody type="fixed" position={[-width / 2 - wallThickness / 2, 0, 0]}>
+        <Box args={[wallThickness, height, depth]} receiveShadow>
           <MeshTransmissionMaterial
             color="#aaddff"
             samples={8}
