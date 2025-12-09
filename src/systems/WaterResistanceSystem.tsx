@@ -1,32 +1,24 @@
 import { useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { world } from '../store';
-import { waterPhysics } from '../config/waterPhysics';
+import { computeDragForce } from '../utils/physicsHelpers';
 
 const tempDragForce = new Vector3();
-const tempVelocity = new Vector3();
 
+// WaterResistanceSystem computes drag for entities and queues it on the ECS `externalForce`
+// (DO NOT call Rapier APIs from systems; components must apply queued forces).
 export const WaterResistanceSystem = () => {
   useFrame(() => {
     // Iterate over all entities with velocity and rigidBody
     // Note: 'isFish' is used to filter, but any entity with velocity/rigidBody might be subject to drag.
     // However, the design specifies 'isFish'.
-    for (const entity of world.with('isFish', 'velocity', 'rigidBody')) {
-        const { velocity, rigidBody } = entity;
+    for (const entity of world.with('isFish', 'velocity', 'externalForce')) {
+      const { velocity, externalForce } = entity;
 
-        // Skip if velocity is negligible
-        const speedSq = velocity.lengthSq();
-        if (speedSq < 0.0001) continue;
-
-        // F_drag = 0.5 * rho * Cd * A * v^2
-        const dragMagnitude = 0.5 * waterPhysics.density * waterPhysics.dragCoefficient * waterPhysics.crossSectionArea * speedSq;
-
-        // Direction is opposite to velocity
-        tempVelocity.copy(velocity).normalize();
-        tempDragForce.copy(tempVelocity).multiplyScalar(-dragMagnitude);
-
-        // Apply to rigid body
-        rigidBody.addForce(tempDragForce, true);
+        // Compute drag and queue it on the entity; the component owning the RigidBody
+        // will apply queued forces at a safe point to avoid WASM re-entrancy.
+        if (!computeDragForce(velocity, tempDragForce)) continue;
+        externalForce.set(0, 0, 0).add(tempDragForce);
     }
   });
 
