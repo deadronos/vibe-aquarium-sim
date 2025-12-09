@@ -21,11 +21,11 @@ The project combines an Entity-Component-System (ECS) architecture with a physic
 
 There is a critical bidirectional data flow between the ECS (Miniplex) and the Physics engine (Rapier):
 
-1.  **ECS -> Physics**: Systems (like `BoidsSystem`) calculate desired physics properties (velocity, forces, impulses) based on behaviors.
-2.  **Physics Update**: The `Fish` component applies these properties to the `RigidBody` (e.g., `setLinvel`, `applyImpulse`).
+1.  **ECS -> Physics**: Systems (like `BoidsSystem`) calculate desired physics properties (velocity, forces, impulses) based on behaviors and queue those changes on the entity (for example `steeringForce` or `externalForce`).
+2.  **Physics Update**: The `Fish` component applies queued entity properties to the `RigidBody` (e.g., `setLinvel`, `applyImpulse`) at a safe point.
 3.  **Physics -> ECS**: Inside `Fish.tsx`'s `useFrame`, we read the _actual_ state from the `RigidBody` (which accounts for collisions) and write it back to the ECS entity.
 
-**Rule**: Physics is the imperative source of truth for ALL entities. Never manually update `entity.position` in Systems. Modify behavior by applying forces, impulses, or setting velocity, and let Rapier handle the integration.
+**Rule**: Physics is the imperative source of truth for ALL entities. Never manually update `entity.position` in Systems. Systems MUST NOT call Rapier methods (for example `applyImpulse`, `addForce`, `setLinvel`) directly — calling Rapier from systems or Rapier event callbacks risks WASM re-entrancy and unsafe aliasing errors. Instead queue forces/impulses on the ECS entity and let the component that owns the `RigidBody` apply them in `useFrame`.
 
 ### 2. Entity Component System (Miniplex)
 

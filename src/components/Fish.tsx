@@ -15,6 +15,7 @@ import {
   Object3D,
   Texture,
 } from 'three';
+import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const tempVec = new Vector3();
@@ -91,8 +92,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
   useEffect(() => {
     return () => {
-      if (entity.rigidBody) {
-        world.removeComponent(entity, 'rigidBody');
+      if (entity.rigidBodyHandle) {
+        world.removeComponent(entity, 'rigidBodyHandle');
       }
     };
   }, [entity]);
@@ -100,8 +101,9 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   useFrame((_, delta) => {
     if (!rigidBody.current) return;
 
-    if (!entity.rigidBody) {
-      world.addComponent(entity, 'rigidBody', rigidBody.current);
+    if (!entity.rigidBodyHandle && rigidBody.current) {
+      // store numeric handle only to avoid keeping WASM wrapper objects in ECS
+      world.addComponent(entity, 'rigidBodyHandle', rigidBody.current.handle);
     }
 
     // 1. Sync Physics -> ECS (Source of Truth)
@@ -142,12 +144,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       }
     }
 
-    // 2. Apply Boids Forces (ECS -> Physics)
-    if (entity.steeringForce) {
-      // Apply as impulse (Force * dt)
-      tempVec.copy(entity.steeringForce).multiplyScalar(delta);
-      rigidBody.current.applyImpulse(tempVec, true);
-    }
+    // 2. Apply queued impulses and forces that systems set on the entity.
+    applyQueuedForcesToRigidBody(rigidBody.current, entity, delta);
 
     // 3. Orientation (Visual only)
     if (modelRef.current && entity.velocity && entity.velocity.lengthSq() > 0.01) {

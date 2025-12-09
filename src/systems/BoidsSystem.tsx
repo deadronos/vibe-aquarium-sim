@@ -18,6 +18,8 @@ const SEPARATION_DIST = 0.25;
 const MAX_SPEED = 0.4;
 const MAX_FORCE = 0.5;
 
+// BoidsSystem computes `steeringForce` per entity and writes it into ECS.
+// NOTE: Do NOT call Rapier directly from systems — leave Rapier RPCs to components.
 const updateBoidsLogic = () => {
   // We only iterate over entities that have all the required components
   const boids = world.with('isBoid', 'position', 'velocity', 'steeringForce');
