@@ -3,7 +3,17 @@ import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Entity } from '../store';
-import { Vector3, Quaternion, Group, SRGBColorSpace, Mesh, Material, Color } from 'three';
+import {
+  Vector3,
+  Quaternion,
+  Group,
+  SRGBColorSpace,
+  Mesh,
+  Material,
+  Color,
+  Object3D,
+  Texture,
+} from 'three';
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const tempVec = new Vector3();
@@ -18,10 +28,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // Clone scene and enable shadows + ensure texture color encoding
   const clone = useMemo(() => {
     const c = scene.clone(true);
-    c.traverse((child: any) => {
-      if ((child as Mesh).isMesh) {
-        (child as Mesh).castShadow = true;
-        (child as Mesh).receiveShadow = true;
+    c.traverse((child: Object3D) => {
+      const mesh = child as Mesh;
+      if (mesh.isMesh) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
 
         // If there's a texture map ensure sRGB encoding for correct color
         const material = (child as Mesh).material as Material | Material[] | undefined;
@@ -29,33 +40,45 @@ export const Fish = ({ entity }: { entity: Entity }) => {
           // Support both arrays and single material
           const mats = Array.isArray(material) ? material : [material];
           for (const m of mats) {
-            const matAny = m as any;
-            if (matAny.map) {
-              // Newer three.js versions use `colorSpace` instead of `encoding`.
-              // Use SRGBColorSpace so color textures display correctly.
-              matAny.map.colorSpace = SRGBColorSpace;
-              if (typeof matAny.map.needsUpdate !== 'undefined') matAny.map.needsUpdate = true;
+            type MaterialWithMap = Material & {
+              map?: Texture & { colorSpace?: unknown; needsUpdate?: boolean };
+              name?: string;
+              type?: string;
+              color?: Color & {
+                getHexString?: () => string;
+                lerp?: (c: Color, t: number) => Color;
+              };
+              needsUpdate?: boolean;
+            };
+
+            const mat = m as MaterialWithMap;
+            if (mat.map) {
+              mat.map.colorSpace = SRGBColorSpace;
+              if (typeof mat.map.needsUpdate !== 'undefined') mat.map.needsUpdate = true;
             }
             // Debug dev logs to ensure materials are correct
             if (import.meta.env.DEV) {
               try {
-                // eslint-disable-next-line no-console
                 console.log(
                   'Fish material:',
-                  matAny.name || matAny.type,
-                  matAny.color?.getHexString ? `#${matAny.color.getHexString()}` : matAny.color,
-                  matAny
+                  mat.name || mat.type,
+                  mat.color?.getHexString ? `#${mat.color.getHexString()}` : mat.color,
+                  mat
                 );
-              } catch (e) {}
+              } catch (err) {
+                console.error(err);
+              }
               // If there's no texture map and the material has a color, tint it slightly for visibility
               try {
-                if (!matAny.map && matAny.color) {
+                if (!mat.map && mat.color) {
                   const tint = new Color(0xffb07f);
-                  (matAny.color as Color).lerp(tint, 0.55);
+                  (mat.color as Color).lerp(tint, 0.55);
                 }
-              } catch (e) {}
+              } catch (err) {
+                console.error(err);
+              }
             }
-            if (typeof matAny.needsUpdate !== 'undefined') matAny.needsUpdate = true;
+            if (typeof mat.needsUpdate !== 'undefined') mat.needsUpdate = true;
           }
         }
       }
@@ -98,8 +121,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
             },
             true
           );
-        } catch (e) {
-          // Some Rapier bindings may differ; ignore errors in fallback
+        } catch (err) {
+          if (import.meta.env.DEV) console.error(err);
         }
       }
     }
