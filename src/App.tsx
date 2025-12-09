@@ -9,6 +9,7 @@ import { Water } from './components/Water';
 import { Fish } from './components/Fish';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
+import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
 import * as THREE from 'three';
@@ -72,6 +73,7 @@ function App() {
         <Water />
 
         <Spawner />
+        <SchedulerSystem />
         <BoidsSystem />
         <WaterResistanceSystem />
 
