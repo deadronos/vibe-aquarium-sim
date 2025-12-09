@@ -25,7 +25,7 @@ export const Water = () => {
 
   return (
     <mesh position={[0, 0, 0]} renderOrder={0}>
-       {/* 3.976m x 1.988m x 1.976m */}
+      {/* 3.976m x 1.988m x 1.976m */}
       <boxGeometry args={[3.976, 1.988, 1.976]} />
       <shaderMaterial
         ref={materialRef}

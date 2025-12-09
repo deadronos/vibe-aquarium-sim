@@ -22,11 +22,11 @@ describe('FixedStepScheduler', () => {
   });
 
   it('should clamp max substeps', () => {
-     const scheduler = new FixedStepScheduler(1 / 60, 5);
-     const callback = vi.fn();
-     scheduler.add(callback);
+    const scheduler = new FixedStepScheduler(1 / 60, 5);
+    const callback = vi.fn();
+    scheduler.add(callback);
 
-     scheduler.update(10 / 60); // 10 steps worth
-     expect(callback).toHaveBeenCalledTimes(5);
+    scheduler.update(10 / 60); // 10 steps worth
+    expect(callback).toHaveBeenCalledTimes(5);
   });
 });
