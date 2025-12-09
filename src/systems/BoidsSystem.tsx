@@ -1,6 +1,6 @@
-import { useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
-import { world } from "../store";
+import { useFrame } from '@react-three/fiber';
+import { Vector3 } from 'three';
+import { world } from '../store';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
@@ -56,11 +56,11 @@ export const BoidsSystem = () => {
       if (count > 0) {
         // Separation
         if (sep.lengthSq() > 0) {
-            sep.divideScalar(count);
-            sep.normalize();
-            sep.multiplyScalar(MAX_SPEED);
-            sep.sub(entity.velocity);
-            sep.clampLength(0, MAX_FORCE);
+          sep.divideScalar(count);
+          sep.normalize();
+          sep.multiplyScalar(MAX_SPEED);
+          sep.sub(entity.velocity);
+          sep.clampLength(0, MAX_FORCE);
         }
 
         // Alignment
@@ -84,7 +84,7 @@ export const BoidsSystem = () => {
       ali.multiplyScalar(1.0);
       coh.multiplyScalar(1.0);
 
-      entity.steeringForce.set(0,0,0).add(sep).add(ali).add(coh);
+      entity.steeringForce.set(0, 0, 0).add(sep).add(ali).add(coh);
 
       // Soft Boundary (Sphere approx for now, or box)
       // Tank is box (-2,2), (-1,1), (-1,1)
@@ -95,17 +95,35 @@ export const BoidsSystem = () => {
       steer.set(0, 0, 0);
       let boundForce = false;
 
-      if (x < -1.7) { steer.x += 1; boundForce = true; }
-      if (x > 1.7)  { steer.x -= 1; boundForce = true; }
-      if (y < -0.7) { steer.y += 1; boundForce = true; }
-      if (y > 0.7)  { steer.y -= 1; boundForce = true; }
-      if (z < -0.7) { steer.z += 1; boundForce = true; }
-      if (z > 0.7)  { steer.z -= 1; boundForce = true; }
+      if (x < -1.7) {
+        steer.x += 1;
+        boundForce = true;
+      }
+      if (x > 1.7) {
+        steer.x -= 1;
+        boundForce = true;
+      }
+      if (y < -0.7) {
+        steer.y += 1;
+        boundForce = true;
+      }
+      if (y > 0.7) {
+        steer.y -= 1;
+        boundForce = true;
+      }
+      if (z < -0.7) {
+        steer.z += 1;
+        boundForce = true;
+      }
+      if (z > 0.7) {
+        steer.z -= 1;
+        boundForce = true;
+      }
 
       if (boundForce) {
-          steer.normalize().multiplyScalar(MAX_SPEED);
-          steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 2);
-          entity.steeringForce.add(steer);
+        steer.normalize().multiplyScalar(MAX_SPEED);
+        steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 2);
+        entity.steeringForce.add(steer);
       }
     }
   });

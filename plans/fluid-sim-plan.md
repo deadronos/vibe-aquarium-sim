@@ -66,4 +66,3 @@ We will implement a "Tier 1" fluid simulation using `@react-three/drei` for real
 **Open Questions**
 
 1. None.
-

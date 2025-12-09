@@ -38,4 +38,3 @@ That file contains the "Source of Truth" loop logic, ECS patterns, and performan
 - When modifying systems, always check for memory leaks (new Vector3 in loops).
 - Prefer `miniplex` queries over manual array filtering.
 - Keep components small and focused.
-
