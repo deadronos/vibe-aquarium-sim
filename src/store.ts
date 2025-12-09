@@ -15,7 +15,10 @@ export type Entity = {
   position?: Vector3;
   quaternion?: Quaternion;
   velocity?: Vector3; // Linear velocity
-  rigidBody?: RapierRigidBody;
+  // The Rapier body handle (integer) — avoid storing WASM wrapper objects in ECS
+  rigidBodyHandle?: number;
+  // Accumulated external forces (e.g. water drag) scheduled by systems — applied by component
+  externalForce?: Vector3;
 
   // Boids / Steering
   steeringForce?: Vector3; // The force calculated by BoidsSystem to be applied to the RigidBody

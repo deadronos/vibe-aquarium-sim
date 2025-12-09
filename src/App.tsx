@@ -18,7 +18,7 @@ const Spawner = () => {
   useEffect(() => {
     // Spawn 30 fish
     for (let i = 0; i < 30; i++) {
-      world.add({
+        world.add({
         isFish: true,
         isBoid: true,
         position: new Vector3(
@@ -32,6 +32,7 @@ const Spawner = () => {
           (Math.random() - 0.5) * 1
         ),
         steeringForce: new Vector3(),
+        externalForce: new Vector3(),
       });
     }
   }, []);
