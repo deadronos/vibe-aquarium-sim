@@ -58,6 +58,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
               if (typeof mat.map.needsUpdate !== 'undefined') mat.map.needsUpdate = true;
             }
             // Debug dev logs to ensure materials are correct
+            /* disabled for now, uncomment if needed
             if (import.meta.env.DEV) {
               try {
                 console.log(
@@ -79,6 +80,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
                 console.error(err);
               }
             }
+              */
             if (typeof mat.needsUpdate !== 'undefined') mat.needsUpdate = true;
           }
         }
