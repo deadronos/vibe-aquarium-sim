@@ -9,6 +9,8 @@ import { Water } from './components/Water';
 import { Fish } from './components/Fish';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
+import { SchedulerSystem } from './systems/SchedulerSystem';
+import { DebugUI } from './components/DebugUI';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
 import * as THREE from 'three';
@@ -39,8 +41,10 @@ const Spawner = () => {
 
 function App() {
   return (
-    <Canvas
-      camera={{ position: [0, 0, 4.5], fov: 50 }}
+    <>
+      <DebugUI />
+      <Canvas
+        camera={{ position: [0, 0, 4.5], fov: 50 }}
       shadows
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -72,6 +76,7 @@ function App() {
         <Water />
 
         <Spawner />
+        <SchedulerSystem />
         <BoidsSystem />
         <WaterResistanceSystem />
 
@@ -82,6 +87,7 @@ function App() {
 
       <OrbitControls target={[0, 0, 0]} />
     </Canvas>
+    </>
   );
 }
 

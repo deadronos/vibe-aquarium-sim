@@ -1,6 +1,9 @@
 import { useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { world } from '../store';
+import { useEffect } from 'react';
+import { fixedScheduler } from '../utils/FixedStepScheduler';
+import { debugSettings } from '../debug';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
@@ -17,114 +20,128 @@ const SEPARATION_DIST = 0.25;
 const MAX_SPEED = 0.4;
 const MAX_FORCE = 0.5;
 
-export const BoidsSystem = () => {
-  useFrame(() => {
-    // We only iterate over entities that have all the required components
-    const boids = world.with('isBoid', 'position', 'velocity', 'steeringForce');
+const updateBoidsLogic = () => {
+  // We only iterate over entities that have all the required components
+  const boids = world.with('isBoid', 'position', 'velocity', 'steeringForce');
 
-    for (const entity of boids) {
-      sep.set(0, 0, 0);
-      ali.set(0, 0, 0);
-      coh.set(0, 0, 0);
+  for (const entity of boids) {
+    sep.set(0, 0, 0);
+    ali.set(0, 0, 0);
+    coh.set(0, 0, 0);
 
-      let count = 0;
+    let count = 0;
 
-      for (const neighbor of boids) {
-        if (entity === neighbor) continue;
+    for (const neighbor of boids) {
+      if (entity === neighbor) continue;
 
-        const d = entity.position.distanceTo(neighbor.position);
+      const d = entity.position.distanceTo(neighbor.position);
 
-        if (d > 0 && d < NEIGHBOR_DIST) {
-          // Separation
-          if (d < SEPARATION_DIST) {
-            diff.copy(entity.position).sub(neighbor.position);
-            diff.normalize();
-            diff.divideScalar(d);
-            sep.add(diff);
-          }
-
-          // Alignment
-          ali.add(neighbor.velocity);
-
-          // Cohesion
-          coh.add(neighbor.position);
-
-          count++;
-        }
-      }
-
-      if (count > 0) {
+      if (d > 0 && d < NEIGHBOR_DIST) {
         // Separation
-        if (sep.lengthSq() > 0) {
-          sep.divideScalar(count);
-          sep.normalize();
-          sep.multiplyScalar(MAX_SPEED);
-          sep.sub(entity.velocity);
-          sep.clampLength(0, MAX_FORCE);
+        if (d < SEPARATION_DIST) {
+          diff.copy(entity.position).sub(neighbor.position);
+          diff.normalize();
+          diff.divideScalar(d);
+          sep.add(diff);
         }
 
         // Alignment
-        ali.divideScalar(count);
-        ali.normalize();
-        ali.multiplyScalar(MAX_SPEED);
-        ali.sub(entity.velocity);
-        ali.clampLength(0, MAX_FORCE);
+        ali.add(neighbor.velocity);
 
         // Cohesion
-        coh.divideScalar(count);
-        coh.sub(entity.position);
-        coh.normalize();
-        coh.multiplyScalar(MAX_SPEED);
-        coh.sub(entity.velocity);
-        coh.clampLength(0, MAX_FORCE);
+        coh.add(neighbor.position);
+
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      // Separation
+      if (sep.lengthSq() > 0) {
+        sep.divideScalar(count);
+        sep.normalize();
+        sep.multiplyScalar(MAX_SPEED);
+        sep.sub(entity.velocity);
+        sep.clampLength(0, MAX_FORCE);
       }
 
-      // Apply weights
-      sep.multiplyScalar(2.0);
-      ali.multiplyScalar(1.0);
-      coh.multiplyScalar(1.0);
+      // Alignment
+      ali.divideScalar(count);
+      ali.normalize();
+      ali.multiplyScalar(MAX_SPEED);
+      ali.sub(entity.velocity);
+      ali.clampLength(0, MAX_FORCE);
 
-      entity.steeringForce.set(0, 0, 0).add(sep).add(ali).add(coh);
+      // Cohesion
+      coh.divideScalar(count);
+      coh.sub(entity.position);
+      coh.normalize();
+      coh.multiplyScalar(MAX_SPEED);
+      coh.sub(entity.velocity);
+      coh.clampLength(0, MAX_FORCE);
+    }
 
-      // Soft Boundary (Sphere approx for now, or box)
-      // Tank is box (-2,2), (-1,1), (-1,1)
-      const x = entity.position.x;
-      const y = entity.position.y;
-      const z = entity.position.z;
+    // Apply weights
+    sep.multiplyScalar(2.0);
+    ali.multiplyScalar(1.0);
+    coh.multiplyScalar(1.0);
 
-      steer.set(0, 0, 0);
-      let boundForce = false;
+    entity.steeringForce.set(0, 0, 0).add(sep).add(ali).add(coh);
 
-      if (x < -1.7) {
-        steer.x += 1;
-        boundForce = true;
-      }
-      if (x > 1.7) {
-        steer.x -= 1;
-        boundForce = true;
-      }
-      if (y < -0.7) {
-        steer.y += 1;
-        boundForce = true;
-      }
-      if (y > 0.7) {
-        steer.y -= 1;
-        boundForce = true;
-      }
-      if (z < -0.7) {
-        steer.z += 1;
-        boundForce = true;
-      }
-      if (z > 0.7) {
-        steer.z -= 1;
-        boundForce = true;
-      }
+    // Soft Boundary (Sphere approx for now, or box)
+    // Tank is box (-2,2), (-1,1), (-1,1)
+    const x = entity.position.x;
+    const y = entity.position.y;
+    const z = entity.position.z;
 
-      if (boundForce) {
-        steer.normalize().multiplyScalar(MAX_SPEED);
-        steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 2);
-        entity.steeringForce.add(steer);
+    steer.set(0, 0, 0);
+    let boundForce = false;
+
+    if (x < -1.7) {
+      steer.x += 1;
+      boundForce = true;
+    }
+    if (x > 1.7) {
+      steer.x -= 1;
+      boundForce = true;
+    }
+    if (y < -0.7) {
+      steer.y += 1;
+      boundForce = true;
+    }
+    if (y > 0.7) {
+      steer.y -= 1;
+      boundForce = true;
+    }
+    if (z < -0.7) {
+      steer.z += 1;
+      boundForce = true;
+    }
+    if (z > 0.7) {
+      steer.z -= 1;
+      boundForce = true;
+    }
+
+    if (boundForce) {
+      steer.normalize().multiplyScalar(MAX_SPEED);
+      steer.sub(entity.velocity).clampLength(0, MAX_FORCE * 2);
+      entity.steeringForce.add(steer);
+    }
+  }
+};
+
+export const BoidsSystem = () => {
+  useEffect(() => {
+    return fixedScheduler.add(() => {
+      if (debugSettings.fixedStepEnabled) {
+        updateBoidsLogic();
       }
+    });
+  }, []);
+
+  useFrame(() => {
+    if (!debugSettings.fixedStepEnabled) {
+      updateBoidsLogic();
     }
   });
 
