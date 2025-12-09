@@ -6,7 +6,7 @@
 
 ## Pending
 
-- (no pending tasks)
+- [TASK002] Implement Water Simulation (Hybrid Approach) - Three-phase implementation: visual shader, physics resistance, optional currents
 
 ## Completed
 
