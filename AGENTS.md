@@ -11,6 +11,8 @@ Vibe Aquarium Sim is a relaxing, physics-based aquarium simulation built with Re
 **CRITICAL**: Before generating code, you MUST read and follow the detailed architectural rules defined in:
 👉 **[.github/copilot-instructions.md](.github/copilot-instructions.md)**
 
+Memory bank is in `memory/` folder.
+
 Also consult the repository-level workflow and memory bank guidance in:
 👉 **[.github/instructions/memory-bank.instructions.md](.github/instructions/memory-bank.instructions.md)**
 👉 **[.github/instructions/spec-driven-workflow-v1.instructions.md](.github/instructions/spec-driven-workflow-v1.instructions.md)**

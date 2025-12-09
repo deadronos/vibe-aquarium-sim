@@ -8,6 +8,8 @@ This is a **React 19** application using **TypeScript**, **Vite**, **Three.js (@
 
 This repository includes additional process and memory-bank guidance for AI agents and contributors under `.github/instructions/`. Please consult the following before planning or making changes:
 
+Memory bank is in `memory/` folder.
+
 - `.github/instructions/memory-bank.instructions.md` — memory-bank conventions and where to store design/task artifacts.
 - `.github/instructions/spec-driven-workflow-v1.instructions.md` — spec-driven workflow guidance for analyze → design → implement → validate → reflect → handoff.
 

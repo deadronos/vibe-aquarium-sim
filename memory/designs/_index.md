@@ -6,7 +6,7 @@
 
 ## Pending
 
-- (no pending designs)
+- [DES002] Water Simulation (Hybrid Approach) - Planning phase-based water implementation
 
 ## Completed
 
