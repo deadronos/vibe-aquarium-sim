@@ -15,6 +15,7 @@ import {
   Object3D,
   Texture,
 } from 'three';
+import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const tempVec = new Vector3();
@@ -143,20 +144,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       }
     }
 
-    // 2. Apply Boids Forces (ECS -> Physics)
-    if (entity.steeringForce) {
-      // Apply as impulse (Force * dt)
-      tempVec.copy(entity.steeringForce).multiplyScalar(delta);
-      rigidBody.current.applyImpulse(tempVec, true);
-    }
-
-    // 2b. Apply queued external forces (e.g. water drag) from systems
-    if (entity.externalForce && (entity.externalForce.lengthSq() > 0.000001)) {
-      tempVec.copy(entity.externalForce).multiplyScalar(delta);
-      rigidBody.current.applyImpulse(tempVec, true);
-      // clear queued external forces after applying
-      entity.externalForce.set(0, 0, 0);
-    }
+    // 2. Apply queued impulses and forces that systems set on the entity.
+    applyQueuedForcesToRigidBody(rigidBody.current, entity, delta);
 
     // 3. Orientation (Visual only)
     if (modelRef.current && entity.velocity && entity.velocity.lengthSq() > 0.01) {

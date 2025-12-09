@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Vector3 } from 'three';
-import { computeDragForce } from '../src/systems/WaterResistanceSystem';
+import { computeDragForce } from '../src/utils/physicsHelpers';
 import { waterPhysics } from '../src/config/waterPhysics';
 
 describe('WaterResistanceSystem.computeDragForce', () => {

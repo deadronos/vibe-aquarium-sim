@@ -1,7 +1,6 @@
 import createECS from 'miniplex-react';
 import { Vector3, Quaternion } from 'three';
 import { World } from 'miniplex';
-import type { RapierRigidBody } from '@react-three/rapier';
 
 export type Entity = {
   // Metadata
