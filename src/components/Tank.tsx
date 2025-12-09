@@ -36,8 +36,8 @@ export const Tank = () => {
             color="#aaddff"
             samples={8}
             resolution={1024}
-            thickness={0.5}
-            roughness={0}
+            thickness={0.012}
+            roughness={0.15}
             chromaticAberration={0.02}
             anisotropy={0.1}
             ior={1.1}
@@ -54,8 +54,8 @@ export const Tank = () => {
             color="#aaddff"
             samples={8}
             resolution={1024}
-            thickness={0.5}
-            roughness={0}
+            thickness={0.012}
+            roughness={0.15}
             chromaticAberration={0.02}
             anisotropy={0.1}
             ior={1.1}
@@ -72,8 +72,8 @@ export const Tank = () => {
             color="#aaddff"
             samples={8}
             resolution={1024}
-            thickness={0.5}
-            roughness={0}
+            thickness={0.012}
+            roughness={0.15}
             chromaticAberration={0.02}
             anisotropy={0.1}
             ior={1.1}
@@ -90,8 +90,8 @@ export const Tank = () => {
             color="#aaddff"
             samples={8}
             resolution={1024}
-            thickness={0.5}
-            roughness={0}
+            thickness={0.012}
+            roughness={0.15}
             chromaticAberration={0.02}
             anisotropy={0.1}
             ior={1.1}
