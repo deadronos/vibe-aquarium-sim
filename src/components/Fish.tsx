@@ -1,9 +1,6 @@
 import { useGLTF } from '@react-three/drei';
-<<<<<<< HEAD
-import { RigidBody, BallCollider, RapierRigidBody } from '@react-three/rapier';
-=======
-import { RigidBody, RapierRigidBody, useBeforePhysicsStep, useAfterPhysicsStep, BallCollider } from '@react-three/rapier';
->>>>>>> 46da91946c1168a1cac72e5c46e0d8568083d41d
+import { RigidBody, BallCollider } from '@react-three/rapier';
+import type { RapierRigidBody } from '@react-three/rapier';
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { world } from '../store';
@@ -91,30 +88,30 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
     // 1. Calculate target velocity from forces (ECS -> Physics)
     // Convert forces to velocity changes instead of applying impulses
-    if (!entity.targetVelocity) {
-      entity.targetVelocity = new Vector3();
+    let targetVelocity = entity.targetVelocity;
+    if (!targetVelocity) {
+      targetVelocity = new Vector3();
+      world.addComponent(entity, 'targetVelocity', targetVelocity);
     }
-    
+
     const dt = 1 / 60;
     const currentVel = rigidBody.current.linvel();
-    entity.targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
-    
-    // Apply steering force
+    targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
     if (entity.steeringForce && entity.steeringForce.lengthSq() > 1e-6) {
       tempVec.copy(entity.steeringForce).multiplyScalar(dt);
-      entity.targetVelocity.add(tempVec);
+      targetVelocity.add(tempVec);
     }
-    
+
     // Apply external force
     if (entity.externalForce && entity.externalForce.lengthSq() > 1e-6) {
       tempVec.copy(entity.externalForce).multiplyScalar(dt);
-      entity.targetVelocity.add(tempVec);
+      targetVelocity.add(tempVec);
       entity.externalForce.set(0, 0, 0);
     }
-    
+
     // Apply target velocity directly
-    if (entity.targetVelocity) {
-      rigidBody.current.setLinvel(entity.targetVelocity, true);
+    if (targetVelocity) {
+      rigidBody.current.setLinvel(targetVelocity, true);
     }
 
     // 2. Sync Physics -> ECS
@@ -156,20 +153,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
         mass={1}
         ccd
       >
-<<<<<<< HEAD
         <BallCollider args={[0.06]} />
-=======
-        <BallCollider args={[0.1]} />
->>>>>>> 46da91946c1168a1cac72e5c46e0d8568083d41d
       </RigidBody>
 
       {/* Visual Mesh (Interpolated) */}
-      <primitive
-        ref={modelRef}
-        object={clone}
-        scale={1.0}
-        position={entity.position}
-      />
+      <primitive ref={modelRef} object={clone} scale={1.0} position={entity.position} />
     </group>
   );
 };
