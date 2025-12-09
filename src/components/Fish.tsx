@@ -68,6 +68,26 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     if (pos && vel) {
         entity.position?.set(pos.x, pos.y, pos.z);
         entity.velocity?.set(vel.x, vel.y, vel.z);
+
+        // Clamp rigid body position to stay inside tank bounds (X [-2,2], Y [-1,1], Z [-1,1])
+        const xLimit = 2.0, yLimit = 1.0, zLimit = 1.0;
+        const margin = 0.05; // small margin inside walls
+        let clamped = false;
+        const cx = Math.max(-xLimit + margin, Math.min(xLimit - margin, pos.x));
+        const cy = Math.max(-yLimit + margin, Math.min(yLimit - margin, pos.y));
+        const cz = Math.max(-zLimit + margin, Math.min(zLimit - margin, pos.z));
+        if (cx !== pos.x || cy !== pos.y || cz !== pos.z) {
+            clamped = true;
+        }
+        if (clamped && rigidBody.current) {
+            // Teleport the rigid body back inside and damp outward velocity
+            try {
+                rigidBody.current.setTranslation({ x: cx, y: cy, z: cz }, true);
+                rigidBody.current.setLinvel({ x: Math.sign(cx - pos.x) * Math.abs(vel.x) * 0.2, y: Math.sign(cy - pos.y) * Math.abs(vel.y) * 0.2, z: Math.sign(cz - pos.z) * Math.abs(vel.z) * 0.2 }, true);
+            } catch (e) {
+                // Some Rapier bindings may differ; ignore errors in fallback
+            }
+        }
     }
 
     // 2. Apply Boids Forces (ECS -> Physics)

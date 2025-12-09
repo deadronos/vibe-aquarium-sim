@@ -1,5 +1,6 @@
 import { RigidBody } from "@react-three/rapier";
 import { Box, Text } from "@react-three/drei";
+import { DoubleSide } from "three";
 
 export const Tank = () => {
   // Tank Dimensions: 4m wide, 2m high, 2m deep
@@ -14,7 +15,7 @@ export const Tank = () => {
       {/* Floor */}
          <RigidBody type="fixed" position={[0, -height/2 - thickness/2, 0]} restitution={0.2} friction={1}>
             <Box args={[width + thickness*2, thickness, depth + thickness*2]} receiveShadow>
-           <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
+           <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} side={DoubleSide} />
         </Box>
       </RigidBody>
 
@@ -26,28 +27,28 @@ export const Tank = () => {
       {/* Back Wall */}
       <RigidBody type="fixed" position={[0, 0, -depth/2 - thickness/2]}>
              <Box args={[width + thickness*2, height, thickness]} receiveShadow>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} side={DoubleSide} />
          </Box>
       </RigidBody>
 
       {/* Front Wall */}
       <RigidBody type="fixed" position={[0, 0, depth/2 + thickness/2]}>
              <Box args={[width + thickness*2, height, thickness]} receiveShadow>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} side={DoubleSide} />
          </Box>
       </RigidBody>
 
       {/* Right Wall */}
       <RigidBody type="fixed" position={[width/2 + thickness/2, 0, 0]}>
              <Box args={[thickness, height, depth]} receiveShadow>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} side={DoubleSide} />
          </Box>
       </RigidBody>
 
       {/* Left Wall */}
       <RigidBody type="fixed" position={[-width/2 - thickness/2, 0, 0]}>
              <Box args={[thickness, height, depth]} receiveShadow>
-            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} />
+            <meshStandardMaterial color="#aaddff" transparent opacity={0.15} side={DoubleSide} />
          </Box>
       </RigidBody>
 
