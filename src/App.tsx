@@ -5,8 +5,11 @@ import { Environment } from '@react-three/drei';
 import { ECS, world } from './store';
 import type { Entity } from './store';
 import { Tank } from './components/Tank';
+import { Water } from './components/Water';
 import { Fish } from './components/Fish';
 import { BoidsSystem } from './systems/BoidsSystem';
+import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
+import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
 import * as THREE from 'three';
@@ -67,9 +70,12 @@ function App() {
         <Environment preset="studio" background={true} />
 
         <Tank />
+        <Water />
 
         <Spawner />
+        <SchedulerSystem />
         <BoidsSystem />
+        <WaterResistanceSystem />
 
         <ECS.Entities in={world.with('isFish')}>
           {(entity: Entity) => <Fish entity={entity} />}

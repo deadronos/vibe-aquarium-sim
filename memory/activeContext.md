@@ -15,6 +15,7 @@
 1. Finish core systems for movement, spawning and food interactions.
 2. Add tests covering the ECS ↔ Physics synchronization loop.
 3. Add some minimal UI state (Zustand) for runtime controls and debug toggles.
+4. Run an experiment to evaluate fixed-step physics & boid logic (TASK003 / DES003)
 
 ## Active decisions / considerations
 
