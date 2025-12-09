@@ -58,7 +58,7 @@ function App() {
           {/* Cool fill from back */}
           <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
           {/* Environment map for realistic PBR reflections */}
-          <Environment preset="studio" background={false} />
+          <Environment preset="studio" background={true} />
 
           <Tank />
 
