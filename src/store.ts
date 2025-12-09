@@ -1,24 +1,25 @@
-import { World } from 'miniplex'
-import { createReactAPI } from 'miniplex-react'
-import { Vector3 } from 'three'
+import createECS from 'miniplex-react';
+import { Vector3, Quaternion } from 'three';
+import { World } from 'miniplex';
+import type { RapierRigidBody } from '@react-three/rapier';
 
 export type Entity = {
-  id?: number
-  position: Vector3
-  velocity?: Vector3
-  
+  // Metadata
+  id?: string;
+
   // Tags
-  fish?: boolean
-  food?: boolean
-  
-  // Boids properties
-  separation?: number
-  alignment?: number
-  cohesion?: number
-}
+  isFish?: boolean;
+  isBoid?: boolean;
 
-export const world = new World<Entity>()
-export const ECS = createReactAPI(world)
-export const store = world
+  // Physics / Transform (synced from Rapier)
+  position?: Vector3;
+  quaternion?: Quaternion;
+  velocity?: Vector3; // Linear velocity
+  rigidBody?: RapierRigidBody;
 
+  // Boids / Steering
+  steeringForce?: Vector3; // The force calculated by BoidsSystem to be applied to the RigidBody
+};
 
+export const world = new World<Entity>();
+export const ECS = createECS(world);

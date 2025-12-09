@@ -1,0 +1,24 @@
+# Progress
+
+## What works
+
+- Project scaffold and core components exist in `src/` (Fish, Tank, BoidsSystem, store)
+- Basic unit test harness and linting configuration present (Vitest, ESLint, Prettier)
+- Documentation: `AGENTS.md` and `.github/copilot-instructions.md` updated to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` and recorded in memory (2025-12-09)
+
+## What's left / next milestones
+
+1. Finish systems for spawning, food, and more robust boid interactions.
+2. Add tests for ECS ↔ Physics synchronization and edge-case collisions.
+3. Add basic UI (Zustand) for runtime tweaking and debug overlays.
+4. Implement fixed-step physics & boid logic (see DES003-fixed-step-physics.md and TASK003-fixed-step-physics.md) and add validation tests for stability.
+
+## Current status
+
+- Phase: In Progress
+- Branch: `rewrite-aquarium-sim` (work in-progress)
+
+## Known issues / technical debt
+
+- No persistent tasks or design docs were present in `memory/` before this update — memory bank must be maintained as work continues.
+- Full fluid simulation is out of scope for current milestone and should be tracked separately as a design item.
