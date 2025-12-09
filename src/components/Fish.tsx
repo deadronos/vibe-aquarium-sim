@@ -1,5 +1,5 @@
 import { useGLTF } from '@react-three/drei';
-import { RigidBody, RapierRigidBody } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, useBeforePhysicsStep, useAfterPhysicsStep } from '@react-three/rapier';
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { world } from '../store';
@@ -58,30 +58,6 @@ export const Fish = ({ entity }: { entity: Entity }) => {
               mat.map.colorSpace = SRGBColorSpace;
               if (typeof mat.map.needsUpdate !== 'undefined') mat.map.needsUpdate = true;
             }
-            // Debug dev logs to ensure materials are correct
-            /* disabled for now, uncomment if needed
-            if (import.meta.env.DEV) {
-              try {
-                console.log(
-                  'Fish material:',
-                  mat.name || mat.type,
-                  mat.color?.getHexString ? `#${mat.color.getHexString()}` : mat.color,
-                  mat
-                );
-              } catch (err) {
-                console.error(err);
-              }
-              // If there's no texture map and the material has a color, tint it slightly for visibility
-              try {
-                if (!mat.map && mat.color) {
-                  const tint = new Color(0xffb07f);
-                  (mat.color as Color).lerp(tint, 0.55);
-                }
-              } catch (err) {
-                console.error(err);
-              }
-            }
-              */
             if (typeof mat.needsUpdate !== 'undefined') mat.needsUpdate = true;
           }
         }
@@ -98,15 +74,24 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     };
   }, [entity]);
 
-  useFrame((_, delta) => {
+  // 1. Apply Forces BEFORE the physics step (Source of Truth: ECS -> Physics)
+  useBeforePhysicsStep((rapierWorld) => {
     if (!rigidBody.current) return;
 
-    if (!entity.rigidBodyHandle && rigidBody.current) {
+    // Use the physics engine's fixed timestep for consistent force application
+    const dt = rapierWorld.timestep;
+    applyQueuedForcesToRigidBody(rigidBody.current, entity, dt);
+  });
+
+  // 2. Sync Physics -> ECS AFTER the physics step (Source of Truth: Physics -> ECS)
+  useAfterPhysicsStep(() => {
+    if (!rigidBody.current) return;
+
+    if (!entity.rigidBodyHandle) {
       // store numeric handle only to avoid keeping WASM wrapper objects in ECS
       world.addComponent(entity, 'rigidBodyHandle', rigidBody.current.handle);
     }
 
-    // 1. Sync Physics -> ECS (Source of Truth)
     const pos = rigidBody.current.translation();
     const vel = rigidBody.current.linvel();
 
@@ -128,6 +113,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       }
       if (clamped && rigidBody.current) {
         // Teleport the rigid body back inside and damp outward velocity
+        // Doing this in useAfterPhysicsStep means the physics engine has already finished a step,
+        // so we are correcting the result for the next frame/step.
         try {
           rigidBody.current.setTranslation({ x: cx, y: cy, z: cz }, true);
           rigidBody.current.setLinvel(
@@ -143,11 +130,11 @@ export const Fish = ({ entity }: { entity: Entity }) => {
         }
       }
     }
+  });
 
-    // 2. Apply queued impulses and forces that systems set on the entity.
-    applyQueuedForcesToRigidBody(rigidBody.current, entity, delta);
-
-    // 3. Orientation (Visual only)
+  // 3. Visuals (Model Orientation) in Render Loop
+  useFrame(() => {
+    // Only update visuals here. Physics sync is handled in fixed steps.
     if (modelRef.current && entity.velocity && entity.velocity.lengthSq() > 0.01) {
       tempVec.copy(entity.velocity).normalize();
       tempQuat.setFromUnitVectors(FORWARD, tempVec);
