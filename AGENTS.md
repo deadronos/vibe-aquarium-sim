@@ -11,6 +11,8 @@ Vibe Aquarium Sim is a relaxing, physics-based aquarium simulation built with Re
 **CRITICAL**: Before generating code, you MUST read and follow the detailed architectural rules defined in:
 👉 **[.github/copilot-instructions.md](.github/copilot-instructions.md)**
 
+Read .prettierrc and eslint.config.js, follow the rules exactly. After making edits run npm run format and npm run lint --max-warnings=0. Don’t add unrelated changes; keep diffs minimal.
+
 That file contains the "Source of Truth" loop logic, ECS patterns, and performance constraints (vector reuse) that are non-negotiable.
 
 ### 2. Core Principles

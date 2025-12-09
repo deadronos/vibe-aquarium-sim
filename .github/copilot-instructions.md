@@ -31,6 +31,10 @@ There is a critical bidirectional data flow between the ECS (Miniplex) and the P
 
 ## Coding Conventions
 
+### Prettier & ESLint
+
+Read .prettierrc and eslint.config.js, follow the rules exactly. After making edits run npm run format and npm run lint --max-warnings=0. Don’t add unrelated changes; keep diffs minimal.
+
 ### Performance & Math
 
 - **Vector Reuse**: In `useFrame` loops (especially in Systems), **never** create new `Vector3` instances. Create module-level temporary vectors to avoid Garbage Collection spikes.
