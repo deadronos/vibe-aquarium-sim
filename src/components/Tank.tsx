@@ -40,9 +40,9 @@ export const Tank = () => {
             resolution={1024}
             thickness={0.012}
             roughness={0.15}
-            chromaticAberration={0.02}
-            anisotropy={0.1}
-            ior={1.1}
+            chromaticAberration={0.01}
+            anisotropy={0.01}
+            ior={1.5}
             toneMapped={true}
             side={BackSide}
           />
@@ -58,9 +58,9 @@ export const Tank = () => {
             resolution={1024}
             thickness={0.012}
             roughness={0.15}
-            chromaticAberration={0.02}
-            anisotropy={0.1}
-            ior={1.1}
+            chromaticAberration={0.01}
+            anisotropy={0.01}
+            ior={1.5}
             toneMapped={true}
             side={BackSide}
           />
@@ -76,9 +76,9 @@ export const Tank = () => {
             resolution={1024}
             thickness={0.012}
             roughness={0.15}
-            chromaticAberration={0.02}
-            anisotropy={0.1}
-            ior={1.1}
+            chromaticAberration={0.01}
+            anisotropy={0.01}
+            ior={1.5}
             toneMapped={true}
             side={BackSide}
           />
@@ -94,9 +94,9 @@ export const Tank = () => {
             resolution={1024}
             thickness={0.012}
             roughness={0.15}
-            chromaticAberration={0.02}
-            anisotropy={0.1}
-            ior={1.1}
+            chromaticAberration={0.01}
+            anisotropy={0.01}
+            ior={1.5}
             toneMapped={true}
             side={BackSide}
           />
