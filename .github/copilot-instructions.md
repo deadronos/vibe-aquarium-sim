@@ -4,6 +4,13 @@
 
 This is a **React 19** application using **TypeScript**, **Vite**, **Three.js (@react-three/fiber)**, **Rapier Physics (@react-three/rapier)**, and **Miniplex (ECS)**.
 
+## Repository-level instructions
+
+This repository includes additional process and memory-bank guidance for AI agents and contributors under `.github/instructions/`. Please consult the following before planning or making changes:
+
+- `.github/instructions/memory-bank.instructions.md` — memory-bank conventions and where to store design/task artifacts.
+- `.github/instructions/spec-driven-workflow-v1.instructions.md` — spec-driven workflow guidance for analyze → design → implement → validate → reflect → handoff.
+
 ## Architecture & Data Flow
 
 The project combines an Entity-Component-System (ECS) architecture with a physics engine.

@@ -4,6 +4,7 @@
 
 - Project scaffold and core components exist in `src/` (Fish, Tank, BoidsSystem, store)
 - Basic unit test harness and linting configuration present (Vitest, ESLint, Prettier)
+- Documentation: `AGENTS.md` and `.github/copilot-instructions.md` updated to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` and recorded in memory (2025-12-09)
 
 ## What's left / next milestones
 

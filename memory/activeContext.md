@@ -8,7 +8,7 @@
 ## Recent changes
 
 - Initial rewrite and scaffolding completed: core components and a BoidsSystem are present in `src/systems` and `src/components`.
-- Project directives and AI agent instructions were added to `.github/copilot-instructions.md` and `AGENTS.md`.
+- Project directives and AI agent instructions were added to `.github/copilot-instructions.md` and `AGENTS.md` — now extended to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` (2025-12-09).
 
 ## Next steps
 
