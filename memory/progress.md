@@ -11,6 +11,7 @@
 1. Finish systems for spawning, food, and more robust boid interactions.
 2. Add tests for ECS ↔ Physics synchronization and edge-case collisions.
 3. Add basic UI (Zustand) for runtime tweaking and debug overlays.
+4. Implement fixed-step physics & boid logic (see DES003-fixed-step-physics.md and TASK003-fixed-step-physics.md) and add validation tests for stability.
 
 ## Current status
 
