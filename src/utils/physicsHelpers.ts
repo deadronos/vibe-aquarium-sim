@@ -49,4 +49,26 @@ export function computeDragForce(velocity: Vector3, out: Vector3) {
   return true;
 }
 
+/**
+ * Compute a simple procedural water current vector for a given position and time.
+ * Returns true if a non-negligible current was written to `out`.
+ */
+export function computeWaterCurrent(position: Vector3, time: number, out: Vector3) {
+  tempVelocity.copy(position);
+  const strength = 0.03;
+
+  const cx = Math.sin(time * 0.2 + tempVelocity.x * 0.5) * 0.5 + Math.cos(time * 0.13 + tempVelocity.z * 0.3) * 0.5;
+  const cz = Math.cos(time * 0.2 + tempVelocity.z * 0.5) * 0.5 - Math.sin(time * 0.13 + tempVelocity.x * 0.3) * 0.5;
+
+  tempImpulseA.set(cx, 0, cz);
+  if (tempImpulseA.lengthSq() < 1e-6) {
+    out.set(0, 0, 0);
+    return false;
+  }
+
+  tempImpulseA.normalize().multiplyScalar(strength);
+  out.copy(tempImpulseA);
+  return true;
+}
+
 export default applyQueuedForcesToRigidBody;

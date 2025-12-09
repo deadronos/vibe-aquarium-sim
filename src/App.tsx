@@ -6,6 +6,7 @@ import { ECS, world } from './store';
 import type { Entity } from './store';
 import { Tank } from './components/Tank';
 import { Water } from './components/Water';
+import { WaterCurrentSystem } from './systems/WaterCurrentSystem';
 import { Fish } from './components/Fish';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
@@ -77,6 +78,7 @@ function App() {
         <SchedulerSystem />
         <BoidsSystem />
         <WaterResistanceSystem />
+        <WaterCurrentSystem />
 
         <ECS.Entities in={world.with('isFish')}>
           {(entity: Entity) => <Fish entity={entity} />}

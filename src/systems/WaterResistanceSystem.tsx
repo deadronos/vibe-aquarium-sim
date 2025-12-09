@@ -5,6 +5,8 @@ import { computeDragForce } from '../utils/physicsHelpers';
 
 const tempDragForce = new Vector3();
 
+// WaterResistanceSystem computes drag for entities and queues it on the ECS `externalForce`
+// (DO NOT call Rapier APIs from systems; components must apply queued forces).
 export const WaterResistanceSystem = () => {
   useFrame(() => {
     // Iterate over all entities with velocity and rigidBody
