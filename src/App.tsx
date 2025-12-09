@@ -19,7 +19,7 @@ const Spawner = () => {
   useEffect(() => {
     // Spawn 30 fish
     for (let i = 0; i < 30; i++) {
-        world.add({
+      world.add({
         isFish: true,
         isBoid: true,
         position: new Vector3(

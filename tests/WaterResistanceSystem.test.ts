@@ -11,7 +11,12 @@ describe('WaterResistanceSystem.computeDragForce', () => {
     const ok = computeDragForce(velocity, out);
     expect(ok).toBe(true);
 
-    const expectedMagnitude = 0.5 * waterPhysics.density * waterPhysics.dragCoefficient * waterPhysics.crossSectionArea * velocity.lengthSq();
+    const expectedMagnitude =
+      0.5 *
+      waterPhysics.density *
+      waterPhysics.dragCoefficient *
+      waterPhysics.crossSectionArea *
+      velocity.lengthSq();
     expect(out.x).toBeCloseTo(-expectedMagnitude, 8);
     expect(out.y).toBeCloseTo(0, 8);
     expect(out.z).toBeCloseTo(0, 8);

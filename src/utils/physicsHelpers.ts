@@ -13,9 +13,15 @@ const tempVelocity = new Vector3();
  * - `externalForce` is treated as a force and converted to impulse by multiplying by `delta`.
  * After applying, `externalForce` is cleared.
  */
-type RigidLike = RapierRigidBody | { applyImpulse: (v: Vector3 | { x: number; y: number; z: number }, wake?: boolean) => void };
+type RigidLike =
+  | RapierRigidBody
+  | { applyImpulse: (v: Vector3 | { x: number; y: number; z: number }, wake?: boolean) => void };
 
-export function applyQueuedForcesToRigidBody(rigidBody: RigidLike | null, entity: Entity, delta: number) {
+export function applyQueuedForcesToRigidBody(
+  rigidBody: RigidLike | null,
+  entity: Entity,
+  delta: number
+) {
   if (!rigidBody) return;
 
   const EPS = 1e-6;
@@ -42,7 +48,12 @@ export function computeDragForce(velocity: Vector3, out: Vector3) {
     return false;
   }
 
-  const dragMagnitude = 0.5 * waterPhysics.density * waterPhysics.dragCoefficient * waterPhysics.crossSectionArea * speedSq;
+  const dragMagnitude =
+    0.5 *
+    waterPhysics.density *
+    waterPhysics.dragCoefficient *
+    waterPhysics.crossSectionArea *
+    speedSq;
 
   tempVelocity.copy(velocity).normalize();
   out.copy(tempVelocity).multiplyScalar(-dragMagnitude);
@@ -57,8 +68,12 @@ export function computeWaterCurrent(position: Vector3, time: number, out: Vector
   tempVelocity.copy(position);
   const strength = 0.03;
 
-  const cx = Math.sin(time * 0.2 + tempVelocity.x * 0.5) * 0.5 + Math.cos(time * 0.13 + tempVelocity.z * 0.3) * 0.5;
-  const cz = Math.cos(time * 0.2 + tempVelocity.z * 0.5) * 0.5 - Math.sin(time * 0.13 + tempVelocity.x * 0.3) * 0.5;
+  const cx =
+    Math.sin(time * 0.2 + tempVelocity.x * 0.5) * 0.5 +
+    Math.cos(time * 0.13 + tempVelocity.z * 0.3) * 0.5;
+  const cz =
+    Math.cos(time * 0.2 + tempVelocity.z * 0.5) * 0.5 -
+    Math.sin(time * 0.13 + tempVelocity.x * 0.3) * 0.5;
 
   tempImpulseA.set(cx, 0, cz);
   if (tempImpulseA.lengthSq() < 1e-6) {
