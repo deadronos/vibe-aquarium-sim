@@ -47,15 +47,15 @@ Keep changes incremental and testable at each step so we can measure improvement
 
 ## Subtasks
 
-| ID  | Description                                   | Status      | Updated    | Notes            |
-| --- | --------------------------------------------- | ----------- | ---------- | ---------------- |
-| 0.1 | Add `boidsFixedTick` runtime toggle + probe    | Completed   | 2025-12-09 | Experiment phase |
-| 1.1 | Implement fixed-step scheduler service        | Completed   | 2025-12-09 | Configurable TBD |
-| 1.2 | Move `BoidsSystem` into scheduler loop        | Completed   | 2025-12-09 | Force clamping   |
-| 2.1 | (Optional) Move Rapier stepping to scheduler  | Not Started | 2025-12-09 | Evaluate risks   |
-| 3.1 | Add interpolation in `Fish.tsx`                | Not Started | 2025-12-09 | Smooth visuals   |
-| 3.2 | Runtime toggles + debug overlays               | Completed   | 2025-12-09 | Removed in cleanup |
-| 4.1 | Add deterministic/integration tests           | Partial     | 2025-12-09 | Vitest-based     |
+| ID  | Description                                  | Status      | Updated    | Notes              |
+| --- | -------------------------------------------- | ----------- | ---------- | ------------------ |
+| 0.1 | Add `boidsFixedTick` runtime toggle + probe  | Completed   | 2025-12-09 | Experiment phase   |
+| 1.1 | Implement fixed-step scheduler service       | Completed   | 2025-12-09 | Configurable TBD   |
+| 1.2 | Move `BoidsSystem` into scheduler loop       | Completed   | 2025-12-09 | Force clamping     |
+| 2.1 | (Optional) Move Rapier stepping to scheduler | Not Started | 2025-12-09 | Evaluate risks     |
+| 3.1 | Add interpolation in `Fish.tsx`              | Not Started | 2025-12-09 | Smooth visuals     |
+| 3.2 | Runtime toggles + debug overlays             | Completed   | 2025-12-09 | Removed in cleanup |
+| 4.1 | Add deterministic/integration tests          | Partial     | 2025-12-09 | Vitest-based       |
 
 ## Acceptance Criteria
 

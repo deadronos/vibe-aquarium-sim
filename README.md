@@ -1,11 +1,9 @@
-
 # Vibe Aquarium Sim
 
 A relaxing, physics-driven aquarium simulation built with React, Three.js and Rapier physics — designed as a high-performance, ECS-driven interactive demo.
 
 Live demo: [deadronos.github.io/vibe-aquarium-sim](https://deadronos.github.io/vibe-aquarium-sim/)
 Image: ![vibe aquarium screenshot](./image.png)
-
 
 Key ideas:
 
@@ -92,7 +90,7 @@ GitHub Actions / Deployment
 
 Contributing
 
-- Read .github/instructions/* and memory/ to get the project's conventions and design history.
+- Read .github/instructions/\* and memory/ to get the project's conventions and design history.
 - Keep changes small, test-driven and avoid allocations in render loops.
 
 License & attribution

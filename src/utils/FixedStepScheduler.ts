@@ -30,7 +30,7 @@ export class FixedStepScheduler {
     }
     // Prevent spiraling if we hit maxSubSteps by clamping accumulator
     if (this.accumulator > this.fixedStep * this.maxSubSteps) {
-        this.accumulator = 0;
+      this.accumulator = 0;
     }
   }
 

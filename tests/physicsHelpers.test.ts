@@ -5,8 +5,13 @@ import type { Entity } from '../src/store';
 
 describe('applyQueuedForcesToRigidBody', () => {
   it('applies steeringForce as an impulse scaled by delta', () => {
-    const rb = { applyImpulse: vi.fn() } as unknown as { applyImpulse: (v: Vector3, wake?: boolean) => void };
-    const entity = { steeringForce: new Vector3(1, 0, 0), externalForce: new Vector3() } as unknown as Entity;
+    const rb = { applyImpulse: vi.fn() } as unknown as {
+      applyImpulse: (v: Vector3, wake?: boolean) => void;
+    };
+    const entity = {
+      steeringForce: new Vector3(1, 0, 0),
+      externalForce: new Vector3(),
+    } as unknown as Entity;
 
     applyQueuedForcesToRigidBody(rb, entity, 0.5);
 
@@ -18,8 +23,13 @@ describe('applyQueuedForcesToRigidBody', () => {
   });
 
   it('applies externalForce and clears it afterwards', () => {
-    const rb = { applyImpulse: vi.fn() } as unknown as { applyImpulse: (v: Vector3, wake?: boolean) => void };
-    const entity = { steeringForce: new Vector3(), externalForce: new Vector3(1, 0, 0) } as unknown as Entity;
+    const rb = { applyImpulse: vi.fn() } as unknown as {
+      applyImpulse: (v: Vector3, wake?: boolean) => void;
+    };
+    const entity = {
+      steeringForce: new Vector3(),
+      externalForce: new Vector3(1, 0, 0),
+    } as unknown as Entity;
 
     applyQueuedForcesToRigidBody(rb, entity, 1 / 60);
 
@@ -32,8 +42,13 @@ describe('applyQueuedForcesToRigidBody', () => {
   });
 
   it('applies steering and external forces in sequence', () => {
-    const rb = { applyImpulse: vi.fn() } as unknown as { applyImpulse: (v: Vector3, wake?: boolean) => void };
-    const entity = { steeringForce: new Vector3(0.5, 0, 0), externalForce: new Vector3(1, 0, 0) } as unknown as Entity;
+    const rb = { applyImpulse: vi.fn() } as unknown as {
+      applyImpulse: (v: Vector3, wake?: boolean) => void;
+    };
+    const entity = {
+      steeringForce: new Vector3(0.5, 0, 0),
+      externalForce: new Vector3(1, 0, 0),
+    } as unknown as Entity;
 
     applyQueuedForcesToRigidBody(rb, entity, 0.5);
 
@@ -56,7 +71,11 @@ describe('applyQueuedForcesToRigidBody', () => {
       },
     } as unknown as { applyImpulse: (v: Vector3, wake?: boolean) => void };
 
-    const entity = { velocity: new Vector3(1, 0, 0), externalForce: new Vector3(), steeringForce: new Vector3() } as unknown as Entity;
+    const entity = {
+      velocity: new Vector3(1, 0, 0),
+      externalForce: new Vector3(),
+      steeringForce: new Vector3(),
+    } as unknown as Entity;
 
     // While inside the physics step, system computes and queues forces (should NOT call RB)
     const out = new Vector3();
