@@ -1,9 +1,7 @@
-import { useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { world } from '../store';
 import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
-import { debugSettings } from '../debug';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
@@ -133,17 +131,9 @@ const updateBoidsLogic = () => {
 export const BoidsSystem = () => {
   useEffect(() => {
     return fixedScheduler.add(() => {
-      if (debugSettings.fixedStepEnabled) {
-        updateBoidsLogic();
-      }
+      updateBoidsLogic();
     });
   }, []);
-
-  useFrame(() => {
-    if (!debugSettings.fixedStepEnabled) {
-      updateBoidsLogic();
-    }
-  });
 
   return null;
 };
