@@ -1,5 +1,9 @@
 import { useGLTF } from '@react-three/drei';
+<<<<<<< HEAD
 import { RigidBody, BallCollider, RapierRigidBody } from '@react-three/rapier';
+=======
+import { RigidBody, RapierRigidBody, useBeforePhysicsStep, useAfterPhysicsStep, BallCollider } from '@react-three/rapier';
+>>>>>>> 46da91946c1168a1cac72e5c46e0d8568083d41d
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { world } from '../store';
@@ -149,9 +153,14 @@ export const Fish = ({ entity }: { entity: Entity }) => {
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
         gravityScale={0}
+        mass={1}
         ccd
       >
+<<<<<<< HEAD
         <BallCollider args={[0.06]} />
+=======
+        <BallCollider args={[0.1]} />
+>>>>>>> 46da91946c1168a1cac72e5c46e0d8568083d41d
       </RigidBody>
 
       {/* Visual Mesh (Interpolated) */}
