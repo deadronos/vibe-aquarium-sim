@@ -1,5 +1,5 @@
 import { useGLTF } from '@react-three/drei';
-import { RigidBody, RapierRigidBody, useBeforePhysicsStep, useAfterPhysicsStep } from '@react-three/rapier';
+import { RigidBody, BallCollider, RapierRigidBody } from '@react-three/rapier';
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { world } from '../store';
@@ -15,7 +15,6 @@ import {
   Object3D,
   Texture,
 } from 'three';
-import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const tempVec = new Vector3();
@@ -74,75 +73,62 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     };
   }, [entity]);
 
-  // 1. Apply Forces BEFORE the physics step (Source of Truth: ECS -> Physics)
-  useBeforePhysicsStep((rapierWorld) => {
-    if (!rigidBody.current) return;
-
-    // Use the physics engine's fixed timestep for consistent force application
-    const dt = rapierWorld.timestep;
-    applyQueuedForcesToRigidBody(rigidBody.current, entity, dt);
-  });
-
-  // 2. Sync Physics -> ECS AFTER the physics step (Source of Truth: Physics -> ECS)
-  useAfterPhysicsStep(() => {
-    if (!rigidBody.current) return;
-
-    if (!entity.rigidBodyHandle) {
-      // store numeric handle only to avoid keeping WASM wrapper objects in ECS
+  // Cache the rigid body handle once the ref is available
+  useEffect(() => {
+    if (rigidBody.current && !entity.rigidBodyHandle) {
       world.addComponent(entity, 'rigidBodyHandle', rigidBody.current.handle);
     }
+  }, [entity]);
 
+  // Physics interactions and visuals in render loop
+  // useFrame runs after the automatic physics step, making it safe to read/write
+  useFrame((_, delta) => {
+    if (!rigidBody.current) return;
+
+    // 1. Calculate target velocity from forces (ECS -> Physics)
+    // Convert forces to velocity changes instead of applying impulses
+    if (!entity.targetVelocity) {
+      entity.targetVelocity = new Vector3();
+    }
+    
+    const dt = 1 / 60;
+    const currentVel = rigidBody.current.linvel();
+    entity.targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
+    
+    // Apply steering force
+    if (entity.steeringForce && entity.steeringForce.lengthSq() > 1e-6) {
+      tempVec.copy(entity.steeringForce).multiplyScalar(dt);
+      entity.targetVelocity.add(tempVec);
+    }
+    
+    // Apply external force
+    if (entity.externalForce && entity.externalForce.lengthSq() > 1e-6) {
+      tempVec.copy(entity.externalForce).multiplyScalar(dt);
+      entity.targetVelocity.add(tempVec);
+      entity.externalForce.set(0, 0, 0);
+    }
+    
+    // Apply target velocity directly
+    if (entity.targetVelocity) {
+      rigidBody.current.setLinvel(entity.targetVelocity, true);
+    }
+
+    // 2. Sync Physics -> ECS
     const pos = rigidBody.current.translation();
     const vel = rigidBody.current.linvel();
-
     if (pos && vel) {
       entity.position?.set(pos.x, pos.y, pos.z);
       entity.velocity?.set(vel.x, vel.y, vel.z);
-
-      // Clamp rigid body position to stay inside tank bounds (X [-2,2], Y [-1,1], Z [-1,1])
-      const xLimit = 2.0,
-        yLimit = 1.0,
-        zLimit = 1.0;
-      const margin = 0.05; // small margin inside walls
-      let clamped = false;
-      const cx = Math.max(-xLimit + margin, Math.min(xLimit - margin, pos.x));
-      const cy = Math.max(-yLimit + margin, Math.min(yLimit - margin, pos.y));
-      const cz = Math.max(-zLimit + margin, Math.min(zLimit - margin, pos.z));
-      if (cx !== pos.x || cy !== pos.y || cz !== pos.z) {
-        clamped = true;
-      }
-      if (clamped && rigidBody.current) {
-        // Teleport the rigid body back inside and damp outward velocity
-        try {
-          rigidBody.current.setTranslation({ x: cx, y: cy, z: cz }, true);
-          rigidBody.current.setLinvel(
-            {
-              x: Math.sign(cx - pos.x) * Math.abs(vel.x) * 0.2,
-              y: Math.sign(cy - pos.y) * Math.abs(vel.y) * 0.2,
-              z: Math.sign(cz - pos.z) * Math.abs(vel.z) * 0.2,
-            },
-            true
-          );
-        } catch (err) {
-          if (import.meta.env.DEV) console.error(err);
-        }
-      }
     }
-  });
 
-  // 3. Visuals (Interpolation & Orientation) in Render Loop
-  useFrame((_, delta) => {
-    if (!modelRef.current || !rigidBody.current) return;
+    // 3. Visuals (Interpolation & Orientation)
+    if (!modelRef.current || !entity.position) return;
 
     // Position Interpolation (Smoothing)
-    // Read directly from rigid body for latest physics state
-    const targetPos = rigidBody.current.translation();
-
-    // Frame-rate independent smoothing
     const smoothness = 20;
     const lerpFactor = 1 - Math.exp(-smoothness * delta);
 
-    tempVec.set(targetPos.x, targetPos.y, targetPos.z);
+    tempVec.copy(entity.position);
     modelRef.current.position.lerp(tempVec, lerpFactor);
 
     // Orientation
@@ -159,13 +145,13 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       <RigidBody
         ref={rigidBody}
         position={entity.position}
-        colliders="ball"
+        colliders={false}
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
         gravityScale={0}
         ccd
       >
-        {/* No visual mesh here */}
+        <BallCollider args={[0.06]} />
       </RigidBody>
 
       {/* Visual Mesh (Interpolated) */}

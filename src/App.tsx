@@ -34,6 +34,7 @@ const Spawner = () => {
         ),
         steeringForce: new Vector3(),
         externalForce: new Vector3(),
+        targetVelocity: new Vector3(),
       });
     }
   }, []);
