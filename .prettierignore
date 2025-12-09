@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+public
+.vscode
+coverage
+*.log
+*.min.js
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+/.turbo
+/.next
+/.vercel
+*.local
+.DS_Store

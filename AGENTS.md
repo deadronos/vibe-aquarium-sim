@@ -11,6 +11,14 @@ Vibe Aquarium Sim is a relaxing, physics-based aquarium simulation built with Re
 **CRITICAL**: Before generating code, you MUST read and follow the detailed architectural rules defined in:
 👉 **[.github/copilot-instructions.md](.github/copilot-instructions.md)**
 
+Memory bank is in `memory/` folder.
+
+Also consult the repository-level workflow and memory bank guidance in:
+👉 **[.github/instructions/memory-bank.instructions.md](.github/instructions/memory-bank.instructions.md)**
+👉 **[.github/instructions/spec-driven-workflow-v1.instructions.md](.github/instructions/spec-driven-workflow-v1.instructions.md)**
+
+Read .prettierrc and eslint.config.js, follow the rules exactly. After making edits run npm run format and npm run lint --max-warnings=0. Don’t add unrelated changes; keep diffs minimal.
+
 That file contains the "Source of Truth" loop logic, ECS patterns, and performance constraints (vector reuse) that are non-negotiable.
 
 ### 2. Core Principles
@@ -38,4 +46,3 @@ That file contains the "Source of Truth" loop logic, ECS patterns, and performan
 - When modifying systems, always check for memory leaks (new Vector3 in loops).
 - Prefer `miniplex` queries over manual array filtering.
 - Keep components small and focused.
-
