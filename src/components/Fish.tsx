@@ -113,8 +113,6 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       }
       if (clamped && rigidBody.current) {
         // Teleport the rigid body back inside and damp outward velocity
-        // Doing this in useAfterPhysicsStep means the physics engine has already finished a step,
-        // so we are correcting the result for the next frame/step.
         try {
           rigidBody.current.setTranslation({ x: cx, y: cy, z: cz }, true);
           rigidBody.current.setLinvel(
@@ -132,10 +130,23 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     }
   });
 
-  // 3. Visuals (Model Orientation) in Render Loop
-  useFrame(() => {
-    // Only update visuals here. Physics sync is handled in fixed steps.
-    if (modelRef.current && entity.velocity && entity.velocity.lengthSq() > 0.01) {
+  // 3. Visuals (Interpolation & Orientation) in Render Loop
+  useFrame((_, delta) => {
+    if (!modelRef.current || !rigidBody.current) return;
+
+    // Position Interpolation (Smoothing)
+    // Read directly from rigid body for latest physics state
+    const targetPos = rigidBody.current.translation();
+
+    // Frame-rate independent smoothing
+    const smoothness = 20;
+    const lerpFactor = 1 - Math.exp(-smoothness * delta);
+
+    tempVec.set(targetPos.x, targetPos.y, targetPos.z);
+    modelRef.current.position.lerp(tempVec, lerpFactor);
+
+    // Orientation
+    if (entity.velocity && entity.velocity.lengthSq() > 0.01) {
       tempVec.copy(entity.velocity).normalize();
       tempQuat.setFromUnitVectors(FORWARD, tempVec);
       modelRef.current.quaternion.slerp(tempQuat, 0.1);
@@ -143,16 +154,27 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   });
 
   return (
-    <RigidBody
-      ref={rigidBody}
-      position={entity.position}
-      colliders="ball"
-      enabledRotations={[false, false, false]}
-      linearDamping={0.5}
-      gravityScale={0}
-      ccd
-    >
-      <primitive ref={modelRef} object={clone} scale={1.0} />
-    </RigidBody>
+    <group>
+      {/* Physics Body (Invisible) */}
+      <RigidBody
+        ref={rigidBody}
+        position={entity.position}
+        colliders="ball"
+        enabledRotations={[false, false, false]}
+        linearDamping={0.5}
+        gravityScale={0}
+        ccd
+      >
+        {/* No visual mesh here */}
+      </RigidBody>
+
+      {/* Visual Mesh (Interpolated) */}
+      <primitive
+        ref={modelRef}
+        object={clone}
+        scale={1.0}
+        position={entity.position}
+      />
+    </group>
   );
 };
