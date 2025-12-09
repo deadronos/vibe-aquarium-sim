@@ -1,7 +1,8 @@
 import { useGLTF } from '@react-three/drei';
 import { RigidBody, RapierRigidBody } from '@react-three/rapier';
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { world } from '../store';
 import type { Entity } from '../store';
 import {
   Vector3,
@@ -86,8 +87,20 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     return c;
   }, [scene]);
 
+  useEffect(() => {
+    return () => {
+      if (entity.rigidBody) {
+        world.removeComponent(entity, 'rigidBody');
+      }
+    };
+  }, [entity]);
+
   useFrame((_, delta) => {
     if (!rigidBody.current) return;
+
+    if (!entity.rigidBody) {
+      world.addComponent(entity, 'rigidBody', rigidBody.current);
+    }
 
     // 1. Sync Physics -> ECS (Source of Truth)
     const pos = rigidBody.current.translation();
