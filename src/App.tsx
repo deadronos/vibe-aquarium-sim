@@ -13,6 +13,7 @@ import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
+import { SIMULATION_BOUNDS } from './config/constants';
 import * as THREE from 'three';
 
 const Spawner = () => {
@@ -23,9 +24,9 @@ const Spawner = () => {
         isFish: true,
         isBoid: true,
         position: new Vector3(
-          (Math.random() - 0.5) * 3.5, // Spread across width
-          (Math.random() - 0.5) * 1.5, // Spread across height
-          (Math.random() - 0.5) * 1.5 // Spread across depth
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.x * 2),
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.y * 2),
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.z * 2)
         ),
         velocity: new Vector3(
           (Math.random() - 0.5) * 1,
