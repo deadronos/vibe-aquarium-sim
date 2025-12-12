@@ -1,102 +1,75 @@
+# React + TypeScript + Vite
 
-# Vibe Aquarium Sim
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-A relaxing, physics-driven aquarium simulation built with React, Three.js and Rapier physics — designed as a high-performance, ECS-driven interactive demo.
+Currently, two official plugins are available:
 
-Live demo: [deadronos.github.io/vibe-aquarium-sim](https://deadronos.github.io/vibe-aquarium-sim/)
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-Key ideas:
+## React Compiler
 
-- Physics is the source of truth — rigid bodies in Rapier govern movement and collisions.
-- ECS architecture (Miniplex) separates simulation logic (systems) from render/physics representations (components).
-- Vite + React (R3F) + TypeScript for fast iteration and strong developer ergonomics.
+The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
 
-Tech stack
+Note: This will impact Vite dev & build performances.
 
-- React 19 + TypeScript
-- Vite (build tooling)
-- Three.js + @react-three/fiber for rendering
-- @react-three/rapier (Rapier) for physics
-- miniplex + miniplex-react for ECS
+## Expanding the ESLint configuration
 
-Repository layout (high-level)
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-- src/
-  - components/: R3F components + physics wrappers (Fish, Tank, Water)
-  - systems/: ECS systems (Boids, WaterResistance, Scheduler)
-  - store.ts: ECS world and entity definitions
-  - shaders/: custom water shader
-  - config/: shared physics configuration
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-- public/: static assets
-- tests/: unit / integration tests
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-Getting started
-
-Prerequisites
-
-- Node.js 20+ (this project uses modern toolchains)
-
-Install
-
-```bash
-npm ci
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-Run locally
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-npm run dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-Build
-
-```bash
-npm run build
-```
-
-Preview production build
-
-```bash
-npm run preview
-```
-
-Tests & formatting
-
-```bash
-npm run test        # run tests
-npm run lint        # ESLint
-npm run format      # Prettier
-```
-
-Development notes & patterns
-
-- Performance: avoid allocating new Vector3/Matrix objects inside render loops. Look for module-level temporary vectors in systems and components.
-- Physics-driven movement: systems compute desired velocities/impulses, apply them to Rapier rigid bodies, and `Fish.tsx` syncs back Rapier state into ECS.
-- Query ECS with `world.with(...)` and keep systems focused and fast.
-
-Important files / starting points
-
-- `src/store.ts` — ECS world + entity types
-- `src/components/Fish.tsx` — R3F + Rapier integration and ECS sync
-- `src/systems/BoidsSystem.tsx` — swarm-like behavior logic
-- `src/systems/WaterResistanceSystem.tsx` — simple fluid drag forces
-- `src/utils/FixedStepScheduler.ts` — fixed-step simulation helper
-
-GitHub Actions / Deployment
-
-- Pages workflow: `.github/workflows/deploy-pages.yml` builds the app and deploys the `dist/` output to GitHub Pages using current action versions (checkout@v6, setup-node@v6, upload-pages-artifact@v4, deploy-pages@v4).
-- Vite `base`: this repo is configured for the project Pages URL `https://deadronos.github.io/vibe-aquarium-sim/` — `base` is set to `/vibe-aquarium-sim/` in `vite.config.ts` and CI passes `--base /vibe-aquarium-sim/` when building.
-
-Contributing
-
-- Read .github/instructions/* and memory/ to get the project's conventions and design history.
-- Keep changes small, test-driven and avoid allocations in render loops.
-
-License & attribution
-
-- Check the repository root for license and contributor information.
-
-Questions / next steps
-
-- Want a PR preview workflow (deploy a preview for PRs) or CI optimization (caching and faster builds)? Open an issue or start a draft PR.

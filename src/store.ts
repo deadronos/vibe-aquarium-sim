@@ -1,7 +1,6 @@
-import createECS from 'miniplex-react';
-import { Vector3, Quaternion } from 'three';
-import { World } from 'miniplex';
-import type { RapierRigidBody } from '@react-three/rapier';
+import createECS from "miniplex-react";
+import { Vector3, Quaternion } from "three";
+import { World } from "miniplex";
 
 export type Entity = {
   // Metadata
@@ -15,7 +14,6 @@ export type Entity = {
   position?: Vector3;
   quaternion?: Quaternion;
   velocity?: Vector3; // Linear velocity
-  rigidBody?: RapierRigidBody;
 
   // Boids / Steering
   steeringForce?: Vector3; // The force calculated by BoidsSystem to be applied to the RigidBody
