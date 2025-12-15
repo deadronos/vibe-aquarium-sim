@@ -9,6 +9,7 @@ export type Entity = {
   // Tags
   isFish?: boolean;
   isBoid?: boolean;
+  isFood?: boolean;
 
   // Physics / Transform (synced from Rapier)
   position?: Vector3;
