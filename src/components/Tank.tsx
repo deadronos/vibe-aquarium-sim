@@ -106,6 +106,16 @@ export const Tank = () => {
       >
         Vibe Aquarium
       </Text>
+
+      <Text
+        position={[0, height / 2 - 0.5, -depth / 2 + 0.1]}
+        fontSize={0.15}
+        color="#aaddff"
+        anchorY="top"
+        fillOpacity={0.7}
+      >
+        Click tank to feed fish
+      </Text>
     </group>
   );
 };
