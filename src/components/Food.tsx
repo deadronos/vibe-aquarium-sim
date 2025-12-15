@@ -7,12 +7,11 @@ import type { Entity } from '../store';
 export const Food = ({ entity }: { entity: Entity }) => {
     const rigidBody = useRef<RapierRigidBody>(null);
 
-    // Clean up when unmounting
+    // Apply initial velocity once
     useEffect(() => {
-        return () => {
-            // If we needed to remove any specific components, we would do it here.
-            // But typically ECS cleanup happens at the system/spawn level or when the entity is removed.
-        };
+        if (rigidBody.current && entity.velocity) {
+            rigidBody.current.setLinvel(entity.velocity, true);
+        }
     }, []);
 
     // Sync physics back to ECS
@@ -30,10 +29,11 @@ export const Food = ({ entity }: { entity: Entity }) => {
             ref={rigidBody}
             position={entity.position}
             colliders={false} // Custom collider
-            linearDamping={2.0} // High drag in water
+            linearDamping={1.0}
             angularDamping={1.0}
             restitution={0.2}
             mass={0.1}
+            gravityScale={1.0}
         >
             <BallCollider args={[0.05]} />
             <mesh castShadow receiveShadow>

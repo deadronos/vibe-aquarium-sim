@@ -6,7 +6,6 @@ export const FeedingController = () => {
     return (
         <mesh
             position={[0, 0, SIMULATION_BOUNDS.z + 0.1]}
-            visible={false}
             onClick={(e) => {
                 // Prevent clicking through to other things if necessary
                 e.stopPropagation();
@@ -20,6 +19,7 @@ export const FeedingController = () => {
         >
             {/* Large plane to cover the view */}
             <planeGeometry args={[100, 100]} />
+            <meshBasicMaterial transparent opacity={0} />
         </mesh>
     );
 };
