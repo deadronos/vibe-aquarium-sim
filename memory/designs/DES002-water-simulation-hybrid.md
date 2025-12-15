@@ -1,8 +1,10 @@
 # [DES002] - Water Simulation (Hybrid Approach)
 
-**Status:** Pending  
+**Status:** Completed  
 **Added:** 2025-12-09  
-**Updated:** 2025-12-09
+**Updated:** 2025-12-15
+
+**Progress:** Phase 1 (Visual water shader) ✓ — implemented in `src/components/Water.tsx` + `src/shaders/waterShader.ts`; Phase 2 (Resistance) ✓ — `src/systems/WaterResistanceSystem.tsx` + `src/utils/physicsHelpers.ts` (computeDragForce); Phase 3 (Currents) ✓ — `src/systems/WaterCurrentSystem.tsx` + `src/utils/physicsHelpers.ts` (computeWaterCurrent). Unit tests: `tests/WaterResistanceSystem.test.ts`, `tests/WaterCurrentSystem.test.ts`
 
 ## Problem Statement
 

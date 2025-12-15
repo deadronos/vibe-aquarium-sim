@@ -127,34 +127,35 @@ The critical technical constraints are:
 
 ## Progress Tracking
 
-**Overall Status:** Not Started - 0%
+**Overall Status:** Completed - 100%
 
 ### Subtasks
 
-| ID  | Description                                   | Status      | Updated    | Notes            |
-| --- | --------------------------------------------- | ----------- | ---------- | ---------------- |
-| 1.1 | Create water shader with caustics and effects | Not Started | 2025-12-09 |                  |
-| 1.2 | Create Water component                        | Not Started | 2025-12-09 |                  |
-| 1.3 | Integrate and test visual water               | Not Started | 2025-12-09 |                  |
-| 2.1 | Create waterPhysics configuration             | Not Started | 2025-12-09 |                  |
-| 2.2 | Update Entity type for rigidBody refs         | Not Started | 2025-12-09 |                  |
-| 2.3 | Create WaterResistanceSystem                  | Not Started | 2025-12-09 |                  |
-| 2.4 | Integrate and test resistance physics         | Not Started | 2025-12-09 |                  |
-| 3.1 | Design velocity grid structure (Future)       | Not Started | 2025-12-09 | Phase 3 optional |
-| 3.2 | Implement grid sampling (Future)              | Not Started | 2025-12-09 | Phase 3 optional |
-| 3.3 | Create WaterCurrentSystem (Future)            | Not Started | 2025-12-09 | Phase 3 optional |
-| 3.4 | Test and optimize currents (Future)           | Not Started | 2025-12-09 | Phase 3 optional |
+| ID  | Description                                   | Status    | Updated    | Notes                                                                 |
+| --- | --------------------------------------------- | --------- | ---------- | --------------------------------------------------------------------- |
+| 1.1 | Create water shader with caustics and effects | Completed | 2025-12-15 | Implemented in `src/shaders/waterShader.ts`                           |
+| 1.2 | Create Water component                        | Completed | 2025-12-15 | `src/components/Water.tsx`                                            |
+| 1.3 | Integrate and test visual water               | Completed | 2025-12-15 | Manual QA + perf checks                                               |
+| 2.1 | Create waterPhysics configuration             | Completed | 2025-12-15 | `src/config/waterPhysics.ts`                                          |
+| 2.2 | Update Entity type for rigidBody refs         | Completed | 2025-12-15 | `src/store.ts` updated                                                |
+| 2.3 | Create WaterResistanceSystem                  | Completed | 2025-12-15 | `src/systems/WaterResistanceSystem.tsx`                               |
+| 2.4 | Integrate and test resistance physics         | Completed | 2025-12-15 | `tests/WaterResistanceSystem.test.ts`                                 |
+| 3.1 | Design velocity grid structure (Future)       | Completed | 2025-12-15 | Procedural currents implemented instead of grid (computeWaterCurrent) |
+| 3.2 | Implement grid sampling (Future)              | N/A       | 2025-12-15 | Trilinear grid deferred; procedural currents used                     |
+| 3.3 | Create WaterCurrentSystem (Future)            | Completed | 2025-12-15 | `src/systems/WaterCurrentSystem.tsx`                                  |
+| 3.4 | Test and optimize currents (Future)           | Completed | 2025-12-15 | `tests/WaterCurrentSystem.test.ts`                                    |
 
 ---
 
 ## Progress Log
 
-### 2025-12-09
+### 2025-12-15
 
-- Task created based on DES002 design document
-- Implementation plan structured in three phases
-- Subtasks defined with clear deliverables
-- Waiting to begin Phase 1: Visual Water implementation
+- Implemented water shader and `Water.tsx` component for visual water
+- Created `waterPhysics` config and `WaterResistanceSystem` to queue drag forces
+- Added `WaterCurrentSystem` and procedural current computation in `src/utils/physicsHelpers.ts`
+- Added unit tests for drag/current computations and systems
+- Performance checks completed (basic manual QA)
 
 ---
 

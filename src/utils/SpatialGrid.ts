@@ -52,11 +52,11 @@ export class SpatialGrid<T> {
   query(pos: Vector3, radius: number): T[] {
     const results: T[] = [];
     const keys = this.getKeysForRange(pos, radius);
-    
-    // Use a Set if you need to deduplicate items that might be in multiple buckets 
+
+    // Use a Set if you need to deduplicate items that might be in multiple buckets
     // (though in this implementation, an item is only added to ONE bucket based on its center).
     // So simple concatenation is fine.
-    
+
     for (const key of keys) {
       const items = this.buckets.get(key);
       if (items) {

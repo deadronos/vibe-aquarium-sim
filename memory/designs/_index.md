@@ -2,13 +2,16 @@
 
 ## In Progress
 
-(no active in-progress designs)
+- None
 
 ## Pending
 
-- [DES002] Water Simulation (Hybrid Approach) - Planning phase-based water implementation
-- [DES003] Fixed-step physics (fish & boid logic) - Improve stability and reduce visual jitter by running stable physics ticks
+- None
 
 ## Completed
 
 - [DES001] Memory bank: core files and guidelines - Completed (2025-12-09)
+- [DES002] Water Simulation (Hybrid Approach) - Completed (2025-12-15)
+- [DES003] Fixed-step physics (fish & boid logic) - Completed (2025-12-15)
+- [DES004] Physics: Force-Queue Pattern & Safe Rapier Integration - Completed (2025-12-15)
+- [DES005] Interactive Feeding & Food Entities - Completed (2025-12-15)

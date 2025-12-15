@@ -160,7 +160,8 @@ const updateBoidsLogic = () => {
       }
     }
 
-    if (closestFood && minFoodDist < 5.0) { // Range
+    if (closestFood && minFoodDist < 5.0) {
+      // Range
       if (minFoodDist < 0.2) {
         // EAT IT
         world.remove(closestFood);

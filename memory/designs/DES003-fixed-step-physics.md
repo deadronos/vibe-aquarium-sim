@@ -1,10 +1,12 @@
 ---
 title: Fixed-step physics for fish & boid logic
 id: DES003
-status: Pending
+status: Completed
 created: 2025-12-09
-updated: 2025-12-09
+updated: 2025-12-15
 ---
+
+**Progress:** Fixed-step scheduler implemented (`src/utils/FixedStepScheduler.ts`, `src/systems/SchedulerSystem.tsx`) and `BoidsSystem` now runs via the scheduler (`src/systems/BoidsSystem.tsx`). Visual interpolation implemented in `src/components/Fish.tsx`. Tests: `tests/FixedStepScheduler.test.ts`, `src/components/Fish.test.ts`
 
 ## DES003 — Fixed-step physics for fish & boid logic
 

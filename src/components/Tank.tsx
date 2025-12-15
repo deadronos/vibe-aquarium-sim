@@ -16,7 +16,10 @@ export const Tank = () => {
         restitution={0.2}
         friction={1}
       >
-        <Box args={[width + floorThickness * 2, floorThickness, depth + floorThickness * 2]} receiveShadow>
+        <Box
+          args={[width + floorThickness * 2, floorThickness, depth + floorThickness * 2]}
+          receiveShadow
+        >
           <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
         </Box>
       </RigidBody>

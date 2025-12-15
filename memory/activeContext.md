@@ -2,20 +2,22 @@
 
 ## Current focus
 
-- Branch: `rewrite-aquarium-sim` (active PR: "Rewrite Vibe Aquarium Sim")
-- Stabilize the ECS ↔ Physics workflow and add robust tests for systems and components
+- Branch: `main` (features merged)
+- Maintain and polish core systems: water visuals + resistance, currents, fixed-step scheduler, feeding, and physics integration utilities
 
 ## Recent changes
 
-- Initial rewrite and scaffolding completed: core components and a BoidsSystem are present in `src/systems` and `src/components`.
-- Project directives and AI agent instructions were added to `.github/copilot-instructions.md` and `AGENTS.md` — now extended to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` (2025-12-09).
+- Implemented hybrid water simulation (visual shader, drag/resistance system, procedural currents).
+- Implemented fixed-step scheduler and moved Boids logic into the scheduler.
+- Added physics-safe force-queue utilities and reworked components (Fish/Food) to apply queued forces safely.
+- Added interactive feeding via `FeedingController` and `Food` entities.
 
 ## Next steps
 
-1. Finish core systems for movement, spawning and food interactions.
-2. Add tests covering the ECS ↔ Physics synchronization loop.
-3. Add some minimal UI state (Zustand) for runtime controls and debug toggles.
-4. Run an experiment to evaluate fixed-step physics & boid logic (TASK003 / DES003)
+1. Add automated integration tests for feeding behavior and ECS↔Physics scenarios.
+2. Performance tuning and profiling with larger fish counts (50–100).
+3. Add a small runtime UI (Zustand) for tuning water/physics parameters and toggles.
+4. Optional: implement a grid-based velocity field if needed for more complex flow patterns.
 
 ## Active decisions / considerations
 
