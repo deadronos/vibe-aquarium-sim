@@ -49,14 +49,38 @@ export class SpatialGrid<T> {
     this.buckets.get(key)!.push(item);
   }
 
+  // Optimize: Use a callback to avoid array allocation
+  queryCallback(pos: Vector3, radius: number, callback: (item: T) => void) {
+    const minX = Math.floor((pos.x - radius) / this.cellSize);
+    const maxX = Math.floor((pos.x + radius) / this.cellSize);
+    const minY = Math.floor((pos.y - radius) / this.cellSize);
+    const maxY = Math.floor((pos.y + radius) / this.cellSize);
+    const minZ = Math.floor((pos.z - radius) / this.cellSize);
+    const maxZ = Math.floor((pos.z + radius) / this.cellSize);
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        for (let z = minZ; z <= maxZ; z++) {
+          const key = `${x},${y},${z}`;
+          const items = this.buckets.get(key);
+          if (items) {
+            for (let i = 0; i < items.length; i++) {
+              callback(items[i]);
+            }
+          }
+        }
+      }
+    }
+  }
+
   query(pos: Vector3, radius: number): T[] {
     const results: T[] = [];
     const keys = this.getKeysForRange(pos, radius);
-    
-    // Use a Set if you need to deduplicate items that might be in multiple buckets 
+
+    // Use a Set if you need to deduplicate items that might be in multiple buckets
     // (though in this implementation, an item is only added to ONE bucket based on its center).
     // So simple concatenation is fine.
-    
+
     for (const key of keys) {
       const items = this.buckets.get(key);
       if (items) {

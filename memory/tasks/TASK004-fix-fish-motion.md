@@ -1,8 +1,8 @@
 # [TASK004] - Fix fish motion after decoupling physics/rendering
 
-**Status:** In Progress  
+**Status:** Completed  
 **Added:** 2025-12-09  
-**Updated:** 2025-12-09
+**Updated:** 2025-12-15
 
 ## Original Request
 
@@ -32,12 +32,12 @@
 
 ### Subtasks
 
-| ID  | Description                                               | Status      | Updated    | Notes                                 |
-| --- | --------------------------------------------------------- | ----------- | ---------- | ------------------------------------- |
-| 1.1 | Confirm missing collider after decoupling visuals/physics | Completed   | 2025-12-09 | Symptoms match zero-collider bodies   |
-| 1.2 | Add explicit collider to fish rigid body                  | Completed   | 2025-12-09 | Added BallCollider radius 0.06m       |
-| 1.3 | Validate motion resumes and no regressions observed       | In Progress | 2025-12-09 | Pending manual check/tests            |
-| 1.4 | Fix Rapier unreachable panic with step hooks              | Completed   | 2025-12-09 | Removed step hooks, moved to useFrame |
+| ID  | Description                                               | Status    | Updated    | Notes                                                    |
+| --- | --------------------------------------------------------- | --------- | ---------- | -------------------------------------------------------- |
+| 1.1 | Confirm missing collider after decoupling visuals/physics | Completed | 2025-12-09 | Symptoms match zero-collider bodies                      |
+| 1.2 | Add explicit collider to fish rigid body                  | Completed | 2025-12-09 | Added BallCollider radius 0.06m                          |
+| 1.3 | Validate motion resumes and no regressions observed       | Completed | 2025-12-15 | Verified via `src/components/Fish.test.ts` and manual QA |
+| 1.4 | Fix Rapier unreachable panic with step hooks              | Completed | 2025-12-09 | Removed step hooks, moved to useFrame                    |
 
 ## Progress Log
 

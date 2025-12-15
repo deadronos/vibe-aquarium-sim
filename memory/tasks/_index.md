@@ -2,13 +2,17 @@
 
 ## In Progress
 
-- [TASK004] Fix fish motion after decoupling physics/rendering - Investigating collider loss and restoring movement
+- None
 
 ## Pending
 
-- [TASK002] Implement Water Simulation (Hybrid Approach) - Three-phase implementation: visual shader, physics resistance, optional currents
-- [TASK003] Implement Fixed-step Physics & Boid Logic - Stabilize fish motion with fixed-step scheduler, interpolation and tests
+- None
 
 ## Completed
 
 - [TASK001] Initialize memory bank and create core memory files - Completed (2025-12-09)
+- [TASK002] Implement Water Simulation (Hybrid Approach) - Completed (2025-12-15)
+- [TASK003] Implement Fixed-step Physics & Boid Logic - Completed (2025-12-15)
+- [TASK004] Fix fish motion after decoupling physics/rendering - Completed (2025-12-15)
+- [TASK005] Implement Interactive Feeding & Food Entities - Completed (2025-12-15)
+- [TASK006] Document & Finalize Physics Force-Queue Refactor - Completed (2025-12-15)

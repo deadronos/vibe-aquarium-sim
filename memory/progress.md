@@ -8,17 +8,24 @@
 
 ## What's left / next milestones
 
-1. Finish systems for spawning, food, and more robust boid interactions.
-2. Add tests for ECS ↔ Physics synchronization and edge-case collisions.
-3. Add basic UI (Zustand) for runtime tweaking and debug overlays.
-4. Implement fixed-step physics & boid logic (see DES003-fixed-step-physics.md and TASK003-fixed-step-physics.md) and add validation tests for stability.
+1. Add automated integration tests for feeding behavior and end-to-end ECS↔Physics scenarios.
+2. Performance tuning under larger counts (50–100 fish) and profiling shader / system hotspots.
+3. Add a small runtime UI for tuning water/physics parameters (Zustand planned).
+4. Optional: implement a grid-based velocity field (trilinear sampling) if procedural currents are insufficient for future features.
 
 ## Current status
 
-- Phase: In Progress
-- Branch: `rewrite-aquarium-sim` (work in-progress)
+- Phase: Maintenance & polish (core features implemented: water visuals + resistance, currents, fixed-step scheduler, feeding, physics queue utilities)
+- Branch: `main` (features merged)
 
 ## Known issues / technical debt
 
 - No persistent tasks or design docs were present in `memory/` before this update — memory bank must be maintained as work continues.
 - Full fluid simulation is out of scope for current milestone and should be tracked separately as a design item.
+
+### 2025-12-15
+
+- Backfilled memory bank: added DES004 (physics force-queue) and DES005 (feeding) and updated `memory/tasks` to reflect implemented work.
+- TASK002 (Water), TASK003 (Fixed-step), and TASK004 (Fix fish motion) marked Completed; TASK005 and TASK006 added as Completed.
+- Ran unit tests for `physicsHelpers`, `WaterResistanceSystem`, `WaterCurrentSystem`, `FixedStepScheduler`, and `Fish` — all passed.
+- Next: add integration tests for feeding and run performance profiling as needed.

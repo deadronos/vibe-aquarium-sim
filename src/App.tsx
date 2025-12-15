@@ -10,6 +10,7 @@ import { WaterCurrentSystem } from './systems/WaterCurrentSystem';
 import { Fish } from './components/Fish';
 import { Food } from './components/Food';
 import { FeedingController } from './components/FeedingController';
+import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
@@ -83,6 +84,7 @@ function App() {
         <BoidsSystem />
         <WaterResistanceSystem />
         <WaterCurrentSystem />
+        <FishRenderSystem />
 
         <ECS.Entities in={world.with('isFish')}>
           {(entity: Entity) => <Fish entity={entity} />}
