@@ -42,19 +42,18 @@ const updateBoidsLogic = () => {
     let count = 0;
 
     // Radius query
-    const neighbors = grid.query(entity.position, neighborDist);
-
-    for (const neighbor of neighbors) {
-      if (entity === neighbor) continue;
+    // Radius query
+    grid.queryCallback(entity.position, neighborDist, (neighbor: Entity) => {
+      if (entity === neighbor) return;
       // We know these exist because of the ECS query, but TS needs help
-      if (!neighbor.position || !entity.position) continue;
+      if (!neighbor.position || !entity.position) return;
 
-      const d = entity.position!.distanceTo(neighbor.position!);
+      const d = entity.position.distanceTo(neighbor.position);
 
       if (d > 0 && d < neighborDist) {
         // Separation
         if (d < separationDist) {
-          diff.copy(entity.position!).sub(neighbor.position!);
+          diff.copy(entity.position).sub(neighbor.position);
           diff.normalize();
           diff.divideScalar(d);
           sep.add(diff);
@@ -66,11 +65,11 @@ const updateBoidsLogic = () => {
         }
 
         // Cohesion
-        coh.add(neighbor.position!);
+        coh.add(neighbor.position);
 
         count++;
       }
-    }
+    });
 
     if (count > 0) {
       // Separation
