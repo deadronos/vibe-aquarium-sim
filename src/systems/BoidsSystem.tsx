@@ -11,6 +11,7 @@ const ali = new Vector3();
 const coh = new Vector3();
 const diff = new Vector3();
 const steer = new Vector3();
+const tempVec = new Vector3();
 
 import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
 
@@ -142,6 +143,35 @@ const updateBoidsLogic = () => {
       steer.normalize().multiplyScalar(maxSpeed);
       steer.sub(entity.velocity!).clampLength(0, maxForce * 2);
       entity.steeringForce!.add(steer);
+    }
+
+    // --- Feeding Logic ---
+    // Seek closest food
+    const foodEntities = world.with('isFood', 'position');
+    let closestFood: Entity | null = null;
+    let minFoodDist = Infinity;
+
+    for (const food of foodEntities) {
+      if (!food.position) continue;
+      const d = entity.position!.distanceTo(food.position);
+      if (d < minFoodDist) {
+        minFoodDist = d;
+        closestFood = food;
+      }
+    }
+
+    if (closestFood && minFoodDist < 5.0) { // Range
+      if (minFoodDist < 0.2) {
+        // EAT IT
+        world.remove(closestFood);
+      } else {
+        // SEEK
+        const seek = tempVec.copy(closestFood.position!).sub(entity.position!).normalize();
+        seek.multiplyScalar(maxSpeed);
+        seek.sub(entity.velocity!);
+        seek.clampLength(0, maxForce * 2.0); // Stronger than boids
+        entity.steeringForce!.add(seek);
+      }
     }
   }
 };
