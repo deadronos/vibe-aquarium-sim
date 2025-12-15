@@ -2,33 +2,28 @@ import { RigidBody } from '@react-three/rapier';
 import { Box, Text, MeshTransmissionMaterial } from '@react-three/drei';
 import { BackSide } from 'three';
 
+import { TANK_DIMENSIONS } from '../config/constants';
+
 export const Tank = () => {
-  // Tank Dimensions: 4m wide, 2m high, 2m deep
-  // Extents: X[-2, 2], Y[-1, 1], Z[-1, 1]
-  const width = 4;
-  const height = 2;
-  const depth = 2;
-  const thickness = 0.5;
-  // Thin glass walls (meters) — 0.012 is approximately 1/2 inch
-  const wallThickness = 0.012;
+  const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
 
   return (
     <group>
       {/* Floor */}
       <RigidBody
         type="fixed"
-        position={[0, -height / 2 - thickness / 2, 0]}
+        position={[0, -height / 2 - floorThickness / 2, 0]}
         restitution={0.2}
         friction={1}
       >
-        <Box args={[width + thickness * 2, thickness, depth + thickness * 2]} receiveShadow>
+        <Box args={[width + floorThickness * 2, floorThickness, depth + floorThickness * 2]} receiveShadow>
           <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
         </Box>
       </RigidBody>
 
       {/* Ceiling (Invisible barrier) */}
-      <RigidBody type="fixed" position={[0, height / 2 + thickness / 2, 0]}>
-        <Box args={[width, thickness, depth]} visible={false} />
+      <RigidBody type="fixed" position={[0, height / 2 + floorThickness / 2, 0]}>
+        <Box args={[width, floorThickness, depth]} visible={false} />
       </RigidBody>
 
       {/* Back Wall */}

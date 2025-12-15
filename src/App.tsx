@@ -8,11 +8,14 @@ import { Tank } from './components/Tank';
 import { Water } from './components/Water';
 import { WaterCurrentSystem } from './systems/WaterCurrentSystem';
 import { Fish } from './components/Fish';
+import { Food } from './components/Food';
+import { FeedingController } from './components/FeedingController';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
+import { SIMULATION_BOUNDS } from './config/constants';
 import * as THREE from 'three';
 
 const Spawner = () => {
@@ -23,9 +26,9 @@ const Spawner = () => {
         isFish: true,
         isBoid: true,
         position: new Vector3(
-          (Math.random() - 0.5) * 3.5, // Spread across width
-          (Math.random() - 0.5) * 1.5, // Spread across height
-          (Math.random() - 0.5) * 1.5 // Spread across depth
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.x * 2),
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.y * 2),
+          (Math.random() - 0.5) * (SIMULATION_BOUNDS.z * 2)
         ),
         velocity: new Vector3(
           (Math.random() - 0.5) * 1,
@@ -54,7 +57,7 @@ function App() {
     >
       <color attach="background" args={['#000510']} />
 
-      <Physics gravity={[0, 0, 0]}>
+      <Physics gravity={[0, -9.81, 0]}>
         {/* Hemisphere light gives a soft sky/ground ambient */}
         <hemisphereLight color={0xaaccff} groundColor={0x101020} intensity={0.8} />
         {/* Directional key light to give stronger highlights */}
@@ -84,6 +87,12 @@ function App() {
         <ECS.Entities in={world.with('isFish')}>
           {(entity: Entity) => <Fish entity={entity} />}
         </ECS.Entities>
+
+        <ECS.Entities in={world.with('isFood')}>
+          {(entity: Entity) => <Food entity={entity} />}
+        </ECS.Entities>
+
+        <FeedingController />
       </Physics>
 
       <OrbitControls target={[0, 0, 0]} />
