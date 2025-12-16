@@ -17,3 +17,4 @@
 - [DES005] Interactive Feeding & Food Entities - Completed (2025-12-15)
 - [DES006] Performance Optimizations - Completed (2025-12-15)
 - [DES007] Per-Instance Rotation Interpolation for Instanced Fish - Completed (2025-12-16)
+- [DES008] Code Quality Fixes - Index Collision, System Order, Helper Consolidation - Completed (2025-12-16)
