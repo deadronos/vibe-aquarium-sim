@@ -2,6 +2,8 @@ import createECS from 'miniplex-react';
 import { Vector3, Quaternion } from 'three';
 import { World } from 'miniplex';
 
+export type DecorationType = 'seaweed' | 'coral' | 'rock';
+
 export type Entity = {
   // Metadata
   id?: string;
@@ -10,6 +12,7 @@ export type Entity = {
   isFish?: boolean;
   isBoid?: boolean;
   isFood?: boolean;
+  isDecoration?: boolean;
 
   // Physics / Transform (synced from Rapier)
   position?: Vector3;
@@ -24,6 +27,13 @@ export type Entity = {
 
   // Boids / Steering
   steeringForce?: Vector3; // The force calculated by BoidsSystem to be applied to the RigidBody
+
+  // Decoration properties
+  decorationType?: DecorationType;
+
+  // Fish state
+  excitementLevel?: number; // 0-1, triggers flash/speed boost
+  excitementDecay?: number; // Time remaining for excitement
 };
 
 export const world = new World<Entity>();

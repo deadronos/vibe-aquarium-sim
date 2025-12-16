@@ -18,3 +18,8 @@
 - [DES006] Performance Optimizations - Completed (2025-12-15)
 - [DES007] Per-Instance Rotation Interpolation for Instanced Fish - Completed (2025-12-16)
 - [DES008] Code Quality Fixes - Index Collision, System Order, Helper Consolidation - Completed (2025-12-16)
+- [DES009] Physics Scale (1 unit = 1 meter) - Completed (2025-12-16)
+- [DES010] Architecture Overview - Completed (2025-12-16)
+- [DES011] Boids Algorithm - Completed (2025-12-16)
+- [DES012] Visual Effects (Ripple, Bubbles, Burst) - Completed (2025-12-16)
+- [DES013] Decoration System - Completed (2025-12-16)
