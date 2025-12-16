@@ -18,7 +18,7 @@ export const WaterResistanceSystem = () => {
       // Compute drag and queue it on the entity; the component owning the RigidBody
       // will apply queued forces at a safe point to avoid WASM re-entrancy.
       if (!computeDragForce(velocity, tempDragForce)) continue;
-      externalForce.set(0, 0, 0).add(tempDragForce);
+      externalForce.add(tempDragForce);
     }
   });
 
