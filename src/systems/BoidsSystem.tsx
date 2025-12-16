@@ -148,20 +148,22 @@ const updateBoidsLogic = () => {
     // Seek closest food
     const foodEntities = world.with('isFood', 'position');
     let closestFood: Entity | null = null;
-    let minFoodDist = Infinity;
+    let minFoodDistSq = Infinity;
 
     for (const food of foodEntities) {
       if (!food.position) continue;
-      const d = entity.position!.distanceTo(food.position);
-      if (d < minFoodDist) {
-        minFoodDist = d;
+      const dSq = entity.position!.distanceToSquared(food.position);
+      if (dSq < minFoodDistSq) {
+        minFoodDistSq = dSq;
         closestFood = food;
       }
     }
 
-    if (closestFood && minFoodDist < 5.0) {
+    // 5.0 * 5.0 = 25.0
+    if (closestFood && minFoodDistSq < 25.0) {
       // Range
-      if (minFoodDist < 0.2) {
+      // 0.2 * 0.2 = 0.04
+      if (minFoodDistSq < 0.04) {
         // EAT IT
         world.remove(closestFood);
       } else {
