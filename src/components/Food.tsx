@@ -56,29 +56,32 @@ export const Food = ({ entity }: { entity: Entity }) => {
   });
 
   return (
-    <RigidBody
-      ref={rigidBody}
-      position={entity.position}
-      colliders={false}
-      linearDamping={3.0} // Higher damping in water
-      angularDamping={1.0}
-      restitution={0.2}
-      mass={0.005} // 5 grams
-      gravityScale={0.15} // Mostly neutrally buoyant, sinks slowly
-    >
-      <BallCollider args={[0.012]} /> {/* 1.2cm collision radius */}
-      <mesh ref={meshRef} castShadow receiveShadow>
-        <sphereGeometry args={[0.015, 16, 16]} /> {/* 1.5cm visual radius */}
-        <meshStandardMaterial
-          color="#ffaa00"
-          roughness={0.3}
-          emissive="#ff6600"
-          emissiveIntensity={0.3}
-        />
-      </mesh>
+    <>
 
-      {/* Bubble trail effect */}
-      {entity.position && <BubbleTrail parentPosition={entity.position} />}
-    </RigidBody>
+      <RigidBody
+        ref={rigidBody}
+        position={entity.position}
+        colliders={false}
+        linearDamping={3.0} // Higher damping in water
+        angularDamping={1.0}
+        restitution={0.2}
+        mass={0.005} // 5 grams
+        gravityScale={0.15} // Mostly neutrally buoyant, sinks slowly
+      >
+        <BallCollider args={[0.012]} /> {/* 1.2cm collision radius */}
+        <mesh ref={meshRef} castShadow receiveShadow>
+          <sphereGeometry args={[0.015, 16, 16]} /> {/* 1.5cm visual radius */}
+          <meshStandardMaterial
+            color="#ffaa00"
+            roughness={0.3}
+            emissive="#ff6600"
+            emissiveIntensity={0.3}
+          />
+        </mesh>
+      </RigidBody>
+
+      {/* Bubble trail effect - outside RigidBody to avoid double transform */}
+      {entity.position && <BubbleTrail parentPosition={entity.position!} />}
+    </>
   );
 };
