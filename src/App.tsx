@@ -19,7 +19,7 @@ import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
-import { SIMULATION_BOUNDS } from './config/constants';
+import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from './config/constants';
 import * as THREE from 'three';
 
 const Spawner = () => {
@@ -46,6 +46,26 @@ const Spawner = () => {
         excitementDecay: 0,
       });
     }
+
+    // Spawn Decorations (Tasteful Scatter)
+    const spawnDecoration = (type: 'seaweed' | 'coral' | 'rock', count: number) => {
+      for (let i = 0; i < count; i++) {
+        const x = (Math.random() - 0.5) * (TANK_DIMENSIONS.width - 0.4); // Margin from walls
+        const z = (Math.random() - 0.5) * (TANK_DIMENSIONS.depth - 0.4);
+        const y = -TANK_DIMENSIONS.height / 2; // On the floor
+
+        world.add({
+          isDecoration: true,
+          decorationType: type,
+          position: new Vector3(x, y, z),
+        });
+      }
+    };
+
+    spawnDecoration('seaweed', 5);
+    spawnDecoration('coral', 5);
+    spawnDecoration('rock', 5);
+
   }, []);
   return null;
 };
