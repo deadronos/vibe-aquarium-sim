@@ -4,6 +4,7 @@ import type { Entity } from '../store';
 import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { SpatialGrid } from '../utils/SpatialGrid';
+import { triggerEatingBurst } from '../components/EffectsManager';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
@@ -159,12 +160,14 @@ const updateBoidsLogic = () => {
       }
     }
 
-    // 5.0 * 5.0 = 25.0
+    // 5.0 * 5.0 = 25.0 (5m detection range)
     if (closestFood && minFoodDistSq < 25.0) {
-      // Range
-      // 0.2 * 0.2 = 0.04
-      if (minFoodDistSq < 0.04) {
-        // EAT IT
+      // Eating range: 0.1m * 0.1m = 0.01 (10cm for 1.5cm pellet)
+      if (minFoodDistSq < 0.01) {
+        // EAT IT - trigger particle burst at food location
+        if (closestFood.position) {
+          triggerEatingBurst(closestFood.position);
+        }
         world.remove(closestFood);
       } else {
         // SEEK

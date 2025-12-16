@@ -28,8 +28,17 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
   // Physics interactions and visuals in render loop
   // useFrame runs after the automatic physics step, making it safe to read/write
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!rigidBody.current) return;
+
+    // Handle excitement decay
+    if (entity.excitementLevel && entity.excitementLevel > 0) {
+      entity.excitementDecay = (entity.excitementDecay || 0) - delta;
+      if (entity.excitementDecay <= 0) {
+        entity.excitementLevel = 0;
+        entity.excitementDecay = 0;
+      }
+    }
 
     // Use pre-existing targetVelocity from entity (initialized by Spawner)
     const targetVelocity = entity.targetVelocity;
@@ -50,6 +59,22 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       tempVec.copy(entity.externalForce).multiplyScalar(dt);
       targetVelocity.add(tempVec);
       entity.externalForce.set(0, 0, 0);
+    }
+
+    // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
+    if (entity.excitementLevel && entity.excitementLevel > 0.1) {
+      // Add extra speed in the current direction, capped
+      const currentSpeed = targetVelocity.length();
+      if (currentSpeed > 0.01) {
+        const boostAmount = entity.excitementLevel * 0.15; // Gentler boost
+        targetVelocity.normalize().multiplyScalar(currentSpeed + boostAmount);
+      }
+    }
+
+    // Clamp final velocity to max speed to prevent escaping
+    const maxSpeed = 0.8; // Slightly above boids maxSpeed of 0.4
+    if (targetVelocity.length() > maxSpeed) {
+      targetVelocity.normalize().multiplyScalar(maxSpeed);
     }
 
     // Set velocity directly (velocity-based approach)
@@ -74,7 +99,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
         enabledRotations={[false, false, false]}
         linearDamping={0.5}
         gravityScale={0}
-        mass={1}
+        mass={0.05} // 50 grams (small fish)
         ccd={false}
       >
         <BallCollider args={[0.06]} />
