@@ -21,7 +21,9 @@ for (let i = 0; i < MAX_INSTANCES; i++) {
     instanceQuaternions[i * 4 + 3] = 1; // w component
 }
 
-// Stable entity-to-index mapping for consistent interpolation
+// Stable entity-to-index mapping with free-list recycling
+let nextIndex = 0;
+const freeIndices: number[] = [];
 const entityToIndex = new Map<Entity, number>();
 
 export const FishRenderSystem = () => {
@@ -75,7 +77,7 @@ export const FishRenderSystem = () => {
             // Get or assign stable instance index for this entity
             let idx = entityToIndex.get(entity);
             if (idx === undefined) {
-                idx = entityToIndex.size;
+                idx = freeIndices.length > 0 ? freeIndices.pop()! : nextIndex++;
                 entityToIndex.set(entity, idx);
             }
 
@@ -122,9 +124,10 @@ export const FishRenderSystem = () => {
             count++;
         }
 
-        // Cleanup: remove entities no longer active
-        for (const [e] of entityToIndex) {
+        // Cleanup: remove entities no longer active and recycle their indices
+        for (const [e, removedIdx] of entityToIndex) {
             if (!activeEntities.has(e)) {
+                freeIndices.push(removedIdx);
                 entityToIndex.delete(e);
             }
         }

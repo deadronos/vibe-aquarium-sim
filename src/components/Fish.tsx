@@ -31,35 +31,31 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   useFrame(() => {
     if (!rigidBody.current) return;
 
-    // 1. Calculate target velocity from forces (ECS -> Physics)
-    // Convert forces to velocity changes instead of applying impulses
-    let targetVelocity = entity.targetVelocity;
-    if (!targetVelocity) {
-      targetVelocity = new Vector3();
-      world.addComponent(entity, 'targetVelocity', targetVelocity);
-    }
+    // Use pre-existing targetVelocity from entity (initialized by Spawner)
+    const targetVelocity = entity.targetVelocity;
+    if (!targetVelocity) return;
 
     const dt = 1 / 60;
     const currentVel = rigidBody.current.linvel();
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
+
+    // Apply steering force
     if (entity.steeringForce && entity.steeringForce.lengthSq() > 1e-6) {
       tempVec.copy(entity.steeringForce).multiplyScalar(dt);
       targetVelocity.add(tempVec);
     }
 
-    // Apply external force
+    // Apply external force (drag, water current, etc.)
     if (entity.externalForce && entity.externalForce.lengthSq() > 1e-6) {
       tempVec.copy(entity.externalForce).multiplyScalar(dt);
       targetVelocity.add(tempVec);
       entity.externalForce.set(0, 0, 0);
     }
 
-    // Apply target velocity directly
-    if (targetVelocity) {
-      rigidBody.current.setLinvel(targetVelocity, true);
-    }
+    // Set velocity directly (velocity-based approach)
+    rigidBody.current.setLinvel(targetVelocity, true);
 
-    // 2. Sync Physics -> ECS
+    // Sync Physics -> ECS
     const pos = rigidBody.current.translation();
     const vel = rigidBody.current.linvel();
     if (pos && vel) {
