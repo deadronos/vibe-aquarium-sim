@@ -72,10 +72,10 @@ export const FeedingController = () => {
   return (
     <>
       <mesh
-        position={[0, 0, SIMULATION_BOUNDS.z + 0.1]}
+        position={[0, 0, 0]}
         onClick={handleClick}
       >
-        <planeGeometry args={[100, 100]} />
+        <boxGeometry args={[TANK_DIMENSIONS.width, TANK_DIMENSIONS.height, TANK_DIMENSIONS.depth]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
