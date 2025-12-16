@@ -4,13 +4,25 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { Object3D, InstancedMesh, Vector3, Quaternion } from 'three';
 import { world } from '../store';
+import type { Entity } from '../store';
 import fishUrl from '../assets/gltf/CopilotClownFish.glb?url';
 
 const MAX_INSTANCES = 1000;
 const tempObj = new Object3D();
 const tempVec = new Vector3();
 const tempQuat = new Quaternion();
+const prevQuat = new Quaternion();
 const FORWARD = new Vector3(0, 0, 1);
+
+// Per-instance rotation storage: [x, y, z, w] per instance
+const instanceQuaternions = new Float32Array(MAX_INSTANCES * 4);
+// Initialize all to identity quaternion (0, 0, 0, 1)
+for (let i = 0; i < MAX_INSTANCES; i++) {
+    instanceQuaternions[i * 4 + 3] = 1; // w component
+}
+
+// Stable entity-to-index mapping for consistent interpolation
+const entityToIndex = new Map<Entity, number>();
 
 export const FishRenderSystem = () => {
     const { scene } = useGLTF(fishUrl);
@@ -51,38 +63,56 @@ export const FishRenderSystem = () => {
         const fishEntities = world.with('isFish', 'position', 'velocity');
         let count = 0;
 
-        // Smoothness factor for interpolation (if we had previous state, but we're reading direct ECS pos)
-        // Actually, ECS positions are updated by physics which runs at fixed step.
-        // For now, we render at current ECS position. 
-        // Ideally we'd interpolate between physics states, but reading 'position' is fine for v1.
-
-        // Position Interpolation note:
-        // The previous Fish.tsx had: modelRef.current.position.lerp(entity.position, lerpFactor)
-        // To replicate that strictly in Instancing is harder (need to store visualization state per instance).
-        // Better: Just use the ECS position directly. It might be slightly jittery if physics < FPS, 
-        // but Rapier usually interpolates if configured, or we can add interpolation later.
-        // We will stick to simple "Set transform to entity.position" for now.
+        // Track which entities are still active this frame
+        const activeEntities = new Set<Entity>();
 
         for (const entity of fishEntities) {
             if (count >= MAX_INSTANCES) break;
             if (!entity.position) continue;
 
+            activeEntities.add(entity);
+
+            // Get or assign stable instance index for this entity
+            let idx = entityToIndex.get(entity);
+            if (idx === undefined) {
+                idx = entityToIndex.size;
+                entityToIndex.set(entity, idx);
+            }
+
             tempObj.position.copy(entity.position);
 
-            // Orientation based on velocity
+            // Orientation based on velocity with slerp interpolation
+            const base = idx * 4;
+
             if (entity.velocity && entity.velocity.lengthSq() > 0.01) {
                 tempVec.copy(entity.velocity).normalize();
                 tempQuat.setFromUnitVectors(FORWARD, tempVec);
-                // Slerp for smoothness? 
-                // We can't easily slerp without storing previous rotation per instance.
-                // Direct set for now.
-                tempObj.quaternion.copy(tempQuat);
+
+                // Load previous quaternion from storage
+                prevQuat.set(
+                    instanceQuaternions[base],
+                    instanceQuaternions[base + 1],
+                    instanceQuaternions[base + 2],
+                    instanceQuaternions[base + 3]
+                );
+
+                // Slerp towards target (0.1 factor for smoothness)
+                prevQuat.slerp(tempQuat, 0.1);
+                tempObj.quaternion.copy(prevQuat);
+
+                // Store back to array
+                instanceQuaternions[base] = prevQuat.x;
+                instanceQuaternions[base + 1] = prevQuat.y;
+                instanceQuaternions[base + 2] = prevQuat.z;
+                instanceQuaternions[base + 3] = prevQuat.w;
             } else {
-                // Default or previous quaternion? 
-                // Defaulting to identity might snap weirdly. 
-                // Ideally we keep rotation if velocity is zero.
-                // For now, let's just leave it (tempObj retains last mutation? No, it's shared).
-                tempObj.quaternion.identity();
+                // Keep previous rotation when stationary
+                tempObj.quaternion.set(
+                    instanceQuaternions[base],
+                    instanceQuaternions[base + 1],
+                    instanceQuaternions[base + 2],
+                    instanceQuaternions[base + 3]
+                );
             }
 
             tempObj.scale.setScalar(0.3);
@@ -90,6 +120,13 @@ export const FishRenderSystem = () => {
 
             meshRef.current.setMatrixAt(count, tempObj.matrix);
             count++;
+        }
+
+        // Cleanup: remove entities no longer active
+        for (const [e] of entityToIndex) {
+            if (!activeEntities.has(e)) {
+                entityToIndex.delete(e);
+            }
         }
 
         meshRef.current.count = count;

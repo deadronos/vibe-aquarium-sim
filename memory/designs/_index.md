@@ -15,3 +15,5 @@
 - [DES003] Fixed-step physics (fish & boid logic) - Completed (2025-12-15)
 - [DES004] Physics: Force-Queue Pattern & Safe Rapier Integration - Completed (2025-12-15)
 - [DES005] Interactive Feeding & Food Entities - Completed (2025-12-15)
+- [DES006] Performance Optimizations - Completed (2025-12-15)
+- [DES007] Per-Instance Rotation Interpolation for Instanced Fish - Completed (2025-12-16)
