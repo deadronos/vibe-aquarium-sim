@@ -59,9 +59,13 @@ export const FeedingController = () => {
         }
       }
 
+      // Clamp to simulation bounds so fish can reach it
+      const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
+      const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+
       world.add({
         isFood: true,
-        position: new Vector3(point.x, point.y, point.z),
+        position: new Vector3(x, point.y, z),
         velocity: new Vector3(0, -0.08, 0), // Slow sink ~8cm/s
       });
 
