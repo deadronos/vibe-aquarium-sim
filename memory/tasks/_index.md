@@ -20,3 +20,4 @@
 - [TASK008] Fix Abrupt Fish Turning with Instanced Rendering - Completed (2025-12-16)
 - [TASK009] Code Quality Fixes - Completed (2025-12-16)
 - [TASK010] Gameplay/UX Improvements & Physics Scale Review - Completed (2025-12-16)
+- [TASK011] Fix Food Spawning Reachability - Completed (2025-12-17)

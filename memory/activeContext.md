@@ -11,6 +11,7 @@
 - Implemented fixed-step scheduler and moved Boids logic into the scheduler.
 - Added physics-safe force-queue utilities and reworked components (Fish/Food) to apply queued forces safely.
 - Added interactive feeding via `FeedingController` and `Food` entities.
+- Fixed food spawning reachability by clamping spawn position to simulation bounds.
 
 ## Next steps
 
