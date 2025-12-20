@@ -4,29 +4,24 @@ import * as THREE from 'three';
 
 interface BubbleTrailProps {
     parentPosition: THREE.Vector3;
+    bubbles?: Array<{ offset: THREE.Vector3; speed: number; phase: number; size: number; wobble: number }>
 }
 
 const BUBBLE_COUNT = 8;
 
-export const BubbleTrail = ({ parentPosition }: BubbleTrailProps) => {
+export const BubbleTrail = ({ parentPosition, bubbles: propBubbles }: BubbleTrailProps) => {
     const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
     const dummy = useMemo(() => new THREE.Object3D(), []);
 
-    // Initialize bubble states - scaled for small food pellets
-    const bubbles = useMemo(() => {
-        return Array.from({ length: BUBBLE_COUNT }, () => ({
-            offset: new THREE.Vector3(
-                (Math.random() - 0.5) * 0.04,
-                Math.random() * 0.03,
-                (Math.random() - 0.5) * 0.04
-            ),
-            speed: 0.15 + Math.random() * 0.2,
-            phase: Math.random() * Math.PI * 2,
-            size: 0.004 + Math.random() * 0.006, // 4-10mm bubbles
-            wobble: 0.01 + Math.random() * 0.015,
-        }));
-    }, []);
+    const defaultBubbles = Array.from({ length: BUBBLE_COUNT }, (_, i) => ({
+        offset: new THREE.Vector3(0, i * 0.01, 0),
+        speed: 0.15,
+        phase: i,
+        size: 0.004,
+        wobble: 0.01,
+    }));
 
+    const bubbles = propBubbles ?? defaultBubbles;
     useFrame((state) => {
         if (!instancedMeshRef.current) return;
         const time = state.clock.elapsedTime;

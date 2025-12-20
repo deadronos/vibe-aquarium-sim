@@ -54,10 +54,30 @@ const Spawner = () => {
         const z = (Math.random() - 0.5) * (TANK_DIMENSIONS.depth - 0.4);
         const y = -TANK_DIMENSIONS.height / 2; // On the floor
 
+        // Seed decoration properties at spawn time (pure, non-render code)
+        let decorationProps: Record<string, unknown> = {};
+        if (type === 'seaweed') {
+          decorationProps = {
+            blades: [
+              { height: 0.4 + Math.random() * 0.2, offset: 0, phase: Math.random() * Math.PI * 2 },
+              { height: 0.3 + Math.random() * 0.15, offset: 0.05, phase: Math.random() * Math.PI * 2 },
+              { height: 0.35 + Math.random() * 0.15, offset: -0.04, phase: Math.random() * Math.PI * 2 },
+            ],
+          };
+        } else if (type === 'coral') {
+          const colors = ['#ff6b6b', '#ff8e72', '#ffa07a', '#e056fd'];
+          decorationProps = { color: colors[Math.floor(Math.random() * colors.length)] };
+        } else if (type === 'rock') {
+          const s = 0.8 + Math.random() * 0.4;
+          const gray = 0.3 + Math.random() * 0.2;
+          decorationProps = { scale: s, color: new THREE.Color(gray, gray * 0.95, gray * 0.9) };
+        }
+
         world.add({
           isDecoration: true,
           decorationType: type,
           position: new Vector3(x, y, z),
+          decorationProps,
         });
       }
     };

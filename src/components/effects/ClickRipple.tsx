@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -10,11 +10,15 @@ interface ClickRippleProps {
 export const ClickRipple = ({ position, onComplete }: ClickRippleProps) => {
     const meshRef = useRef<THREE.Mesh>(null);
     const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-    const startTime = useRef(Date.now());
+    const startTime = useRef<number | null>(null);
     const duration = 600; // ms
 
+    useEffect(() => {
+        startTime.current = Date.now();
+    }, []);
+
     useFrame(() => {
-        if (!meshRef.current || !materialRef.current) return;
+        if (!meshRef.current || !materialRef.current || startTime.current === null) return;
 
         const elapsed = Date.now() - startTime.current;
         const progress = elapsed / duration;

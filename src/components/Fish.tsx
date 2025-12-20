@@ -34,10 +34,12 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
     // Handle excitement decay
     if (entity.excitementLevel && entity.excitementLevel > 0) {
-      entity.excitementDecay = (entity.excitementDecay || 0) - delta;
-      if (entity.excitementDecay <= 0) {
-        entity.excitementLevel = 0;
-        entity.excitementDecay = 0;
+      const newDecay = (entity.excitementDecay || 0) - delta;
+      if (newDecay <= 0) {
+        world.addComponent(entity, 'excitementLevel', 0);
+        world.addComponent(entity, 'excitementDecay', 0);
+      } else {
+        world.addComponent(entity, 'excitementDecay', newDecay);
       }
     }
 

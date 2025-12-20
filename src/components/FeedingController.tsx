@@ -59,10 +59,28 @@ export const FeedingController = () => {
         }
       }
 
+      // Clamp to simulation bounds so fish can reach it
+      const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
+      const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+
+      // Seed bubble configuration for the food entity (generated in event handler)
+      const bubbleConfig = Array.from({ length: 8 }, () => ({
+        offset: new Vector3(
+          (Math.random() - 0.5) * 0.04,
+          Math.random() * 0.03,
+          (Math.random() - 0.5) * 0.04,
+        ),
+        speed: 0.15 + Math.random() * 0.2,
+        phase: Math.random() * Math.PI * 2,
+        size: 0.004 + Math.random() * 0.006,
+        wobble: 0.01 + Math.random() * 0.015,
+      }));
+
       world.add({
         isFood: true,
-        position: new Vector3(point.x, point.y, point.z),
+        position: new Vector3(x, point.y, z),
         velocity: new Vector3(0, -0.08, 0), // Slow sink ~8cm/s
+        bubbleConfig,
       });
 
       setLastFedTime(new Date());

@@ -29,3 +29,7 @@
 - TASK002 (Water), TASK003 (Fixed-step), and TASK004 (Fix fish motion) marked Completed; TASK005 and TASK006 added as Completed.
 - Ran unit tests for `physicsHelpers`, `WaterResistanceSystem`, `WaterCurrentSystem`, `FixedStepScheduler`, and `Fish` — all passed.
 - Next: add integration tests for feeding and run performance profiling as needed.
+
+### 2025-12-17
+
+- Fixed food spawning issue where pellets were unreachable on tank edges (TASK011). Clamped spawn coordinates to `SIMULATION_BOUNDS`.
