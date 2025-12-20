@@ -4,7 +4,7 @@ import type { Entity } from '../store';
 import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { SpatialGrid } from '../utils/SpatialGrid';
-import { triggerEatingBurst } from '../components/EffectsManager';
+import { triggerEatingBurst } from '../utils/effectsBus';
 import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
 
 // Temporary vectors to avoid GC in the loop
