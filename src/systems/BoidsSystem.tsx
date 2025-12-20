@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { SpatialGrid } from '../utils/SpatialGrid';
 import { triggerEatingBurst } from '../components/EffectsManager';
+import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
@@ -14,9 +15,9 @@ const diff = new Vector3();
 const steer = new Vector3();
 const tempVec = new Vector3();
 
-import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
-
 const { neighborDist, separationDist, maxSpeed, maxForce } = BOIDS_CONFIG;
+const neighborDistSq = neighborDist * neighborDist;
+const separationDistSq = separationDist * separationDist;
 
 // 1.5 units cell size - slightly larger than standard neighbor distance to catch edge cases
 const grid = new SpatialGrid<Entity>(neighborDist * 2.5);
@@ -43,20 +44,22 @@ const updateBoidsLogic = () => {
     let count = 0;
 
     // Radius query
-    // Radius query
     grid.queryCallback(entity.position, neighborDist, (neighbor: Entity) => {
       if (entity === neighbor) return;
       // We know these exist because of the ECS query, but TS needs help
       if (!neighbor.position || !entity.position) return;
 
-      const d = entity.position.distanceTo(neighbor.position);
+      // OPTIMIZATION: Use distanceToSquared to avoid expensive Math.sqrt()
+      const dSq = entity.position.distanceToSquared(neighbor.position);
 
-      if (d > 0 && d < neighborDist) {
+      if (dSq > 0 && dSq < neighborDistSq) {
         // Separation
-        if (d < separationDist) {
+        if (dSq < separationDistSq) {
           diff.copy(entity.position).sub(neighbor.position);
-          diff.normalize();
-          diff.divideScalar(d);
+          // Standard separation is diff / d (force)
+          // Here we had diff.normalize() / d  --> (diff/d) / d = diff / d^2
+          // So divideScalar(dSq) is mathematically equivalent and faster
+          diff.divideScalar(dSq);
           sep.add(diff);
         }
 
