@@ -14,12 +14,13 @@ export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurs
     const dummy = useMemo(() => new THREE.Object3D(), []);
     const startTime = useRef<number | null>(null);
     const duration = 350; // ms
+    const particleCount = particles.length || 10; // Use actual particle count
 
     useEffect(() => {
         startTime.current = Date.now();
     }, []);
     useFrame(() => {
-        if (!instancedMeshRef.current || !materialRef.current) return;
+        if (!instancedMeshRef.current || !materialRef.current || startTime.current === null) return;
 
         const elapsed = Date.now() - startTime.current;
         const progress = elapsed / duration;
@@ -32,8 +33,9 @@ export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurs
         // Ease out
         const eased = 1 - Math.pow(1 - progress, 2);
 
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
+        for (let i = 0; i < particleCount; i++) {
             const particle = particles[i];
+            if (!particle) continue;
 
             dummy.position.set(
                 position.x + particle.velocity.x * eased * 0.15,
@@ -54,7 +56,7 @@ export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurs
     });
 
     return (
-        <instancedMesh ref={instancedMeshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
+        <instancedMesh ref={instancedMeshRef} args={[undefined, undefined, particleCount]}>
             <sphereGeometry args={[1, 6, 6]} />
             <meshBasicMaterial
                 ref={materialRef}

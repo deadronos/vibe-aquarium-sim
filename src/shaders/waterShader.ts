@@ -29,7 +29,11 @@ varying vec3 vViewPosition;
 // Simplex 3D Noise
 // by Ian McEwan, Ashima Arts
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+vec4 taylorInvSqrt(vec4 r){
+  // Clamp to avoid division by zero and improve precision
+  r = max(r, vec4(1e-6));
+  return 1.79284291400159 - 0.85373472095314 * r;
+}
 
 float snoise(vec3 v){
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
@@ -88,6 +92,8 @@ float snoise(vec3 v){
 
 //Normalise gradients
   vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+  // Add epsilon to avoid division by zero
+  norm = max(norm, vec4(1e-8));
   p0 *= norm.x;
   p1 *= norm.y;
   p2 *= norm.z;
@@ -112,7 +118,9 @@ void main() {
 
   // Fresnel
   vec3 viewDir = normalize(vViewPosition);
-  float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 3.0);
+  // Clamp dot product to avoid negative values from floating point errors
+  float dotValue = max(dot(viewDir, vNormal), 0.0);
+  float fresnel = pow(1.0 - dotValue, 3.0);
 
   // Combine
   vec3 finalColor = gradientColor + vec3(caustics) + fresnel * 0.2;
