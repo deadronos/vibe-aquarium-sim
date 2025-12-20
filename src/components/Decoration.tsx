@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -9,15 +9,15 @@ interface DecorationProps {
 }
 
 // Seaweed - tall wavy plant
-const Seaweed = () => {
+const Seaweed: React.FC<{ blades?: { height: number; offset: number; phase: number }[] }> = ({ blades: propBlades }) => {
     const groupRef = useRef<THREE.Group>(null);
 
-    // Multiple seaweed blades
-    const blades = useMemo(() => [
-        { height: 0.4 + Math.random() * 0.2, offset: 0, phase: 0 },
-        { height: 0.3 + Math.random() * 0.15, offset: 0.05, phase: 1 },
-        { height: 0.35 + Math.random() * 0.15, offset: -0.04, phase: 2 },
-    ], []);
+    // Use blades from entity props when available, otherwise sensible defaults
+    const blades = propBlades ?? [
+        { height: 0.4, offset: 0, phase: 0 },
+        { height: 0.3, offset: 0.05, phase: 1 },
+        { height: 0.35, offset: -0.04, phase: 2 },
+    ];
 
     useFrame((state) => {
         if (!groupRef.current) return;
@@ -51,11 +51,8 @@ const Seaweed = () => {
 };
 
 // Coral - branching structure
-const Coral = () => {
-    const color = useMemo(() => {
-        const colors = ['#ff6b6b', '#ff8e72', '#ffa07a', '#e056fd'];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }, []);
+const Coral: React.FC<{ color?: string }> = ({ color: propColor }) => {
+    const color = propColor ?? '#ff6b6b';
 
     return (
         <group>
@@ -82,12 +79,9 @@ const Coral = () => {
 };
 
 // Rock - irregular stone
-const Rock = () => {
-    const scale = useMemo(() => 0.8 + Math.random() * 0.4, []);
-    const color = useMemo(() => {
-        const gray = 0.3 + Math.random() * 0.2;
-        return new THREE.Color(gray, gray * 0.95, gray * 0.9);
-    }, []);
+const Rock: React.FC<{ scale?: number; color?: THREE.Color }> = ({ scale: propScale, color: propColor }) => {
+    const scale = propScale ?? 1;
+    const color = propColor ?? new THREE.Color(0.4, 0.38, 0.36);
 
     return (
         <mesh position={[0, 0.06 * scale, 0]} scale={scale}>
@@ -110,6 +104,7 @@ const decorationComponents: Record<DecorationType, React.FC> = {
 export const Decoration = ({ entity }: DecorationProps) => {
     const type = entity.decorationType || 'rock';
     const DecorationComponent = decorationComponents[type];
+    const props = (entity.decorationProps ?? {}) as Record<string, unknown>;
 
     return (
         <RigidBody
@@ -118,7 +113,7 @@ export const Decoration = ({ entity }: DecorationProps) => {
             colliders={false}
         >
             <CuboidCollider args={[0.1, 0.15, 0.1]} position={[0, 0.15, 0]} />
-            <DecorationComponent />
+            <DecorationComponent {...props} />
         </RigidBody>
     );
 };
