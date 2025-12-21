@@ -33,22 +33,8 @@ export const Tank = () => {
       0,
       depth / 2 + wallThickness / 2
     );
-    const right = createWall(
-      wallThickness,
-      height,
-      depth,
-      width / 2 + wallThickness / 2,
-      0,
-      0
-    );
-    const left = createWall(
-      wallThickness,
-      height,
-      depth,
-      -width / 2 - wallThickness / 2,
-      0,
-      0
-    );
+    const right = createWall(wallThickness, height, depth, width / 2 + wallThickness / 2, 0, 0);
+    const left = createWall(wallThickness, height, depth, -width / 2 - wallThickness / 2, 0, 0);
 
     const merged = BufferGeometryUtils.mergeGeometries([back, front, right, left]);
     return merged;

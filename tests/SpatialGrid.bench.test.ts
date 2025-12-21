@@ -29,18 +29,14 @@ describe('SpatialGrid', () => {
     // Simple LCG for deterministic "random" numbers
     let seed = 12345;
     const random = () => {
-        const x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
+      const x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
     };
 
     for (let i = 0; i < count; i++) {
       items.push({
-        pos: new Vector3(
-          (random() - 0.5) * 10,
-          (random() - 0.5) * 4,
-          (random() - 0.5) * 4
-        ),
-        id: i
+        pos: new Vector3((random() - 0.5) * 10, (random() - 0.5) * 4, (random() - 0.5) * 4),
+        id: i,
       });
     }
 
@@ -48,21 +44,23 @@ describe('SpatialGrid', () => {
 
     // Add
     for (let i = 0; i < count; i++) {
-        grid.add(items[i].pos, items[i].id);
+      grid.add(items[i].pos, items[i].id);
     }
 
     // Query
     let hitCount = 0;
     const queryRadius = 1.0;
     for (let i = 0; i < count; i++) {
-       grid.queryCallback(items[i].pos, queryRadius, () => {
-           hitCount++;
-       });
+      grid.queryCallback(items[i].pos, queryRadius, () => {
+        hitCount++;
+      });
     }
 
     const end = performance.now();
     const duration = end - start;
-    console.log(`BENCHMARK: SpatialGrid operation took: ${duration.toFixed(3)}ms for ${count} items. Hits: ${hitCount}`);
+    console.log(
+      `BENCHMARK: SpatialGrid operation took: ${duration.toFixed(3)}ms for ${count} items. Hits: ${hitCount}`
+    );
 
     expect(hitCount).toBeGreaterThan(count);
   });

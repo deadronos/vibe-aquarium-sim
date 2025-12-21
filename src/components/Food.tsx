@@ -57,7 +57,6 @@ export const Food = ({ entity }: { entity: Entity }) => {
 
   return (
     <>
-
       <RigidBody
         ref={rigidBody}
         position={entity.position}
@@ -81,7 +80,9 @@ export const Food = ({ entity }: { entity: Entity }) => {
       </RigidBody>
 
       {/* Bubble trail effect - outside RigidBody to avoid double transform */}
-      {entity.position && <BubbleTrail parentPosition={entity.position!} bubbles={entity.bubbleConfig} /> }
+      {entity.position && (
+        <BubbleTrail parentPosition={entity.position!} bubbles={entity.bubbleConfig} />
+      )}
     </>
   );
 };
