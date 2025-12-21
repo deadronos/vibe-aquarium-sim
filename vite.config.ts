@@ -22,5 +22,10 @@ export default defineConfig(({ command }) => {
         'Cross-Origin-Embedder-Policy': 'require-corp',
       },
     },
+    optimizeDeps: {
+      // multithreading uses a worker entry import that the dep optimizer can choke on in dev,
+      // leading to missing prebundled worker modules and repeated worker crashes.
+      exclude: ['multithreading'],
+    },
   };
 });
