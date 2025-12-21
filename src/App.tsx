@@ -15,6 +15,7 @@ import { EffectsManager } from './components/EffectsManager';
 import { HUD } from './components/ui/HUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
+import { ExcitementSystem } from './systems/ExcitementSystem';
 import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
@@ -60,8 +61,16 @@ const Spawner = () => {
           decorationProps = {
             blades: [
               { height: 0.4 + Math.random() * 0.2, offset: 0, phase: Math.random() * Math.PI * 2 },
-              { height: 0.3 + Math.random() * 0.15, offset: 0.05, phase: Math.random() * Math.PI * 2 },
-              { height: 0.35 + Math.random() * 0.15, offset: -0.04, phase: Math.random() * Math.PI * 2 },
+              {
+                height: 0.3 + Math.random() * 0.15,
+                offset: 0.05,
+                phase: Math.random() * Math.PI * 2,
+              },
+              {
+                height: 0.35 + Math.random() * 0.15,
+                offset: -0.04,
+                phase: Math.random() * Math.PI * 2,
+              },
             ],
           };
         } else if (type === 'coral') {
@@ -85,7 +94,6 @@ const Spawner = () => {
     spawnDecoration('seaweed', 5);
     spawnDecoration('coral', 5);
     spawnDecoration('rock', 5);
-
   }, []);
   return null;
 };
@@ -131,6 +139,7 @@ function App() {
           <Spawner />
           <SchedulerSystem />
           <BoidsSystem />
+          <ExcitementSystem />
           <WaterResistanceSystem />
           <WaterCurrentSystem />
           <FishRenderSystem />

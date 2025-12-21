@@ -32,7 +32,9 @@ export type Entity = {
   decorationType?: DecorationType;
   decorationProps?: Record<string, unknown>; // Arbitrary data to configure decoration components (seeded at spawn time)
   // Visual/FX specific data pulled from spawn events (e.g., bubble trails for food)
-  bubbleConfig?: Array<{ offset: Vector3; speed: number; phase: number; size: number; wobble: number }> | undefined;
+  bubbleConfig?:
+    | Array<{ offset: Vector3; speed: number; phase: number; size: number; wobble: number }>
+    | undefined;
 
   // Fish state
   excitementLevel?: number; // 0-1, triggers flash/speed boost

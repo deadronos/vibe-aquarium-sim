@@ -18,7 +18,7 @@ export class SpatialGrid<T> {
 
   // Convert grid coordinates to a unique integer key
   private getKey(x: number, y: number, z: number): number {
-    return (x + OFFSET) + (y + OFFSET) * STRIDE_Y + (z + OFFSET) * STRIDE_Z;
+    return x + OFFSET + (y + OFFSET) * STRIDE_Y + (z + OFFSET) * STRIDE_Z;
   }
 
   clear() {
@@ -55,7 +55,7 @@ export class SpatialGrid<T> {
       for (let y = minY; y <= maxY; y++) {
         for (let z = minZ; z <= maxZ; z++) {
           // Construct key directly to avoid function call overhead
-          const key = (x + o) + (y + o) * sy + (z + o) * sz;
+          const key = x + o + (y + o) * sy + (z + o) * sz;
           const items = this.buckets.get(key);
           if (items) {
             for (let i = 0; i < items.length; i++) {
@@ -83,7 +83,7 @@ export class SpatialGrid<T> {
     for (let x = minX; x <= maxX; x++) {
       for (let y = minY; y <= maxY; y++) {
         for (let z = minZ; z <= maxZ; z++) {
-          const key = (x + o) + (y + o) * sy + (z + o) * sz;
+          const key = x + o + (y + o) * sy + (z + o) * sz;
           const items = this.buckets.get(key);
           if (items) {
             for (let i = 0; i < items.length; i++) {
