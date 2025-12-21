@@ -4,10 +4,8 @@ import { RigidBody, BallCollider } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { world } from '../store';
 import type { Entity } from '../store';
-import { Vector3 } from 'three';
-import { TANK_DIMENSIONS } from '../config/constants';
-
-const tempVec = new Vector3();
+import { integrateForcesToVelocity } from '../utils/physicsHelpers';
+import { clampPositionToTank } from '../utils/boundaryUtils';
 
 export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
@@ -29,19 +27,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
   // Physics interactions and visuals in render loop
   // useFrame runs after the automatic physics step, making it safe to read/write
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (!rigidBody.current) return;
-
-    // Handle excitement decay
-    if (entity.excitementLevel && entity.excitementLevel > 0) {
-      const newDecay = (entity.excitementDecay || 0) - delta;
-      if (newDecay <= 0) {
-        world.addComponent(entity, 'excitementLevel', 0);
-        world.addComponent(entity, 'excitementDecay', 0);
-      } else {
-        world.addComponent(entity, 'excitementDecay', newDecay);
-      }
-    }
 
     // Use pre-existing targetVelocity from entity (initialized by Spawner)
     const targetVelocity = entity.targetVelocity;
@@ -51,18 +38,8 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     const currentVel = rigidBody.current.linvel();
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
 
-    // Apply steering force
-    if (entity.steeringForce && entity.steeringForce.lengthSq() > 1e-6) {
-      tempVec.copy(entity.steeringForce).multiplyScalar(dt);
-      targetVelocity.add(tempVec);
-    }
-
-    // Apply external force (drag, water current, etc.)
-    if (entity.externalForce && entity.externalForce.lengthSq() > 1e-6) {
-      tempVec.copy(entity.externalForce).multiplyScalar(dt);
-      targetVelocity.add(tempVec);
-      entity.externalForce.set(0, 0, 0);
-    }
+    // Apply steering force and external forces
+    integrateForcesToVelocity(targetVelocity, entity, dt);
 
     // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
     if (entity.excitementLevel && entity.excitementLevel > 0.1) {
@@ -86,42 +63,19 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     // --- SAFETY NET: Force Fish Inside Tank ---
     // If physics glitch causes tunneling, we intercept it before render
     const currentPos = rigidBody.current.translation();
-    const margin = 0.1; // 10cm margin (fish radius is ~6cm)
-    const limitX = TANK_DIMENSIONS.width / 2 - margin;
-    const limitY = TANK_DIMENSIONS.height / 2 - margin;
-    const limitZ = TANK_DIMENSIONS.depth / 2 - margin;
-
-    let clamped = false;
-    let cx = currentPos.x;
-    let cy = currentPos.y;
-    let cz = currentPos.z;
-    let vx = targetVelocity.x;
-    let vy = targetVelocity.y;
-    let vz = targetVelocity.z;
-
-    if (Math.abs(cx) > limitX) {
-      cx = Math.sign(cx) * limitX;
-      vx *= -0.5; // Bounce back
-      clamped = true;
-    }
-    if (Math.abs(cy) > limitY) {
-      cy = Math.sign(cy) * limitY;
-      vy *= -0.5;
-      clamped = true;
-    }
-    if (Math.abs(cz) > limitZ) {
-      cz = Math.sign(cz) * limitZ;
-      vz *= -0.5;
-      clamped = true;
-    }
+    const {
+      clamped,
+      position: newPos,
+      velocity: newVel,
+    } = clampPositionToTank(currentPos, targetVelocity);
 
     if (clamped) {
       // 1. Force Hard Reset of Physics Position
-      rigidBody.current.setTranslation({ x: cx, y: cy, z: cz }, true);
+      rigidBody.current.setTranslation(newPos, true);
       // 2. Reflect Velocity (preserve momentum but reverse direction)
-      rigidBody.current.setLinvel({ x: vx, y: vy, z: vz }, true);
+      rigidBody.current.setLinvel(newVel, true);
       // 3. Update targetVelocity for next frame continuity
-      targetVelocity.set(vx, vy, vz);
+      targetVelocity.set(newVel.x, newVel.y, newVel.z);
     }
 
     // Sync Physics -> ECS

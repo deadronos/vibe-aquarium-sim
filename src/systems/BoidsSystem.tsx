@@ -5,14 +5,14 @@ import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { SpatialGrid } from '../utils/SpatialGrid';
 import { triggerEatingBurst } from '../utils/effectsBus';
-import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
+import { BOIDS_CONFIG } from '../config/constants';
+import { getBoundarySteeringForce } from '../utils/boundaryUtils';
 
 // Temporary vectors to avoid GC in the loop
 const sep = new Vector3();
 const ali = new Vector3();
 const coh = new Vector3();
 const diff = new Vector3();
-const steer = new Vector3();
 const tempVec = new Vector3();
 
 const { neighborDist, separationDist, maxSpeed, maxForce } = BOIDS_CONFIG;
@@ -108,45 +108,14 @@ const updateBoidsLogic = () => {
 
     entity.steeringForce!.set(0, 0, 0).add(sep).add(ali).add(coh);
 
-    // Soft Boundary (Sphere approx for now, or box)
-    // Tank is box (-2,2), (-1,1), (-1,1)
-    const x = entity.position!.x;
-    const y = entity.position!.y;
-    const z = entity.position!.z;
-
-    steer.set(0, 0, 0);
-    let boundForce = false;
-
-    if (x < -SIMULATION_BOUNDS.x) {
-      steer.x += 1;
-      boundForce = true;
-    }
-    if (x > SIMULATION_BOUNDS.x) {
-      steer.x -= 1;
-      boundForce = true;
-    }
-    if (y < -SIMULATION_BOUNDS.y) {
-      steer.y += 1;
-      boundForce = true;
-    }
-    if (y > SIMULATION_BOUNDS.y) {
-      steer.y -= 1;
-      boundForce = true;
-    }
-    if (z < -SIMULATION_BOUNDS.z) {
-      steer.z += 1;
-      boundForce = true;
-    }
-    if (z > SIMULATION_BOUNDS.z) {
-      steer.z -= 1;
-      boundForce = true;
-    }
-
-    if (boundForce) {
-      steer.normalize().multiplyScalar(maxSpeed);
-      steer.sub(entity.velocity!).clampLength(0, maxForce * 2);
-      entity.steeringForce!.add(steer);
-    }
+    // Soft Boundary
+    getBoundarySteeringForce(
+      entity.position!,
+      entity.velocity!,
+      maxSpeed,
+      maxForce,
+      entity.steeringForce!
+    );
 
     // --- Feeding Logic ---
     // Seek closest food

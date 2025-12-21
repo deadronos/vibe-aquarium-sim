@@ -1,38 +1,42 @@
 import { Vector3 } from 'three';
 import type { Entity } from '../store';
 import { waterPhysics } from '../config/waterPhysics';
-import type { RapierRigidBody } from '@react-three/rapier';
 
 const tempImpulseA = new Vector3();
 const tempImpulseB = new Vector3();
 const tempVelocity = new Vector3();
 
 /**
- * Apply queued forces from `entity` to the provided `rigidBody` wrapper.
- * - `steeringForce` is treated as a force converted to an impulse by multiplying by `delta`.
- * - `externalForce` is treated as a force and converted to impulse by multiplying by `delta`.
- * After applying, `externalForce` is cleared.
+ * Applies queued forces (steeringForce, externalForce) to a target velocity vector.
+ * - `steeringForce` is integrated as acceleration * dt.
+ * - `externalForce` is integrated as acceleration * dt.
+ * - Clears `externalForce` after application.
+ *
+ * @param targetVelocity The velocity vector to modify.
+ * @param entity The entity containing the forces.
+ * @param dt Time delta.
+ * @param mass Mass of the entity. If 1.0 (default), forces are treated as acceleration.
  */
-type RigidLike =
-  | RapierRigidBody
-  | { applyImpulse: (v: Vector3 | { x: number; y: number; z: number }, wake?: boolean) => void };
-
-export function applyQueuedForcesToRigidBody(
-  rigidBody: RigidLike | null,
+export function integrateForcesToVelocity(
+  targetVelocity: Vector3,
   entity: Entity,
-  delta: number
+  dt: number,
+  mass: number = 1.0
 ) {
-  if (!rigidBody) return;
-
   const EPS = 1e-6;
+
+  // Apply steering force
   if (entity.steeringForce && entity.steeringForce.lengthSq() > EPS) {
-    tempImpulseA.copy(entity.steeringForce).multiplyScalar(delta);
-    rigidBody.applyImpulse(tempImpulseA, true);
+    tempImpulseA.copy(entity.steeringForce).multiplyScalar(dt);
+    if (mass !== 1.0) tempImpulseA.divideScalar(mass);
+    targetVelocity.add(tempImpulseA);
   }
 
+  // Apply external force (drag, water current, etc.)
   if (entity.externalForce && entity.externalForce.lengthSq() > EPS) {
-    tempImpulseB.copy(entity.externalForce).multiplyScalar(delta);
-    rigidBody.applyImpulse(tempImpulseB, true);
+    tempImpulseB.copy(entity.externalForce).multiplyScalar(dt);
+    if (mass !== 1.0) tempImpulseB.divideScalar(mass);
+    targetVelocity.add(tempImpulseB);
     entity.externalForce.set(0, 0, 0);
   }
 }
@@ -85,5 +89,3 @@ export function computeWaterCurrent(position: Vector3, time: number, out: Vector
   out.copy(tempImpulseA);
   return true;
 }
-
-export default applyQueuedForcesToRigidBody;
