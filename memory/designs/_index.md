@@ -23,3 +23,4 @@
 - [DES011] Boids Algorithm - Completed (2025-12-16)
 - [DES012] Visual Effects (Ripple, Bubbles, Burst) - Completed (2025-12-16)
 - [DES013] Decoration System - Completed (2025-12-16)
+- [DES014] Worker offload for boids + water forces - Completed (2025-12-21)

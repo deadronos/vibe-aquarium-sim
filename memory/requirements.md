@@ -14,3 +14,12 @@
 
 5. WHEN users change runtime parameters via UI, THE SYSTEM SHALL apply changes without a full reload and keep simulation state consistent.  
    Acceptance: Controlled UI change updates runtime parameters and effects are visible without reloading the page.
+
+6. WHEN a fixed-step simulation tick occurs, THE SYSTEM SHALL compute boid steering forces and water drag/current in a worker pool (multithreading) and apply results back to ECS within the next fixed-step update.  
+   Acceptance: Boid/water math runs inside a worker function; the main thread only applies returned forces.
+
+7. WHEN a worker job is still in flight, THE SYSTEM SHALL avoid launching overlapping simulation jobs and continue using the last applied forces.  
+   Acceptance: System code gates new jobs while a previous job is pending.
+
+8. WHEN a worker job fails, THE SYSTEM SHALL log the error and keep the simulation running with the last known forces.  
+   Acceptance: Error handling logs failures without crashing the render loop.
