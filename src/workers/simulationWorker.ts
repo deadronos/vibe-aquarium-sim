@@ -1,9 +1,11 @@
+type Float32Buffer = Float32Array<ArrayBufferLike>;
+
 export type SimulationInput = {
   fishCount: number;
-  positions: Float32Array;
-  velocities: Float32Array;
+  positions: Float32Buffer;
+  velocities: Float32Buffer;
   foodCount: number;
-  foodPositions: Float32Array;
+  foodPositions: Float32Buffer;
   time: number;
   boids: { neighborDist: number; separationDist: number; maxSpeed: number; maxForce: number };
   bounds: { x: number; y: number; z: number };
@@ -11,8 +13,8 @@ export type SimulationInput = {
 };
 
 export type SimulationOutput = {
-  steering: Float32Array;
-  externalForces: Float32Array;
+  steering: Float32Buffer;
+  externalForces: Float32Buffer;
   eatenFoodIndices: number[];
 };
 

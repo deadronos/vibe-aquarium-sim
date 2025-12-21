@@ -16,9 +16,11 @@ const fishSnapshot: Entity[] = [];
 const foodSnapshot: Entity[] = [];
 const eatenFoodSet = new Set<number>();
 
-let positions = new Float32Array(0);
-let velocities = new Float32Array(0);
-let foodPositions = new Float32Array(0);
+type Float32Buffer = Float32Array<ArrayBufferLike>;
+
+let positions: Float32Buffer = new Float32Array(0);
+let velocities: Float32Buffer = new Float32Array(0);
+let foodPositions: Float32Buffer = new Float32Array(0);
 
 let pendingResult: SimulationOutput | null = null;
 let pendingFishCount = 0;
@@ -26,6 +28,17 @@ let hasJob = false;
 let elapsedTime = 0;
 let runtimeReady = false;
 let disposed = false;
+
+let multithreadingDisabled = false;
+
+const canUseMultithreading = () => {
+  if (multithreadingDisabled) return false;
+  // SharedArrayBuffer requires cross-origin isolation (COOP/COEP headers).
+  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+  const isIsolated =
+    typeof crossOriginIsolated !== 'undefined' ? Boolean(crossOriginIsolated) : false;
+  return hasSAB && isIsolated;
+};
 
 const workerInput: SimulationInput = {
   fishCount: 0,
@@ -39,7 +52,7 @@ const workerInput: SimulationInput = {
   water: waterPhysics,
 };
 
-const ensureCapacity = (buffer: Float32Array, needed: number) => {
+const ensureCapacity = (buffer: Float32Buffer, needed: number): Float32Buffer => {
   if (buffer.length < needed) {
     return new Float32Array(needed);
   }
@@ -48,6 +61,11 @@ const ensureCapacity = (buffer: Float32Array, needed: number) => {
 
 const ensureRuntime = () => {
   if (runtimeReady) return;
+  if (!canUseMultithreading()) {
+    // Fallback to running the kernel on the main thread.
+    runtimeReady = false;
+    return;
+  }
   const cores =
     typeof navigator !== 'undefined' && navigator.hardwareConcurrency
       ? navigator.hardwareConcurrency
@@ -157,6 +175,19 @@ const startWorkerJob = () => {
   workerInput.time = elapsedTime;
 
   const jobFishCount = fishCount;
+
+  // If the runtime can't use threads (or was disabled due to crashes), run locally.
+  if (!runtimeReady || !canUseMultithreading()) {
+    try {
+      pendingResult = simulateStep(workerInput);
+      pendingFishCount = jobFishCount;
+    } catch (error) {
+      console.error('Boids simulation failed', error);
+    }
+    hasJob = false;
+    return;
+  }
+
   hasJob = true;
   const handle = spawn(move(workerInput), simulateStep);
   handle
@@ -164,6 +195,8 @@ const startWorkerJob = () => {
     .then((result) => {
       if (!result.ok) {
         console.error('Boids worker failed', result.error);
+        // Prevent infinite retry loops if the worker pool is unhealthy.
+        multithreadingDisabled = true;
         hasJob = false;
         return;
       }
@@ -176,6 +209,7 @@ const startWorkerJob = () => {
     })
     .catch((error) => {
       console.error('Boids worker failed', error);
+      multithreadingDisabled = true;
       hasJob = false;
     });
 };
@@ -184,6 +218,12 @@ export const BoidsSystem = () => {
   useEffect(() => {
     ensureRuntime();
     disposed = false;
+
+    if (!runtimeReady && !multithreadingDisabled && !canUseMultithreading()) {
+      console.warn(
+        '[BoidsSystem] Multithreading disabled: SharedArrayBuffer/crossOriginIsolated not available. Falling back to main-thread simulation.'
+      );
+    }
 
     const unsubscribe = fixedScheduler.add((dt) => {
       elapsedTime += dt;

@@ -4,10 +4,16 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 
+vec3 safeNormalize(vec3 v) {
+  // Avoid division-by-zero inside normalize() on some drivers (ANGLE/D3D).
+  // max() prevents inversesqrt(0).
+  return v * inversesqrt(max(dot(v, v), 1e-12));
+}
+
 void main() {
   vUv = uv;
   vPosition = position;
-  vNormal = normalize(normalMatrix * normal);
+  vNormal = safeNormalize(normalMatrix * normal);
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
   vViewPosition = -mvPosition.xyz;
   gl_Position = projectionMatrix * mvPosition;
@@ -26,13 +32,19 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 
+vec3 safeNormalize(vec3 v) {
+  // Avoid division-by-zero inside normalize() on some drivers (ANGLE/D3D).
+  return v * inversesqrt(max(dot(v, v), 1e-12));
+}
+
 // Simplex 3D Noise
 // by Ian McEwan, Ashima Arts
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){
   // Clamp to avoid division by zero and improve precision
   r = max(r, vec4(1e-6));
-  return 1.79284291400159 - 0.85373472095314 * r;
+  // Keep constants at float-like precision to reduce ANGLE/D3D double-precision warnings.
+  return 1.7928429 - 0.8537347 * r;
 }
 
 float snoise(vec3 v){
@@ -117,7 +129,7 @@ void main() {
   float caustics = smoothstep(0.4, 0.6, noise) * 0.3; // Sharpen noise for caustic look
 
   // Fresnel
-  vec3 viewDir = normalize(vViewPosition);
+  vec3 viewDir = safeNormalize(vViewPosition);
   // Clamp dot product to avoid negative values from floating point errors
   float dotValue = max(dot(viewDir, vNormal), 0.0);
   float fresnel = pow(1.0 - dotValue, 3.0);
