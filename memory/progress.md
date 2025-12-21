@@ -4,6 +4,7 @@
 
 - Project scaffold and core components exist in `src/` (Fish, Tank, BoidsSystem, store)
 - Basic unit test harness and linting configuration present (Vitest, ESLint, Prettier)
+- Boids + water drag/current calculations are offloaded to a multithreaded worker and applied back to ECS each fixed step.
 - Documentation: `AGENTS.md` and `.github/copilot-instructions.md` updated to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` and recorded in memory (2025-12-09)
 
 ## What's left / next milestones
@@ -33,3 +34,8 @@
 ### 2025-12-17
 
 - Fixed food spawning issue where pellets were unreachable on tank edges (TASK011). Clamped spawn coordinates to `SIMULATION_BOUNDS`.
+
+### 2025-12-21
+
+- Offloaded boids, food seeking, and water forces to a `multithreading` worker kernel; main thread now applies results and side effects (TASK012).
+- App wiring updated to avoid double-applying water forces; format and lint run cleanly.

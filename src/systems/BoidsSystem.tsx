@@ -1,163 +1,246 @@
-import { Vector3 } from 'three';
+import { useEffect } from 'react';
+import { initRuntime, move, spawn } from 'multithreading';
+import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
+import { waterPhysics } from '../config/waterPhysics';
 import { world } from '../store';
 import type { Entity } from '../store';
-import { useEffect } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
-import { SpatialGrid } from '../utils/SpatialGrid';
 import { triggerEatingBurst } from '../utils/effectsBus';
-import { BOIDS_CONFIG } from '../config/constants';
-import { getBoundarySteeringForce } from '../utils/boundaryUtils';
+import {
+  simulateStep,
+  type SimulationInput,
+  type SimulationOutput,
+} from '../workers/simulationWorker';
 
-// Temporary vectors to avoid GC in the loop
-const sep = new Vector3();
-const ali = new Vector3();
-const coh = new Vector3();
-const diff = new Vector3();
-const tempVec = new Vector3();
+const fishSnapshot: Entity[] = [];
+const foodSnapshot: Entity[] = [];
+const eatenFoodSet = new Set<number>();
 
-const { neighborDist, separationDist, maxSpeed, maxForce } = BOIDS_CONFIG;
-const neighborDistSq = neighborDist * neighborDist;
-const separationDistSq = separationDist * separationDist;
+type Float32Buffer = Float32Array<ArrayBufferLike>;
 
-// 1.5 units cell size - slightly larger than standard neighbor distance to catch edge cases
-const grid = new SpatialGrid<Entity>(neighborDist * 2.5);
+let positions: Float32Buffer = new Float32Array(0);
+let velocities: Float32Buffer = new Float32Array(0);
+let foodPositions: Float32Buffer = new Float32Array(0);
 
-// BoidsSystem computes `steeringForce` per entity and writes it into ECS.
-// NOTE: Do NOT call Rapier directly from systems — leave Rapier RPCs to components.
-const updateBoidsLogic = () => {
-  // We only iterate over entities that have all the required components
-  const boids = world.with('isBoid', 'position', 'velocity', 'steeringForce');
+let pendingResult: SimulationOutput | null = null;
+let pendingFishCount = 0;
+let hasJob = false;
+let elapsedTime = 0;
+let runtimeReady = false;
+let disposed = false;
 
-  // Rebuild grid
-  grid.clear();
-  for (const entity of boids) {
-    if (entity.position) {
-      grid.add(entity.position, entity);
+let multithreadingDisabled = false;
+
+const canUseMultithreading = () => {
+  if (multithreadingDisabled) return false;
+  // SharedArrayBuffer requires cross-origin isolation (COOP/COEP headers).
+  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+  const isIsolated =
+    typeof crossOriginIsolated !== 'undefined' ? Boolean(crossOriginIsolated) : false;
+  return hasSAB && isIsolated;
+};
+
+const workerInput: SimulationInput = {
+  fishCount: 0,
+  positions,
+  velocities,
+  foodCount: 0,
+  foodPositions,
+  time: 0,
+  boids: BOIDS_CONFIG,
+  bounds: SIMULATION_BOUNDS,
+  water: waterPhysics,
+};
+
+const ensureCapacity = (buffer: Float32Buffer, needed: number): Float32Buffer => {
+  if (buffer.length < needed) {
+    return new Float32Array(needed);
+  }
+  return buffer;
+};
+
+const ensureRuntime = () => {
+  if (runtimeReady) return;
+  if (!canUseMultithreading()) {
+    // Fallback to running the kernel on the main thread.
+    runtimeReady = false;
+    return;
+  }
+  const cores =
+    typeof navigator !== 'undefined' && navigator.hardwareConcurrency
+      ? navigator.hardwareConcurrency
+      : 4;
+  const maxWorkers = Math.max(2, Math.min(cores, 8));
+  try {
+    initRuntime({ maxWorkers });
+  } catch (error) {
+    if (!(error instanceof Error) || !error.message.includes('Runtime already initialized')) {
+      throw error;
     }
   }
+  runtimeReady = true;
+};
 
-  for (const entity of boids) {
-    sep.set(0, 0, 0);
-    ali.set(0, 0, 0);
-    coh.set(0, 0, 0);
+const applyResult = () => {
+  if (!pendingResult) return;
+  const { steering, externalForces, eatenFoodIndices } = pendingResult;
 
-    let count = 0;
-
-    // Radius query
-    grid.queryCallback(entity.position, neighborDist, (neighbor: Entity) => {
-      if (entity === neighbor) return;
-      // We know these exist because of the ECS query, but TS needs help
-      if (!neighbor.position || !entity.position) return;
-
-      // OPTIMIZATION: Use distanceToSquared to avoid expensive Math.sqrt()
-      const dSq = entity.position.distanceToSquared(neighbor.position);
-
-      if (dSq > 0 && dSq < neighborDistSq) {
-        // Separation
-        if (dSq < separationDistSq) {
-          diff.copy(entity.position).sub(neighbor.position);
-          // Standard separation is diff / d (force)
-          // Here we had diff.normalize() / d  --> (diff/d) / d = diff / d^2
-          // So divideScalar(dSq) is mathematically equivalent and faster
-          diff.divideScalar(dSq);
-          sep.add(diff);
-        }
-
-        // Alignment
-        if (neighbor.velocity) {
-          ali.add(neighbor.velocity);
-        }
-
-        // Cohesion
-        coh.add(neighbor.position);
-
-        count++;
-      }
-    });
-
-    if (count > 0) {
-      // Separation
-      if (sep.lengthSq() > 0) {
-        sep.divideScalar(count);
-        sep.normalize();
-        sep.multiplyScalar(maxSpeed);
-        sep.sub(entity.velocity!);
-        sep.clampLength(0, maxForce);
-      }
-
-      // Alignment
-      ali.divideScalar(count);
-      ali.normalize();
-      ali.multiplyScalar(maxSpeed);
-      ali.sub(entity.velocity!);
-      ali.clampLength(0, maxForce);
-
-      // Cohesion
-      coh.divideScalar(count);
-      coh.sub(entity.position!);
-      coh.normalize();
-      coh.multiplyScalar(maxSpeed);
-      coh.sub(entity.velocity!);
-      coh.clampLength(0, maxForce);
-    }
-
-    // Apply weights
-    sep.multiplyScalar(2.0);
-    ali.multiplyScalar(1.0);
-    coh.multiplyScalar(1.0);
-
-    entity.steeringForce!.set(0, 0, 0).add(sep).add(ali).add(coh);
-
-    // Soft Boundary
-    getBoundarySteeringForce(
-      entity.position!,
-      entity.velocity!,
-      maxSpeed,
-      maxForce,
-      entity.steeringForce!
+  for (let i = 0; i < pendingFishCount; i++) {
+    const entity = fishSnapshot[i];
+    if (!entity?.steeringForce || !entity.externalForce) continue;
+    const base = i * 3;
+    entity.steeringForce.set(steering[base], steering[base + 1], steering[base + 2]);
+    entity.externalForce.set(
+      externalForces[base],
+      externalForces[base + 1],
+      externalForces[base + 2]
     );
+  }
 
-    // --- Feeding Logic ---
-    // Seek closest food
-    const foodEntities = world.with('isFood', 'position');
-    let closestFood: Entity | null = null;
-    let minFoodDistSq = Infinity;
-
-    for (const food of foodEntities) {
-      if (!food.position) continue;
-      const dSq = entity.position!.distanceToSquared(food.position);
-      if (dSq < minFoodDistSq) {
-        minFoodDistSq = dSq;
-        closestFood = food;
-      }
+  if (eatenFoodIndices.length > 0) {
+    eatenFoodSet.clear();
+    for (let i = 0; i < eatenFoodIndices.length; i++) {
+      eatenFoodSet.add(eatenFoodIndices[i]);
     }
-
-    // 5.0 * 5.0 = 25.0 (5m detection range)
-    if (closestFood && minFoodDistSq < 25.0) {
-      // Eating range: 0.1m * 0.1m = 0.01 (10cm for 1.5cm pellet)
-      if (minFoodDistSq < 0.01) {
-        // EAT IT - trigger particle burst at food location
-        if (closestFood.position) {
-          triggerEatingBurst(closestFood.position);
-        }
-        world.remove(closestFood);
-      } else {
-        // SEEK
-        const seek = tempVec.copy(closestFood.position!).sub(entity.position!).normalize();
-        seek.multiplyScalar(maxSpeed);
-        seek.sub(entity.velocity!);
-        seek.clampLength(0, maxForce * 2.0); // Stronger than boids
-        entity.steeringForce!.add(seek);
+    for (const index of eatenFoodSet) {
+      const food = foodSnapshot[index];
+      if (!food) continue;
+      if (food.position) {
+        triggerEatingBurst(food.position);
       }
+      world.remove(food);
     }
   }
+
+  pendingResult = null;
+  pendingFishCount = 0;
+  hasJob = false;
+};
+
+const startWorkerJob = () => {
+  fishSnapshot.length = 0;
+  for (const entity of world.with(
+    'isBoid',
+    'position',
+    'velocity',
+    'steeringForce',
+    'externalForce'
+  )) {
+    fishSnapshot.push(entity);
+  }
+
+  const fishCount = fishSnapshot.length;
+  if (fishCount === 0) {
+    hasJob = false;
+    return;
+  }
+
+  foodSnapshot.length = 0;
+  for (const entity of world.with('isFood', 'position')) {
+    foodSnapshot.push(entity);
+  }
+
+  const foodCount = foodSnapshot.length;
+
+  positions = ensureCapacity(positions, fishCount * 3);
+  velocities = ensureCapacity(velocities, fishCount * 3);
+  foodPositions = ensureCapacity(foodPositions, foodCount * 3);
+
+  for (let i = 0; i < fishCount; i++) {
+    const entity = fishSnapshot[i];
+    if (!entity.position || !entity.velocity) continue;
+    const base = i * 3;
+    positions[base] = entity.position.x;
+    positions[base + 1] = entity.position.y;
+    positions[base + 2] = entity.position.z;
+    velocities[base] = entity.velocity.x;
+    velocities[base + 1] = entity.velocity.y;
+    velocities[base + 2] = entity.velocity.z;
+  }
+
+  for (let i = 0; i < foodCount; i++) {
+    const entity = foodSnapshot[i];
+    if (!entity.position) continue;
+    const base = i * 3;
+    foodPositions[base] = entity.position.x;
+    foodPositions[base + 1] = entity.position.y;
+    foodPositions[base + 2] = entity.position.z;
+  }
+
+  workerInput.fishCount = fishCount;
+  workerInput.positions = positions;
+  workerInput.velocities = velocities;
+  workerInput.foodCount = foodCount;
+  workerInput.foodPositions = foodPositions;
+  workerInput.time = elapsedTime;
+
+  const jobFishCount = fishCount;
+
+  // If the runtime can't use threads (or was disabled due to crashes), run locally.
+  if (!runtimeReady || !canUseMultithreading()) {
+    try {
+      pendingResult = simulateStep(workerInput);
+      pendingFishCount = jobFishCount;
+    } catch (error) {
+      console.error('Boids simulation failed', error);
+    }
+    hasJob = false;
+    return;
+  }
+
+  hasJob = true;
+  const handle = spawn(move(workerInput), simulateStep);
+  handle
+    .join()
+    .then((result) => {
+      if (!result.ok) {
+        console.error('Boids worker failed', result.error);
+        // Prevent infinite retry loops if the worker pool is unhealthy.
+        multithreadingDisabled = true;
+        hasJob = false;
+        return;
+      }
+      if (disposed) {
+        hasJob = false;
+        return;
+      }
+      pendingResult = result.value;
+      pendingFishCount = jobFishCount;
+    })
+    .catch((error) => {
+      console.error('Boids worker failed', error);
+      multithreadingDisabled = true;
+      hasJob = false;
+    });
 };
 
 export const BoidsSystem = () => {
   useEffect(() => {
-    return fixedScheduler.add(() => {
-      updateBoidsLogic();
+    ensureRuntime();
+    disposed = false;
+
+    if (!runtimeReady && !multithreadingDisabled && !canUseMultithreading()) {
+      console.warn(
+        '[BoidsSystem] Multithreading disabled: SharedArrayBuffer/crossOriginIsolated not available. Falling back to main-thread simulation.'
+      );
+    }
+
+    const unsubscribe = fixedScheduler.add((dt) => {
+      elapsedTime += dt;
+
+      if (pendingResult) {
+        applyResult();
+      }
+
+      if (!hasJob && !pendingResult) {
+        startWorkerJob();
+      }
     });
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
   }, []);
 
   return null;

@@ -3,7 +3,7 @@
 ## Current focus
 
 - Branch: `main` (features merged)
-- Maintain and polish core systems: water visuals + resistance, currents, fixed-step scheduler, feeding, and physics integration utilities
+- Maintain and polish core systems, including the new worker-offloaded boids + water force pipeline.
 
 ## Recent changes
 
@@ -12,6 +12,7 @@
 - Added physics-safe force-queue utilities and reworked components (Fish/Food) to apply queued forces safely.
 - Added interactive feeding via `FeedingController` and `Food` entities.
 - Fixed food spawning reachability by clamping spawn position to simulation bounds.
+- Offloaded boids, food seeking, and water forces to `multithreading` workers; main thread now applies returned forces.
 
 ## Next steps
 

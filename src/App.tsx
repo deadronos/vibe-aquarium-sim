@@ -6,7 +6,6 @@ import { ECS, world } from './store';
 import type { Entity } from './store';
 import { Tank } from './components/Tank';
 import { Water } from './components/Water';
-import { WaterCurrentSystem } from './systems/WaterCurrentSystem';
 import { Fish } from './components/Fish';
 import { Food } from './components/Food';
 import { Decoration } from './components/Decoration';
@@ -16,7 +15,6 @@ import { HUD } from './components/ui/HUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { ExcitementSystem } from './systems/ExcitementSystem';
-import { WaterResistanceSystem } from './systems/WaterResistanceSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
@@ -140,8 +138,6 @@ function App() {
           <SchedulerSystem />
           <BoidsSystem />
           <ExcitementSystem />
-          <WaterResistanceSystem />
-          <WaterCurrentSystem />
           <FishRenderSystem />
 
           <ECS.Entities in={world.with('isFish')}>
