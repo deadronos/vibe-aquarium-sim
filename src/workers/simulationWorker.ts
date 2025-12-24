@@ -18,14 +18,13 @@ export type SimulationOutput = {
   eatenFoodIndices: number[];
 };
 
-// Reusable data structures to avoid per-frame allocation
-const buckets = new Map<number, number[]>();
-const activeKeys: number[] = [];
+// Reusable data structures for Flat Spatial Hash to avoid per-frame allocation and Map overhead
+// Using a larger hash size reduces collisions, improving performance
+const HASH_SIZE = 16384;
+const HASH_MASK = HASH_SIZE - 1;
+const cellHead = new Int32Array(HASH_SIZE);
+let cellNext = new Int32Array(2000); // Initial capacity, will grow if needed
 
-// Constants hoisted to module scope
-const OFFSET = 5000;
-const STRIDE_Y = 20000;
-const STRIDE_Z = 400000000;
 const EPS = 1e-6;
 
 const tempSteer = { x: 0, y: 0, z: 0 };
@@ -88,17 +87,16 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   const cellSize = neighborDist * 2.5;
 
-  // Clear buckets from previous frame
-  // Only clear the buckets we used to avoid O(N) over the whole map
-  for (let i = 0; i < activeKeys.length; i++) {
-    const key = activeKeys[i];
-    const bucket = buckets.get(key);
-    if (bucket) {
-      bucket.length = 0;
-    }
+  // Resize cellNext if necessary
+  if (fishCount > cellNext.length) {
+    const newCapacity = Math.ceil(fishCount * 1.5);
+    cellNext = new Int32Array(newCapacity);
   }
-  activeKeys.length = 0;
 
+  // Clear hash table heads
+  cellHead.fill(-1);
+
+  // Pass 1: Populate spatial hash
   for (let i = 0; i < fishCount; i++) {
     const base = i * 3;
     const px = positions[base];
@@ -108,16 +106,12 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const gx = Math.floor(px / cellSize);
     const gy = Math.floor(py / cellSize);
     const gz = Math.floor(pz / cellSize);
-    const key = gx + OFFSET + (gy + OFFSET) * STRIDE_Y + (gz + OFFSET) * STRIDE_Z;
-    let bucket = buckets.get(key);
-    if (!bucket) {
-      bucket = [];
-      buckets.set(key, bucket);
-    }
-    if (bucket.length === 0) {
-      activeKeys.push(key);
-    }
-    bucket.push(i);
+
+    // Spatial hashing
+    const h = ((gx * 73856093) ^ (gy * 19349663) ^ (gz * 83492791)) & HASH_MASK;
+
+    cellNext[i] = cellHead[h];
+    cellHead[h] = i;
   }
 
   for (let i = 0; i < fishCount; i++) {
@@ -149,17 +143,17 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const maxZ = Math.floor((pz + neighborDist) / cellSize);
 
     for (let x = minX; x <= maxX; x++) {
-      const xPart = x + OFFSET;
       for (let y = minY; y <= maxY; y++) {
-        const yPart = (y + OFFSET) * STRIDE_Y + xPart;
         for (let z = minZ; z <= maxZ; z++) {
-          const key = (z + OFFSET) * STRIDE_Z + yPart;
-          const bucket = buckets.get(key);
-          if (!bucket || bucket.length === 0) continue;
+          const h = ((x * 73856093) ^ (y * 19349663) ^ (z * 83492791)) & HASH_MASK;
+          let j = cellHead[h];
 
-          for (let k = 0; k < bucket.length; k++) {
-            const j = bucket[k];
-            if (j === i) continue;
+          while (j !== -1) {
+            if (j === i) {
+              j = cellNext[j];
+              continue;
+            }
+
             const nBase = j * 3;
             const nx = positions[nBase];
             const ny = positions[nBase + 1];
@@ -188,6 +182,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
               count++;
             }
+            j = cellNext[j];
           }
         }
       }
