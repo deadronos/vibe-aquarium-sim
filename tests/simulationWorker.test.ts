@@ -58,7 +58,7 @@ describe('simulationWorker', () => {
         water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 }
      };
 
-     const res1 = simulateStep(input1);
+     simulateStep(input1);
 
      // Run with 1 fish (should have 0 steering if alone)
      const input2: SimulationInput = {
