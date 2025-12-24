@@ -18,6 +18,57 @@ export type SimulationOutput = {
   eatenFoodIndices: number[];
 };
 
+// Reusable data structures to avoid per-frame allocation
+const buckets = new Map<number, number[]>();
+const activeKeys: number[] = [];
+
+// Constants hoisted to module scope
+const OFFSET = 5000;
+const STRIDE_Y = 20000;
+const STRIDE_Z = 400000000;
+const EPS = 1e-6;
+
+const tempSteer = { x: 0, y: 0, z: 0 };
+
+const steerTo = (
+  dx: number,
+  dy: number,
+  dz: number,
+  vx: number,
+  vy: number,
+  vz: number,
+  maxSpeedLocal: number,
+  maxForceLocal: number
+) => {
+  const lenSq = dx * dx + dy * dy + dz * dz;
+  if (lenSq < EPS) {
+    tempSteer.x = 0;
+    tempSteer.y = 0;
+    tempSteer.z = 0;
+    return;
+  }
+  const invLen = 1 / Math.sqrt(lenSq);
+  let sx = dx * invLen * maxSpeedLocal;
+  let sy = dy * invLen * maxSpeedLocal;
+  let sz = dz * invLen * maxSpeedLocal;
+
+  sx -= vx;
+  sy -= vy;
+  sz -= vz;
+
+  const forceSq = sx * sx + sy * sy + sz * sz;
+  if (forceSq > maxForceLocal * maxForceLocal) {
+    const scale = maxForceLocal / Math.sqrt(forceSq);
+    sx *= scale;
+    sy *= scale;
+    sz *= scale;
+  }
+
+  tempSteer.x = sx;
+  tempSteer.y = sy;
+  tempSteer.z = sz;
+};
+
 // Pure worker kernel: compute boids steering + water forces using numeric math only.
 export function simulateStep(input: SimulationInput): SimulationOutput {
   const { fishCount, positions, velocities, foodCount, foodPositions, time, boids, bounds, water } =
@@ -37,11 +88,16 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   const cellSize = neighborDist * 2.5;
 
-  const OFFSET = 5000;
-  const STRIDE_Y = 20000;
-  const STRIDE_Z = 400000000;
-
-  const buckets = new Map<number, number[]>();
+  // Clear buckets from previous frame
+  // Only clear the buckets we used to avoid O(N) over the whole map
+  for (let i = 0; i < activeKeys.length; i++) {
+    const key = activeKeys[i];
+    const bucket = buckets.get(key);
+    if (bucket) {
+      bucket.length = 0;
+    }
+  }
+  activeKeys.length = 0;
 
   for (let i = 0; i < fishCount; i++) {
     const base = i * 3;
@@ -58,50 +114,11 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
       bucket = [];
       buckets.set(key, bucket);
     }
+    if (bucket.length === 0) {
+      activeKeys.push(key);
+    }
     bucket.push(i);
   }
-
-  const EPS = 1e-6;
-  const tempSteer = { x: 0, y: 0, z: 0 };
-
-  const steerTo = (
-    dx: number,
-    dy: number,
-    dz: number,
-    vx: number,
-    vy: number,
-    vz: number,
-    maxSpeedLocal: number,
-    maxForceLocal: number
-  ) => {
-    const lenSq = dx * dx + dy * dy + dz * dz;
-    if (lenSq < EPS) {
-      tempSteer.x = 0;
-      tempSteer.y = 0;
-      tempSteer.z = 0;
-      return;
-    }
-    const invLen = 1 / Math.sqrt(lenSq);
-    let sx = dx * invLen * maxSpeedLocal;
-    let sy = dy * invLen * maxSpeedLocal;
-    let sz = dz * invLen * maxSpeedLocal;
-
-    sx -= vx;
-    sy -= vy;
-    sz -= vz;
-
-    const forceSq = sx * sx + sy * sy + sz * sz;
-    if (forceSq > maxForceLocal * maxForceLocal) {
-      const scale = maxForceLocal / Math.sqrt(forceSq);
-      sx *= scale;
-      sy *= scale;
-      sz *= scale;
-    }
-
-    tempSteer.x = sx;
-    tempSteer.y = sy;
-    tempSteer.z = sz;
-  };
 
   for (let i = 0; i < fishCount; i++) {
     const base = i * 3;
@@ -132,11 +149,14 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const maxZ = Math.floor((pz + neighborDist) / cellSize);
 
     for (let x = minX; x <= maxX; x++) {
+      const xPart = x + OFFSET;
       for (let y = minY; y <= maxY; y++) {
+        const yPart = (y + OFFSET) * STRIDE_Y + xPart;
         for (let z = minZ; z <= maxZ; z++) {
-          const key = x + OFFSET + (y + OFFSET) * STRIDE_Y + (z + OFFSET) * STRIDE_Z;
+          const key = (z + OFFSET) * STRIDE_Z + yPart;
           const bucket = buckets.get(key);
-          if (!bucket) continue;
+          if (!bucket || bucket.length === 0) continue;
+
           for (let k = 0; k < bucket.length; k++) {
             const j = bucket[k];
             if (j === i) continue;
