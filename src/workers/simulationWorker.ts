@@ -18,60 +18,42 @@ export type SimulationOutput = {
   eatenFoodIndices: number[];
 };
 
-// Reusable data structures for Flat Spatial Hash to avoid per-frame allocation and Map overhead
-// Using a larger hash size reduces collisions, improving performance
-const HASH_SIZE = 16384;
-const HASH_MASK = HASH_SIZE - 1;
-const cellHead = new Int32Array(HASH_SIZE);
-let cellNext = new Int32Array(2000); // Initial capacity, will grow if needed
-
-const EPS = 1e-6;
-
-const tempSteer = { x: 0, y: 0, z: 0 };
-
-const steerTo = (
-  dx: number,
-  dy: number,
-  dz: number,
-  vx: number,
-  vy: number,
-  vz: number,
-  maxSpeedLocal: number,
-  maxForceLocal: number
-) => {
-  const lenSq = dx * dx + dy * dy + dz * dz;
-  if (lenSq < EPS) {
-    tempSteer.x = 0;
-    tempSteer.y = 0;
-    tempSteer.z = 0;
-    return;
-  }
-  const invLen = 1 / Math.sqrt(lenSq);
-  let sx = dx * invLen * maxSpeedLocal;
-  let sy = dy * invLen * maxSpeedLocal;
-  let sz = dz * invLen * maxSpeedLocal;
-
-  sx -= vx;
-  sy -= vy;
-  sz -= vz;
-
-  const forceSq = sx * sx + sy * sy + sz * sz;
-  if (forceSq > maxForceLocal * maxForceLocal) {
-    const scale = maxForceLocal / Math.sqrt(forceSq);
-    sx *= scale;
-    sy *= scale;
-    sz *= scale;
-  }
-
-  tempSteer.x = sx;
-  tempSteer.y = sy;
-  tempSteer.z = sz;
-};
-
 // Pure worker kernel: compute boids steering + water forces using numeric math only.
+// Note: This function is serialized and sent to a worker thread by the 'multithreading' library.
+// It CANNOT rely on module-level variables or imports that are not explicitly bundled.
+// To achieve persistence (avoiding allocation), we attach state to the worker's global scope.
 export function simulateStep(input: SimulationInput): SimulationOutput {
   const { fishCount, positions, velocities, foodCount, foodPositions, time, boids, bounds, water } =
     input;
+
+  // Access global scope (self in worker) to store persistent buffers
+  // @ts-ignore - 'self' is the worker global scope
+  const ctx = self as any;
+
+  // Initialize persistent cache if missing
+  if (!ctx.__boidsCache) {
+    const HASH_SIZE = 16384;
+    ctx.__boidsCache = {
+      HASH_SIZE,
+      HASH_MASK: HASH_SIZE - 1,
+      cellHead: new Int32Array(HASH_SIZE),
+      cellNext: new Int32Array(2000), // Initial capacity
+      tempSteer: { x: 0, y: 0, z: 0 },
+      EPS: 1e-6
+    };
+  }
+
+  const cache = ctx.__boidsCache;
+  const { HASH_MASK, EPS, tempSteer } = cache;
+
+  // Resize cellNext if necessary
+  if (fishCount > cache.cellNext.length) {
+    const newCapacity = Math.ceil(fishCount * 1.5);
+    cache.cellNext = new Int32Array(newCapacity);
+  }
+
+  const cellHead = cache.cellHead;
+  const cellNext = cache.cellNext;
 
   const steering = new Float32Array(fishCount * 3);
   const externalForces = new Float32Array(fishCount * 3);
@@ -87,11 +69,46 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   const cellSize = neighborDist * 2.5;
 
-  // Resize cellNext if necessary
-  if (fishCount > cellNext.length) {
-    const newCapacity = Math.ceil(fishCount * 1.5);
-    cellNext = new Int32Array(newCapacity);
-  }
+  // Helper function defined inside to capture scope or we could attach to cache too.
+  // Defining it here is fine, it's cheap.
+  const steerTo = (
+    dx: number,
+    dy: number,
+    dz: number,
+    vx: number,
+    vy: number,
+    vz: number,
+    maxSpeedLocal: number,
+    maxForceLocal: number
+  ) => {
+    const lenSq = dx * dx + dy * dy + dz * dz;
+    if (lenSq < EPS) {
+      tempSteer.x = 0;
+      tempSteer.y = 0;
+      tempSteer.z = 0;
+      return;
+    }
+    const invLen = 1 / Math.sqrt(lenSq);
+    let sx = dx * invLen * maxSpeedLocal;
+    let sy = dy * invLen * maxSpeedLocal;
+    let sz = dz * invLen * maxSpeedLocal;
+
+    sx -= vx;
+    sy -= vy;
+    sz -= vz;
+
+    const forceSq = sx * sx + sy * sy + sz * sz;
+    if (forceSq > maxForceLocal * maxForceLocal) {
+      const scale = maxForceLocal / Math.sqrt(forceSq);
+      sx *= scale;
+      sy *= scale;
+      sz *= scale;
+    }
+
+    tempSteer.x = sx;
+    tempSteer.y = sy;
+    tempSteer.z = sz;
+  };
 
   // Clear hash table heads
   cellHead.fill(-1);
