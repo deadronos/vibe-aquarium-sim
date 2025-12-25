@@ -5,9 +5,13 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { useMemo } from 'react';
 
 import { TANK_DIMENSIONS } from '../config/constants';
+import { useQualityStore } from '../performance/qualityStore';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
+
+  const transmissionResolution = useQualityStore((s) => s.settings.tankTransmissionResolution);
+  const transmissionSamples = useQualityStore((s) => s.settings.tankTransmissionSamples);
 
   const mergedGeometry = useMemo(() => {
     // Helper to create a box geometry with offset
@@ -80,8 +84,8 @@ export const Tank = () => {
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
         <MeshTransmissionMaterial
           color="#aaddff"
-          samples={8}
-          resolution={1024}
+          samples={transmissionSamples}
+          resolution={transmissionResolution}
           thickness={0.012}
           roughness={0.15}
           chromaticAberration={0.01}

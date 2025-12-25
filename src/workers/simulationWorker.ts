@@ -18,6 +18,19 @@ export type SimulationOutput = {
   eatenFoodIndices: number[];
 };
 
+type BoidsCache = {
+  HASH_SIZE: number;
+  HASH_MASK: number;
+  cellHead: Int32Array;
+  cellNext: Int32Array;
+  tempSteer: { x: number; y: number; z: number };
+  EPS: number;
+};
+
+type BoidsCacheHost = typeof globalThis & {
+  __boidsCache?: BoidsCache;
+};
+
 // Pure worker kernel: compute boids steering + water forces using numeric math only.
 // Note: This function is serialized and sent to a worker thread by the 'multithreading' library.
 // It CANNOT rely on module-level variables or imports that are not explicitly bundled.
@@ -27,8 +40,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     input;
 
   // Access global scope (self in worker) to store persistent buffers
-  // @ts-ignore - 'self' is the worker global scope
-  const ctx = self as any;
+  const ctx = globalThis as unknown as BoidsCacheHost;
 
   // Initialize persistent cache if missing
   if (!ctx.__boidsCache) {
@@ -39,7 +51,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
       cellHead: new Int32Array(HASH_SIZE),
       cellNext: new Int32Array(2000), // Initial capacity
       tempSteer: { x: 0, y: 0, z: 0 },
-      EPS: 1e-6
+      EPS: 1e-6,
     };
   }
 
