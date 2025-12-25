@@ -25,6 +25,10 @@ type BoidsCache = {
   cellNext: Int32Array;
   tempSteer: { x: number; y: number; z: number };
   EPS: number;
+  // Persistent output buffers to avoid allocation
+  steering: Float32Array;
+  externalForces: Float32Array;
+  eatenFoodIndices: number[];
 };
 
 type BoidsCacheHost = typeof globalThis & {
@@ -52,6 +56,9 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
       cellNext: new Int32Array(2000), // Initial capacity
       tempSteer: { x: 0, y: 0, z: 0 },
       EPS: 1e-6,
+      steering: new Float32Array(2000 * 3),
+      externalForces: new Float32Array(2000 * 3),
+      eatenFoodIndices: [],
     };
   }
 
@@ -64,12 +71,26 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     cache.cellNext = new Int32Array(newCapacity);
   }
 
+  // Resize output buffers if necessary
+  if (fishCount * 3 > cache.steering.length) {
+    const newCapacity = Math.ceil(fishCount * 1.5) * 3;
+    cache.steering = new Float32Array(newCapacity);
+    cache.externalForces = new Float32Array(newCapacity);
+  }
+
   const cellHead = cache.cellHead;
   const cellNext = cache.cellNext;
+  const steering = cache.steering;
+  const externalForces = cache.externalForces;
 
-  const steering = new Float32Array(fishCount * 3);
-  const externalForces = new Float32Array(fishCount * 3);
-  const eatenFoodIndices: number[] = [];
+  // Zero-fill buffers to ensure no ghost forces from previous frames if logic changes
+  // (Current logic overwrites fully, but this is a safety measure against regressions)
+  steering.fill(0, 0, fishCount * 3);
+  externalForces.fill(0, 0, fishCount * 3);
+
+  // Use persistent array but clear it
+  const eatenFoodIndices = cache.eatenFoodIndices;
+  eatenFoodIndices.length = 0;
 
   const neighborDist = boids.neighborDist;
   const separationDist = boids.separationDist;
@@ -394,5 +415,11 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     externalForces[base + 2] = currentZ + dragZ;
   }
 
-  return { steering, externalForces, eatenFoodIndices };
+  // Return subarrays to avoid copying the entire large buffer if capacity > fishCount
+  // Note: structuredClone (used by postMessage) will copy the content of the view.
+  return {
+    steering: steering.subarray(0, fishCount * 3),
+    externalForces: externalForces.subarray(0, fishCount * 3),
+    eatenFoodIndices
+  };
 }
