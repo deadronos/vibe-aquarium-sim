@@ -16,10 +16,11 @@ import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { ExcitementSystem } from './systems/ExcitementSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Vector3 } from 'three';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from './config/constants';
 import * as THREE from 'three';
+import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
 
 const Spawner = () => {
   useEffect(() => {
@@ -97,6 +98,9 @@ const Spawner = () => {
 };
 
 function App() {
+  const directionalLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const spotLightRef = useRef<THREE.SpotLight | null>(null);
+
   return (
     <>
       {/* HUD overlay outside Canvas */}
@@ -114,10 +118,15 @@ function App() {
         <color attach="background" args={['#000510']} />
 
         <Physics gravity={[0, -9.81, 0]}>
+          <AdaptiveQualityManager
+            directionalLightRef={directionalLightRef}
+            spotLightRef={spotLightRef}
+          />
           {/* Hemisphere light gives a soft sky/ground ambient */}
           <hemisphereLight color={0xaaccff} groundColor={0x101020} intensity={0.8} />
           {/* Directional key light to give stronger highlights */}
           <directionalLight
+            ref={directionalLightRef}
             position={[1.5, 3, 1]}
             intensity={1.2}
             castShadow
@@ -125,7 +134,14 @@ function App() {
             shadow-mapSize-height={1024}
           />
           {/* Soft spot to add depth & visible speculars */}
-          <spotLight position={[2, 4, 2]} angle={0.6} penumbra={0.6} intensity={1.2} castShadow />
+          <spotLight
+            ref={spotLightRef}
+            position={[2, 4, 2]}
+            angle={0.6}
+            penumbra={0.6}
+            intensity={1.2}
+            castShadow
+          />
           {/* Cool fill from back */}
           <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
           {/* Environment map for realistic PBR reflections */}
