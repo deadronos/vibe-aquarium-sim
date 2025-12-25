@@ -18,61 +18,54 @@ export type SimulationOutput = {
   eatenFoodIndices: number[];
 };
 
-// Reusable data structures to avoid per-frame allocation
-const buckets = new Map<number, number[]>();
-const activeKeys: number[] = [];
+type BoidsCache = {
+  HASH_SIZE: number;
+  HASH_MASK: number;
+  cellHead: Int32Array;
+  cellNext: Int32Array;
+  tempSteer: { x: number; y: number; z: number };
+  EPS: number;
+};
 
-// Constants hoisted to module scope
-const OFFSET = 5000;
-const STRIDE_Y = 20000;
-const STRIDE_Z = 400000000;
-const EPS = 1e-6;
-
-const tempSteer = { x: 0, y: 0, z: 0 };
-
-const steerTo = (
-  dx: number,
-  dy: number,
-  dz: number,
-  vx: number,
-  vy: number,
-  vz: number,
-  maxSpeedLocal: number,
-  maxForceLocal: number
-) => {
-  const lenSq = dx * dx + dy * dy + dz * dz;
-  if (lenSq < EPS) {
-    tempSteer.x = 0;
-    tempSteer.y = 0;
-    tempSteer.z = 0;
-    return;
-  }
-  const invLen = 1 / Math.sqrt(lenSq);
-  let sx = dx * invLen * maxSpeedLocal;
-  let sy = dy * invLen * maxSpeedLocal;
-  let sz = dz * invLen * maxSpeedLocal;
-
-  sx -= vx;
-  sy -= vy;
-  sz -= vz;
-
-  const forceSq = sx * sx + sy * sy + sz * sz;
-  if (forceSq > maxForceLocal * maxForceLocal) {
-    const scale = maxForceLocal / Math.sqrt(forceSq);
-    sx *= scale;
-    sy *= scale;
-    sz *= scale;
-  }
-
-  tempSteer.x = sx;
-  tempSteer.y = sy;
-  tempSteer.z = sz;
+type BoidsCacheHost = typeof globalThis & {
+  __boidsCache?: BoidsCache;
 };
 
 // Pure worker kernel: compute boids steering + water forces using numeric math only.
+// Note: This function is serialized and sent to a worker thread by the 'multithreading' library.
+// It CANNOT rely on module-level variables or imports that are not explicitly bundled.
+// To achieve persistence (avoiding allocation), we attach state to the worker's global scope.
 export function simulateStep(input: SimulationInput): SimulationOutput {
   const { fishCount, positions, velocities, foodCount, foodPositions, time, boids, bounds, water } =
     input;
+
+  // Access global scope (self in worker) to store persistent buffers
+  const ctx = globalThis as unknown as BoidsCacheHost;
+
+  // Initialize persistent cache if missing
+  if (!ctx.__boidsCache) {
+    const HASH_SIZE = 16384;
+    ctx.__boidsCache = {
+      HASH_SIZE,
+      HASH_MASK: HASH_SIZE - 1,
+      cellHead: new Int32Array(HASH_SIZE),
+      cellNext: new Int32Array(2000), // Initial capacity
+      tempSteer: { x: 0, y: 0, z: 0 },
+      EPS: 1e-6,
+    };
+  }
+
+  const cache = ctx.__boidsCache;
+  const { HASH_MASK, EPS, tempSteer } = cache;
+
+  // Resize cellNext if necessary
+  if (fishCount > cache.cellNext.length) {
+    const newCapacity = Math.ceil(fishCount * 1.5);
+    cache.cellNext = new Int32Array(newCapacity);
+  }
+
+  const cellHead = cache.cellHead;
+  const cellNext = cache.cellNext;
 
   const steering = new Float32Array(fishCount * 3);
   const externalForces = new Float32Array(fishCount * 3);
@@ -88,17 +81,51 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   const cellSize = neighborDist * 2.5;
 
-  // Clear buckets from previous frame
-  // Only clear the buckets we used to avoid O(N) over the whole map
-  for (let i = 0; i < activeKeys.length; i++) {
-    const key = activeKeys[i];
-    const bucket = buckets.get(key);
-    if (bucket) {
-      bucket.length = 0;
+  // Helper function defined inside to capture scope or we could attach to cache too.
+  // Defining it here is fine, it's cheap.
+  const steerTo = (
+    dx: number,
+    dy: number,
+    dz: number,
+    vx: number,
+    vy: number,
+    vz: number,
+    maxSpeedLocal: number,
+    maxForceLocal: number
+  ) => {
+    const lenSq = dx * dx + dy * dy + dz * dz;
+    if (lenSq < EPS) {
+      tempSteer.x = 0;
+      tempSteer.y = 0;
+      tempSteer.z = 0;
+      return;
     }
-  }
-  activeKeys.length = 0;
+    const invLen = 1 / Math.sqrt(lenSq);
+    let sx = dx * invLen * maxSpeedLocal;
+    let sy = dy * invLen * maxSpeedLocal;
+    let sz = dz * invLen * maxSpeedLocal;
 
+    sx -= vx;
+    sy -= vy;
+    sz -= vz;
+
+    const forceSq = sx * sx + sy * sy + sz * sz;
+    if (forceSq > maxForceLocal * maxForceLocal) {
+      const scale = maxForceLocal / Math.sqrt(forceSq);
+      sx *= scale;
+      sy *= scale;
+      sz *= scale;
+    }
+
+    tempSteer.x = sx;
+    tempSteer.y = sy;
+    tempSteer.z = sz;
+  };
+
+  // Clear hash table heads
+  cellHead.fill(-1);
+
+  // Pass 1: Populate spatial hash
   for (let i = 0; i < fishCount; i++) {
     const base = i * 3;
     const px = positions[base];
@@ -108,16 +135,12 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const gx = Math.floor(px / cellSize);
     const gy = Math.floor(py / cellSize);
     const gz = Math.floor(pz / cellSize);
-    const key = gx + OFFSET + (gy + OFFSET) * STRIDE_Y + (gz + OFFSET) * STRIDE_Z;
-    let bucket = buckets.get(key);
-    if (!bucket) {
-      bucket = [];
-      buckets.set(key, bucket);
-    }
-    if (bucket.length === 0) {
-      activeKeys.push(key);
-    }
-    bucket.push(i);
+
+    // Spatial hashing
+    const h = ((gx * 73856093) ^ (gy * 19349663) ^ (gz * 83492791)) & HASH_MASK;
+
+    cellNext[i] = cellHead[h];
+    cellHead[h] = i;
   }
 
   for (let i = 0; i < fishCount; i++) {
@@ -149,17 +172,17 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const maxZ = Math.floor((pz + neighborDist) / cellSize);
 
     for (let x = minX; x <= maxX; x++) {
-      const xPart = x + OFFSET;
       for (let y = minY; y <= maxY; y++) {
-        const yPart = (y + OFFSET) * STRIDE_Y + xPart;
         for (let z = minZ; z <= maxZ; z++) {
-          const key = (z + OFFSET) * STRIDE_Z + yPart;
-          const bucket = buckets.get(key);
-          if (!bucket || bucket.length === 0) continue;
+          const h = ((x * 73856093) ^ (y * 19349663) ^ (z * 83492791)) & HASH_MASK;
+          let j = cellHead[h];
 
-          for (let k = 0; k < bucket.length; k++) {
-            const j = bucket[k];
-            if (j === i) continue;
+          while (j !== -1) {
+            if (j === i) {
+              j = cellNext[j];
+              continue;
+            }
+
             const nBase = j * 3;
             const nx = positions[nBase];
             const ny = positions[nBase + 1];
@@ -188,6 +211,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
               count++;
             }
+            j = cellNext[j];
           }
         }
       }
