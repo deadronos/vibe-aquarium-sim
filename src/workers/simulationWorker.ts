@@ -420,6 +420,6 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
   return {
     steering: steering.subarray(0, fishCount * 3),
     externalForces: externalForces.subarray(0, fishCount * 3),
-    eatenFoodIndices
+    eatenFoodIndices,
   };
 }
