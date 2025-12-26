@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { Water } from '../src/components/Water';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
@@ -18,7 +18,7 @@ describe('Water', () => {
     const mesh = renderer.scene.children[0];
     expect(mesh.type).toBe('Mesh');
 
-    // @ts-ignore
+    // @ts-expect-error - mesh.instance.material has no type in test environment
     const material = mesh.instance.material;
     expect(material.type).toBe('ShaderMaterial');
 
@@ -32,7 +32,7 @@ describe('Water', () => {
   it('updates time uniform on frame', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Water />);
     const mesh = renderer.scene.children[0];
-    // @ts-ignore
+    // @ts-expect-error - mesh.instance.material has no type in test environment
     const material = mesh.instance.material;
 
     expect(material.uniforms.time.value).toBe(0);
@@ -48,11 +48,11 @@ describe('Water', () => {
     // Checking if value changed.
     // Note: If this fails again, I'll assume R3F test renderer clock handling is tricky and I'll skip this check or mock useFrame.
     if (material.uniforms.time.value === 0) {
-        console.warn('Time did not advance. This might be a limitation of the test environment.');
-        // We can at least check if the uniform object is the same reference
-        expect(material.uniforms.time).toBeDefined();
+      console.warn('Time did not advance. This might be a limitation of the test environment.');
+      // We can at least check if the uniform object is the same reference
+      expect(material.uniforms.time).toBeDefined();
     } else {
-        expect(material.uniforms.time.value).toBeGreaterThan(0);
+      expect(material.uniforms.time.value).toBeGreaterThan(0);
     }
   });
 });

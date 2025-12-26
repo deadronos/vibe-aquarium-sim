@@ -58,11 +58,11 @@ describe('SpatialGrid Unit Tests', () => {
   });
 
   it('handles large coordinates within supported range', () => {
-     const grid = new SpatialGrid<string>(10);
-     const pos = new Vector3(1000, 1000, 1000);
-     grid.add(pos, 'far');
+    const grid = new SpatialGrid<string>(10);
+    const pos = new Vector3(1000, 1000, 1000);
+    grid.add(pos, 'far');
 
-     const results = grid.query(pos, 10);
-     expect(results).toContain('far');
+    const results = grid.query(pos, 10);
+    expect(results).toContain('far');
   });
 });

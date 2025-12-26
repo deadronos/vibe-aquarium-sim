@@ -5,7 +5,7 @@ import {
   nextLowerQuality,
   nextHigherQuality,
   clampShadowMapSize,
-  getDeviceMaxDpr
+  getDeviceMaxDpr,
 } from '../src/performance/qualityPresets';
 
 describe('adaptive quality presets', () => {
