@@ -4,6 +4,12 @@ import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
 // Reusable vectors to avoid GC
 const tempSteer = new Vector3();
 
+export type Vec3Like = { x: number; y: number; z: number };
+
+const HALF_TANK_WIDTH = TANK_DIMENSIONS.width / 2;
+const HALF_TANK_HEIGHT = TANK_DIMENSIONS.height / 2;
+const HALF_TANK_DEPTH = TANK_DIMENSIONS.depth / 2;
+
 /**
  * Calculates a steering force to keep an entity within the simulation bounds.
  * Returns true if a boundary force was applied.
@@ -61,17 +67,15 @@ export function getBoundarySteeringForce(
  * Logic extracted from Fish.tsx.
  */
 export function clampPositionToTank(
-  position: { x: number; y: number; z: number },
-  velocity: { x: number; y: number; z: number },
+  position: Vec3Like,
+  velocity: Vec3Like,
+  outPosition: Vec3Like,
+  outVelocity: Vec3Like,
   margin = 0.1
-): {
-  clamped: boolean;
-  position: { x: number; y: number; z: number };
-  velocity: { x: number; y: number; z: number };
-} {
-  const limitX = TANK_DIMENSIONS.width / 2 - margin;
-  const limitY = TANK_DIMENSIONS.height / 2 - margin;
-  const limitZ = TANK_DIMENSIONS.depth / 2 - margin;
+): boolean {
+  const limitX = HALF_TANK_WIDTH - margin;
+  const limitY = HALF_TANK_HEIGHT - margin;
+  const limitZ = HALF_TANK_DEPTH - margin;
 
   let cx = position.x;
   let cy = position.y;
@@ -98,12 +102,13 @@ export function clampPositionToTank(
     clamped = true;
   }
 
-  // Return new objects or the same values?
-  // Since we are returning a struct, we return the values.
-  // The caller should apply them.
-  return {
-    clamped,
-    position: { x: cx, y: cy, z: cz },
-    velocity: { x: vx, y: vy, z: vz },
-  };
+  outPosition.x = cx;
+  outPosition.y = cy;
+  outPosition.z = cz;
+
+  outVelocity.x = vx;
+  outVelocity.y = vy;
+  outVelocity.z = vz;
+
+  return clamped;
 }

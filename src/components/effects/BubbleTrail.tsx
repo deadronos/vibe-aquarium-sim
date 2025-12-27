@@ -15,25 +15,29 @@ interface BubbleTrailProps {
 
 const BUBBLE_COUNT = 8;
 
-export const BubbleTrail = ({ parentPosition, bubbles: propBubbles }: BubbleTrailProps) => {
-  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-
-  const defaultBubbles = Array.from({ length: BUBBLE_COUNT }, (_, i) => ({
+const DEFAULT_BUBBLES: NonNullable<BubbleTrailProps['bubbles']> = Array.from(
+  { length: BUBBLE_COUNT },
+  (_, i) => ({
     offset: new THREE.Vector3(0, i * 0.01, 0),
     speed: 0.15,
     phase: i,
     size: 0.004,
     wobble: 0.01,
-  }));
+  })
+);
 
-  const bubbles = propBubbles ?? defaultBubbles;
+export const BubbleTrail = ({ parentPosition, bubbles: propBubbles }: BubbleTrailProps) => {
+  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  const bubbles = propBubbles ?? DEFAULT_BUBBLES;
   useFrame((state) => {
     if (!instancedMeshRef.current) return;
     const time = state.clock.elapsedTime;
 
     for (let i = 0; i < BUBBLE_COUNT; i++) {
-      const bubble = bubbles[i];
+      const bubble = bubbles[i] ?? DEFAULT_BUBBLES[i];
+      if (!bubble) continue;
 
       // Position relative to parent with upward drift and wobble
       const yOffset = (time * bubble.speed + bubble.phase) % 0.5;

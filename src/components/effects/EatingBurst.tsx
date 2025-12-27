@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -8,22 +8,23 @@ interface EatingBurstProps {
   particles?: Array<{ velocity: THREE.Vector3; size: number }>;
 }
 
+const DURATION_SECONDS = 0.35;
+
 export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurstProps) => {
   const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const startTime = useRef<number | null>(null);
-  const duration = 350; // ms
   const particleCount = particles.length || 10; // Use actual particle count
 
-  useEffect(() => {
-    startTime.current = Date.now();
-  }, []);
-  useFrame(() => {
-    if (!instancedMeshRef.current || !materialRef.current || startTime.current === null) return;
+  useFrame((state) => {
+    if (!instancedMeshRef.current || !materialRef.current) return;
+    if (startTime.current === null) {
+      startTime.current = state.clock.elapsedTime;
+    }
 
-    const elapsed = Date.now() - startTime.current;
-    const progress = elapsed / duration;
+    const elapsed = state.clock.elapsedTime - startTime.current;
+    const progress = elapsed / DURATION_SECONDS;
 
     if (progress >= 1) {
       onComplete();

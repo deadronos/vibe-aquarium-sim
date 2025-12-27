@@ -7,6 +7,10 @@ import type { Entity } from '../store';
 import { integrateForcesToVelocity } from '../utils/physicsHelpers';
 import { clampPositionToTank } from '../utils/boundaryUtils';
 
+const FIXED_DT = 1 / 60;
+const clampOutPosition = { x: 0, y: 0, z: 0 };
+const clampOutVelocity = { x: 0, y: 0, z: 0 };
+
 export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
 
@@ -28,62 +32,68 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // Physics interactions and visuals in render loop
   // useFrame runs after the automatic physics step, making it safe to read/write
   useFrame(() => {
-    if (!rigidBody.current) return;
+    const rb = rigidBody.current;
+    if (!rb) return;
 
     // Use pre-existing targetVelocity from entity (initialized by Spawner)
     const targetVelocity = entity.targetVelocity;
     if (!targetVelocity) return;
 
-    const dt = 1 / 60;
-    const currentVel = rigidBody.current.linvel();
+    const currentPos = rb.translation();
+    const currentVel = rb.linvel();
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
 
     // Apply steering force and external forces
-    integrateForcesToVelocity(targetVelocity, entity, dt);
+    integrateForcesToVelocity(targetVelocity, entity, FIXED_DT);
 
     // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
     if (entity.excitementLevel && entity.excitementLevel > 0.1) {
       // Add extra speed in the current direction, capped
-      const currentSpeed = targetVelocity.length();
-      if (currentSpeed > 0.01) {
+      const speedSq = targetVelocity.lengthSq();
+      if (speedSq > 0.0001) {
+        const speed = Math.sqrt(speedSq);
         const boostAmount = entity.excitementLevel * 0.15; // Gentler boost
-        targetVelocity.normalize().multiplyScalar(currentSpeed + boostAmount);
+        targetVelocity.multiplyScalar((speed + boostAmount) / speed);
       }
     }
 
     // Clamp final velocity to max speed to prevent escaping
     const maxSpeed = 0.8; // Slightly above boids maxSpeed of 0.4
-    if (targetVelocity.length() > maxSpeed) {
-      targetVelocity.normalize().multiplyScalar(maxSpeed);
+    const maxSpeedSq = maxSpeed * maxSpeed;
+    const finalSpeedSq = targetVelocity.lengthSq();
+    if (finalSpeedSq > maxSpeedSq) {
+      targetVelocity.multiplyScalar(maxSpeed / Math.sqrt(finalSpeedSq));
     }
 
     // Set velocity directly (velocity-based approach)
-    rigidBody.current.setLinvel(targetVelocity, true);
+    rb.setLinvel(targetVelocity, true);
 
     // --- SAFETY NET: Force Fish Inside Tank ---
     // If physics glitch causes tunneling, we intercept it before render
-    const currentPos = rigidBody.current.translation();
-    const {
-      clamped,
-      position: newPos,
-      velocity: newVel,
-    } = clampPositionToTank(currentPos, targetVelocity);
+    const clamped = clampPositionToTank(
+      currentPos,
+      targetVelocity,
+      clampOutPosition,
+      clampOutVelocity
+    );
 
     if (clamped) {
       // 1. Force Hard Reset of Physics Position
-      rigidBody.current.setTranslation(newPos, true);
+      rb.setTranslation(clampOutPosition, true);
       // 2. Reflect Velocity (preserve momentum but reverse direction)
-      rigidBody.current.setLinvel(newVel, true);
+      rb.setLinvel(clampOutVelocity, true);
       // 3. Update targetVelocity for next frame continuity
-      targetVelocity.set(newVel.x, newVel.y, newVel.z);
+      targetVelocity.set(clampOutVelocity.x, clampOutVelocity.y, clampOutVelocity.z);
     }
 
     // Sync Physics -> ECS
-    const pos = rigidBody.current.translation();
-    const vel = rigidBody.current.linvel();
-    if (pos && vel) {
-      entity.position?.set(pos.x, pos.y, pos.z);
-      entity.velocity?.set(vel.x, vel.y, vel.z);
+    if (entity.position) {
+      const pos = clamped ? clampOutPosition : currentPos;
+      entity.position.set(pos.x, pos.y, pos.z);
+    }
+    if (entity.velocity) {
+      const vel = clamped ? clampOutVelocity : targetVelocity;
+      entity.velocity.set(vel.x, vel.y, vel.z);
     }
   });
 
