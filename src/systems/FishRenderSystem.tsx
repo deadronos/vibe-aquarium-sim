@@ -25,6 +25,10 @@ for (let i = 0; i < MAX_INSTANCES; i++) {
 let nextIndex = 0;
 const freeIndices: number[] = [];
 const entityToIndex = new Map<Entity, number>();
+const entityLastSeenFrame = new Map<Entity, number>();
+let frameId = 0;
+
+const fishEntitiesQuery = world.with('isFish', 'position', 'velocity');
 
 export const FishRenderSystem = () => {
   const { scene } = useGLTF(fishUrl);
@@ -62,17 +66,13 @@ export const FishRenderSystem = () => {
   useFrame(() => {
     if (!meshRef.current) return;
 
-    const fishEntities = world.with('isFish', 'position', 'velocity');
     let count = 0;
+    frameId++;
 
-    // Track which entities are still active this frame
-    const activeEntities = new Set<Entity>();
-
-    for (const entity of fishEntities) {
+    for (const entity of fishEntitiesQuery) {
       if (count >= MAX_INSTANCES) break;
       if (!entity.position) continue;
-
-      activeEntities.add(entity);
+      entityLastSeenFrame.set(entity, frameId);
 
       // Get or assign stable instance index for this entity
       let idx = entityToIndex.get(entity);
@@ -126,9 +126,10 @@ export const FishRenderSystem = () => {
 
     // Cleanup: remove entities no longer active and recycle their indices
     for (const [e, removedIdx] of entityToIndex) {
-      if (!activeEntities.has(e)) {
+      if (entityLastSeenFrame.get(e) !== frameId) {
         freeIndices.push(removedIdx);
         entityToIndex.delete(e);
+        entityLastSeenFrame.delete(e);
       }
     }
 

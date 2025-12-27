@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, BallCollider } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
@@ -6,32 +6,12 @@ import type { Entity } from '../store';
 import { BubbleTrail } from './effects/BubbleTrail';
 import * as THREE from 'three';
 
+const SPAWN_DURATION_SECONDS = 0.3;
+
 export const Food = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  const [spawnScale, setSpawnScale] = useState(0);
-
-  // Spawn animation - scale from 0 to 1
-  useEffect(() => {
-    let frame: number;
-    const startTime = Date.now();
-    const duration = 300;
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      // Elastic ease out
-      const eased = 1 - Math.pow(1 - progress, 3) * Math.cos(progress * Math.PI * 0.5);
-      setSpawnScale(eased);
-
-      if (progress < 1) {
-        frame = requestAnimationFrame(animate);
-      }
-    };
-
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, []);
+  const spawnStartTimeRef = useRef<number | null>(null);
 
   // Apply initial velocity once
   useEffect(() => {
@@ -41,7 +21,7 @@ export const Food = ({ entity }: { entity: Entity }) => {
   }, [entity.velocity]);
 
   // Sync physics back to ECS
-  useFrame(() => {
+  useFrame((state) => {
     if (!rigidBody.current || !entity.position) return;
 
     const pos = rigidBody.current.translation();
@@ -51,7 +31,22 @@ export const Food = ({ entity }: { entity: Entity }) => {
 
     // Apply spawn scale to mesh
     if (meshRef.current) {
-      meshRef.current.scale.setScalar(spawnScale);
+      if (spawnStartTimeRef.current === null) {
+        spawnStartTimeRef.current = state.clock.elapsedTime;
+      }
+
+      const elapsed = state.clock.elapsedTime - spawnStartTimeRef.current;
+      const progress = elapsed / SPAWN_DURATION_SECONDS;
+
+      if (progress >= 1) {
+        if (meshRef.current.scale.x !== 1) {
+          meshRef.current.scale.setScalar(1);
+        }
+      } else {
+        // Elastic ease out
+        const eased = 1 - Math.pow(1 - progress, 3) * Math.cos(progress * Math.PI * 0.5);
+        meshRef.current.scale.setScalar(eased);
+      }
     }
   });
 
@@ -68,7 +63,7 @@ export const Food = ({ entity }: { entity: Entity }) => {
         gravityScale={0.15} // Mostly neutrally buoyant, sinks slowly
       >
         <BallCollider args={[0.012]} /> {/* 1.2cm collision radius */}
-        <mesh ref={meshRef} castShadow receiveShadow>
+        <mesh ref={meshRef} castShadow receiveShadow scale={0}>
           <sphereGeometry args={[0.015, 16, 16]} /> {/* 1.5cm visual radius */}
           <meshStandardMaterial
             color="#ffaa00"
