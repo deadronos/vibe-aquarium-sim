@@ -22,7 +22,6 @@
     "@types/three": "^0.181.0",
     "miniplex": "^2.0.0",
     "miniplex-react": "^2.0.1",
-    "multithreading": "^0.3.45",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "three": "^0.181.2"
