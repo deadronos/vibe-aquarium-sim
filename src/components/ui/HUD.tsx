@@ -101,11 +101,12 @@ export const HUD = () => {
     [isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, startPlacingDecoration]
   );
 
-  const decorationTypes: { type: DecorationType; icon: string; label: string; shortcut: string }[] = [
-    { type: 'seaweed', icon: '🌿', label: 'Seaweed', shortcut: '1' },
-    { type: 'coral', icon: '🪸', label: 'Coral', shortcut: '2' },
-    { type: 'rock', icon: '🪨', label: 'Rock', shortcut: '3' },
-  ];
+  const decorationTypes: { type: DecorationType; icon: string; label: string; shortcut: string }[] =
+    [
+      { type: 'seaweed', icon: '🌿', label: 'Seaweed', shortcut: '1' },
+      { type: 'coral', icon: '🪸', label: 'Coral', shortcut: '2' },
+      { type: 'rock', icon: '🪨', label: 'Rock', shortcut: '3' },
+    ];
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

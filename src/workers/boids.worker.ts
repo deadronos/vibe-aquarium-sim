@@ -7,7 +7,7 @@ self.onmessage = (event: MessageEvent<SimulationInput>) => {
   } catch (error) {
     self.postMessage({
       type: 'error',
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 };
