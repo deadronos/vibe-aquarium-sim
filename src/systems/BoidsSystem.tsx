@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
-import { waterPhysics } from '../config/waterPhysics';
+import { waterPhysics, currentPhysics } from '../config/waterPhysics';
 import { world } from '../store';
 import type { Entity } from '../store';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
@@ -50,6 +50,7 @@ const workerInput: SimulationInput = {
   boids: BOIDS_CONFIG,
   bounds: SIMULATION_BOUNDS,
   water: waterPhysics,
+  current: currentPhysics,
 };
 
 const ensureCapacity = (buffer: Float32Buffer, needed: number): Float32Buffer => {
