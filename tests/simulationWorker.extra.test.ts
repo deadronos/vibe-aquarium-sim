@@ -26,7 +26,11 @@ const makeInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
 
 describe('simulationWorker extra tests', () => {
   it('handles zero fishCount gracefully', () => {
-    const input = makeInput({ fishCount: 0, positions: new Float32Array(0), velocities: new Float32Array(0) });
+    const input = makeInput({
+      fishCount: 0,
+      positions: new Float32Array(0),
+      velocities: new Float32Array(0),
+    });
     const out = simulateStep(input);
 
     expect(out.steering.length).toBe(0);
@@ -49,7 +53,11 @@ describe('simulationWorker extra tests', () => {
     // Prime the cache with a large count
     simulateStep(makeInput({ fishCount: 300 }));
 
-    const small = makeInput({ fishCount: 2, positions: new Float32Array(6), velocities: new Float32Array(6) });
+    const small = makeInput({
+      fishCount: 2,
+      positions: new Float32Array(6),
+      velocities: new Float32Array(6),
+    });
     // All zeros positions/velocities shouldn't produce forces
     const out = simulateStep(small);
     expect(out.steering.every((v) => v === 0)).toBe(true);
@@ -77,7 +85,11 @@ describe('simulationWorker extra tests', () => {
   });
 
   it('does not throw on NaN positions and returns steering with NaN where appropriate', () => {
-    const input = makeInput({ fishCount: 1, positions: new Float32Array([NaN, 0, 0]), velocities: new Float32Array([0, 0, 0]) });
+    const input = makeInput({
+      fishCount: 1,
+      positions: new Float32Array([NaN, 0, 0]),
+      velocities: new Float32Array([0, 0, 0]),
+    });
     expect(() => simulateStep(input)).not.toThrow();
     const out = simulateStep(input);
     // If NaN is present, steering should contain NaN (not crash)

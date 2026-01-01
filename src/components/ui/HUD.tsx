@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { world } from '../../store';
 import { useGameStore } from '../../gameStore';
 import type { DecorationType } from '../../gameStore';
@@ -90,19 +90,56 @@ export const HUD = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDecorationClick = (type: DecorationType) => {
-    if (isPlacingDecoration && selectedDecorationType === type) {
-      stopPlacingDecoration();
-    } else {
-      startPlacingDecoration(type);
-    }
-  };
+  const handleDecorationClick = useCallback(
+    (type: DecorationType) => {
+      if (isPlacingDecoration && selectedDecorationType === type) {
+        stopPlacingDecoration();
+      } else {
+        startPlacingDecoration(type);
+      }
+    },
+    [isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, startPlacingDecoration]
+  );
 
-  const decorationTypes: { type: DecorationType; icon: string; label: string }[] = [
-    { type: 'seaweed', icon: '🌿', label: 'Seaweed' },
-    { type: 'coral', icon: '🪸', label: 'Coral' },
-    { type: 'rock', icon: '🪨', label: 'Rock' },
-  ];
+  const decorationTypes: { type: DecorationType; icon: string; label: string; shortcut: string }[] =
+    [
+      { type: 'seaweed', icon: '🌿', label: 'Seaweed', shortcut: '1' },
+      { type: 'coral', icon: '🪸', label: 'Coral', shortcut: '2' },
+      { type: 'rock', icon: '🪨', label: 'Rock', shortcut: '3' },
+    ];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case '1':
+          handleDecorationClick('seaweed');
+          break;
+        case '2':
+          handleDecorationClick('coral');
+          break;
+        case '3':
+          handleDecorationClick('rock');
+          break;
+        case 'Escape':
+          if (isPlacingDecoration) {
+            stopPlacingDecoration();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isPlacingDecoration,
+    selectedDecorationType,
+    startPlacingDecoration,
+    stopPlacingDecoration,
+    handleDecorationClick,
+  ]);
 
   return (
     <div className="hud-container">
@@ -204,8 +241,11 @@ export const HUD = () => {
                       type="button"
                       className={`decoration-btn ${isPlacingDecoration && selectedDecorationType === type ? 'active' : ''}`}
                       onClick={() => handleDecorationClick(type)}
-                      title={label}
+                      title={`${label} (${decorationTypes.find((d) => d.type === type)?.shortcut})`}
                     >
+                      <span className="decoration-btn-shortcut">
+                        {decorationTypes.find((d) => d.type === type)?.shortcut}
+                      </span>
                       <span className="decoration-btn-icon">{icon}</span>
                       {label}
                     </button>
