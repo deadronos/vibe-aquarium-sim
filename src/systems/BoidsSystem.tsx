@@ -194,9 +194,9 @@ export const BoidsSystem = () => {
           if (disposed) return;
           const data = event.data;
           if (data.type === 'success') {
-             pendingResult = data.result;
-             pendingFishCount = workerInput.fishCount; // Use the count from the input that triggered this
-             hasJob = false;
+            pendingResult = data.result;
+            pendingFishCount = workerInput.fishCount; // Use the count from the input that triggered this
+            hasJob = false;
           } else if (data.type === 'error') {
             console.error('Worker error:', data.error);
             hasJob = false;
@@ -204,8 +204,8 @@ export const BoidsSystem = () => {
         };
 
         worker.onerror = (error) => {
-           console.error('Worker error:', error);
-           hasJob = false;
+          console.error('Worker error:', error);
+          hasJob = false;
         };
       } catch (e) {
         console.error('Failed to create worker:', e);
