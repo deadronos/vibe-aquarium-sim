@@ -10,6 +10,13 @@ export type SimulationInput = {
   boids: { neighborDist: number; separationDist: number; maxSpeed: number; maxForce: number };
   bounds: { x: number; y: number; z: number };
   water: { density: number; dragCoefficient: number; crossSectionArea: number };
+  current: {
+    strength: number;
+    frequency1: number;
+    frequency2: number;
+    spatialScale1: number;
+    spatialScale2: number;
+  };
 };
 
 export type SimulationOutput = {
@@ -40,8 +47,18 @@ type BoidsCacheHost = typeof globalThis & {
 // It CANNOT rely on module-level variables or imports that are not explicitly bundled.
 // To achieve persistence (avoiding allocation), we attach state to the worker's global scope.
 export function simulateStep(input: SimulationInput): SimulationOutput {
-  const { fishCount, positions, velocities, foodCount, foodPositions, time, boids, bounds, water } =
-    input;
+  const {
+    fishCount,
+    positions,
+    velocities,
+    foodCount,
+    foodPositions,
+    time,
+    boids,
+    bounds,
+    water,
+    current,
+  } = input;
 
   // Access global scope (self in worker) to store persistent buffers
   const ctx = globalThis as unknown as BoidsCacheHost;
@@ -379,9 +396,13 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     steering[base + 2] = steerZ;
 
     // Water current
-    const strength = 0.03;
-    const cx = Math.sin(time * 0.2 + px * 0.5) * 0.5 + Math.cos(time * 0.13 + pz * 0.3) * 0.5;
-    const cz = Math.cos(time * 0.2 + pz * 0.5) * 0.5 - Math.sin(time * 0.13 + px * 0.3) * 0.5;
+    const { strength, frequency1, frequency2, spatialScale1, spatialScale2 } = current;
+    const cx =
+      Math.sin(time * frequency1 + px * spatialScale1) * 0.5 +
+      Math.cos(time * frequency2 + pz * spatialScale2) * 0.5;
+    const cz =
+      Math.cos(time * frequency1 + pz * spatialScale1) * 0.5 -
+      Math.sin(time * frequency2 + px * spatialScale2) * 0.5;
     let currentX = cx;
     let currentY = 0;
     let currentZ = cz;

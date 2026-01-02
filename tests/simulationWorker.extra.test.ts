@@ -20,6 +20,13 @@ const makeInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
     },
     bounds: { x: 100, y: 100, z: 100 },
     water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 },
+    current: {
+      strength: 0.03,
+      frequency1: 0.2,
+      frequency2: 0.13,
+      spatialScale1: 0.5,
+      spatialScale2: 0.3,
+    },
     ...overrides,
   };
 };

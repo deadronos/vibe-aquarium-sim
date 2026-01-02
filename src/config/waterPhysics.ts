@@ -12,3 +12,15 @@ export const waterPhysics = {
   crossSectionArea: 0.01,
   buoyancyForce: 0.0,
 };
+
+/**
+ * Procedural water current configuration.
+ * Used to calculate spatially varying current vectors.
+ */
+export const currentPhysics = {
+  strength: 0.03,
+  frequency1: 0.2,
+  frequency2: 0.13,
+  spatialScale1: 0.5,
+  spatialScale2: 0.3,
+};
