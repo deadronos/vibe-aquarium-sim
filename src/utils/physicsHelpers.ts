@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 import type { Entity } from '../store';
-import { waterPhysics } from '../config/waterPhysics';
+import { waterPhysics, currentPhysics } from '../config/waterPhysics';
 
 const tempImpulseA = new Vector3();
 const tempImpulseB = new Vector3();
@@ -70,14 +70,14 @@ export function computeDragForce(velocity: Vector3, out: Vector3) {
  */
 export function computeWaterCurrent(position: Vector3, time: number, out: Vector3) {
   tempVelocity.copy(position);
-  const strength = 0.03;
+  const { strength, frequency1, frequency2, spatialScale1, spatialScale2 } = currentPhysics;
 
   const cx =
-    Math.sin(time * 0.2 + tempVelocity.x * 0.5) * 0.5 +
-    Math.cos(time * 0.13 + tempVelocity.z * 0.3) * 0.5;
+    Math.sin(time * frequency1 + tempVelocity.x * spatialScale1) * 0.5 +
+    Math.cos(time * frequency2 + tempVelocity.z * spatialScale2) * 0.5;
   const cz =
-    Math.cos(time * 0.2 + tempVelocity.z * 0.5) * 0.5 -
-    Math.sin(time * 0.13 + tempVelocity.x * 0.3) * 0.5;
+    Math.cos(time * frequency1 + tempVelocity.z * spatialScale1) * 0.5 -
+    Math.sin(time * frequency2 + tempVelocity.x * spatialScale2) * 0.5;
 
   tempImpulseA.set(cx, 0, cz);
   if (tempImpulseA.lengthSq() < 1e-6) {
