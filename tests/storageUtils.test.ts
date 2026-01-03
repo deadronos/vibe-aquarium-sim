@@ -51,4 +51,49 @@ describe('storageUtils', () => {
       expect(console.warn).toHaveBeenCalled();
     });
   });
+
+  describe('readBoolFromStorage', () => {
+    it('returns true when stored value is "true"', () => {
+      vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+      expect(readBoolFromStorage('key', false)).toBe(true);
+    });
+
+    it('returns false when stored value is "false"', () => {
+      vi.mocked(window.localStorage.getItem).mockReturnValue('false');
+      expect(readBoolFromStorage('key', true)).toBe(false);
+    });
+
+    it('returns fallback when value is null', () => {
+      vi.mocked(window.localStorage.getItem).mockReturnValue(null);
+      expect(readBoolFromStorage('key', true)).toBe(true);
+    });
+
+    it('handles errors gracefully', () => {
+      vi.mocked(window.localStorage.getItem).mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+      expect(readBoolFromStorage('key', true)).toBe(true);
+      expect(console.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('writeBoolToStorage', () => {
+    it('writes "true" string for true boolean', () => {
+      writeBoolToStorage('key', true);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith('key', 'true');
+    });
+
+    it('writes "false" string for false boolean', () => {
+      writeBoolToStorage('key', false);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith('key', 'false');
+    });
+
+    it('handles errors gracefully', () => {
+      vi.mocked(window.localStorage.setItem).mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+      writeBoolToStorage('key', true);
+      expect(console.warn).toHaveBeenCalled();
+    });
+  });
 });
