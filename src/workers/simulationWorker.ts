@@ -46,6 +46,12 @@ type BoidsCacheHost = typeof globalThis & {
 // Note: This function is serialized and sent to a worker thread by the 'multithreading' library.
 // It CANNOT rely on module-level variables or imports that are not explicitly bundled.
 // To achieve persistence (avoiding allocation), we attach state to the worker's global scope.
+
+// We import the math functions directly. Since this is a worker module, imports are allowed if the bundler handles them.
+// The comment above about 'multithreading' library serialization might be outdated if we are using standard Worker modules now.
+// Based on BoidsSystem.tsx, we are using `new Worker(new URL(...))` with `type: 'module'`, so imports SHOULD work.
+import { calculateDragForce, calculateWaterCurrent } from '../utils/physicsMath';
+
 export function simulateStep(input: SimulationInput): SimulationOutput {
   const {
     fishCount,
@@ -396,44 +402,14 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     steering[base + 2] = steerZ;
 
     // Water current
-    const { strength, frequency1, frequency2, spatialScale1, spatialScale2 } = current;
-    const cx =
-      Math.sin(time * frequency1 + px * spatialScale1) * 0.5 +
-      Math.cos(time * frequency2 + pz * spatialScale2) * 0.5;
-    const cz =
-      Math.cos(time * frequency1 + pz * spatialScale1) * 0.5 -
-      Math.sin(time * frequency2 + px * spatialScale2) * 0.5;
-    let currentX = cx;
-    let currentY = 0;
-    let currentZ = cz;
-    const currentLenSq = currentX * currentX + currentZ * currentZ;
-    if (currentLenSq < EPS) {
-      currentX = 0;
-      currentY = 0;
-      currentZ = 0;
-    } else {
-      const invCurrent = 1 / Math.sqrt(currentLenSq);
-      currentX *= invCurrent * strength;
-      currentZ *= invCurrent * strength;
-    }
+    const currentForce = calculateWaterCurrent(px, pz, time, current);
 
     // Drag
-    const speedSq = vx * vx + vy * vy + vz * vz;
-    let dragX = 0;
-    let dragY = 0;
-    let dragZ = 0;
-    if (speedSq >= 0.0001) {
-      const dragMagnitude =
-        0.5 * water.density * water.dragCoefficient * water.crossSectionArea * speedSq;
-      const invSpeed = 1 / Math.sqrt(speedSq);
-      dragX = -vx * invSpeed * dragMagnitude;
-      dragY = -vy * invSpeed * dragMagnitude;
-      dragZ = -vz * invSpeed * dragMagnitude;
-    }
+    const dragForce = calculateDragForce(vx, vy, vz, water);
 
-    externalForces[base] = currentX + dragX;
-    externalForces[base + 1] = currentY + dragY;
-    externalForces[base + 2] = currentZ + dragZ;
+    externalForces[base] = currentForce.x + dragForce.x;
+    externalForces[base + 1] = currentForce.y + dragForce.y;
+    externalForces[base + 2] = currentForce.z + dragForce.z;
   }
 
   // Return subarrays to avoid copying the entire large buffer if capacity > fishCount
