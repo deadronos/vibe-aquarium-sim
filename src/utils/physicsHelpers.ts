@@ -5,7 +5,6 @@ import { calculateDragForce, calculateWaterCurrent } from './physicsMath';
 
 const tempImpulseA = new Vector3();
 const tempImpulseB = new Vector3();
-const tempVelocity = new Vector3();
 
 /**
  * Applies queued forces (steeringForce, externalForce) to a target velocity vector.
