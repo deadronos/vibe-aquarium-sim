@@ -42,9 +42,9 @@ export function calculateFeeding(
         cache.eatenFoodIndices.push(closestIndex);
       } else {
         const fBase = closestIndex * 3;
-        let seekX = foodPositions[fBase] - px;
-        let seekY = foodPositions[fBase + 1] - py;
-        let seekZ = foodPositions[fBase + 2] - pz;
+        const seekX = foodPositions[fBase] - px;
+        const seekY = foodPositions[fBase + 1] - py;
+        const seekZ = foodPositions[fBase + 2] - pz;
         const seekLenSq = seekX * seekX + seekY * seekY + seekZ * seekZ;
         const EPS = cache.EPS;
         if (seekLenSq > EPS) {
