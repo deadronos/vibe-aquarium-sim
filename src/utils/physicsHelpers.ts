@@ -12,12 +12,14 @@ const tempImpulseB = new Vector3();
  * - `externalForce` is integrated as acceleration * dt.
  * - Clears `externalForce` after application.
  *
+ * This function was previously named `integrateForcesToVelocity`.
+ *
  * @param targetVelocity The velocity vector to modify.
  * @param entity The entity containing the forces.
  * @param dt Time delta.
  * @param mass Mass of the entity. If 1.0 (default), forces are treated as acceleration.
  */
-export function integrateForcesToVelocity(
+export function applyQueuedForcesToRigidBody(
   targetVelocity: Vector3,
   entity: Entity,
   dt: number,
@@ -40,6 +42,9 @@ export function integrateForcesToVelocity(
     entity.externalForce.set(0, 0, 0);
   }
 }
+
+// Backward compatibility or for internal use if needed (aliasing)
+export const integrateForcesToVelocity = applyQueuedForcesToRigidBody;
 
 /**
  * Compute water drag force for a velocity vector and write result to `out`.
