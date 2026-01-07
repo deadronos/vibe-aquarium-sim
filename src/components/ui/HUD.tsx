@@ -3,33 +3,15 @@ import { world } from '../../store';
 import { useGameStore } from '../../gameStore';
 import type { DecorationType } from '../../gameStore';
 import { useQualityStore } from '../../performance/qualityStore';
+import { readBoolFromStorage, writeBoolToStorage } from '../../utils/storageUtils';
 import './HUD.css';
-
-const readBoolFromStorage = (key: string, fallback: boolean): boolean => {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (raw === null) return fallback;
-    return raw === 'true';
-  } catch {
-    return fallback;
-  }
-};
-
-const writeBoolToStorage = (key: string, value: boolean) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(key, value ? 'true' : 'false');
-  } catch {
-    // ignore
-  }
-};
 
 const getDefaultPanelOpen = (): boolean => {
   if (typeof window === 'undefined') return true;
   try {
     return !window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
-  } catch {
+  } catch (error) {
+    console.warn('Error determining default panel state:', error);
     return true;
   }
 };

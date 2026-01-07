@@ -75,9 +75,19 @@ export const FishRenderSystem = () => {
       entityLastSeenFrame.set(entity, frameId);
 
       // Get or assign stable instance index for this entity
+      // Use free list to avoid "instance index collision" and unbounded growth
       let idx = entityToIndex.get(entity);
       if (idx === undefined) {
-        idx = freeIndices.length > 0 ? freeIndices.pop()! : nextIndex++;
+        if (freeIndices.length > 0) {
+          idx = freeIndices.pop()!;
+        } else {
+          // Check bounds to prevent corruption if we exceed MAX_INSTANCES
+          if (nextIndex >= MAX_INSTANCES) {
+            // Silently skip to prevent console spam and crash
+            continue;
+          }
+          idx = nextIndex++;
+        }
         entityToIndex.set(entity, idx);
       }
 
