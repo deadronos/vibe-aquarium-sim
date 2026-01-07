@@ -69,6 +69,10 @@ const applyResult = () => {
     if (!entity?.steeringForce || !entity.externalForce) continue;
     const base = i * 3;
     entity.steeringForce.set(steering[base], steering[base + 1], steering[base + 2]);
+
+    // BoidsSystem is the authoritative source for external forces (drag + current).
+    // It overwrites any previous value to ensure consistency with the worker simulation.
+    // This replaces separate WaterResistance and WaterCurrent systems to avoid race conditions.
     entity.externalForce.set(
       externalForces[base],
       externalForces[base + 1],

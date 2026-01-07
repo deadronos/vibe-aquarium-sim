@@ -4,7 +4,7 @@ import { RigidBody, BallCollider } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { world } from '../store';
 import type { Entity } from '../store';
-import { integrateForcesToVelocity } from '../utils/physicsHelpers';
+import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import { clampPositionToTank } from '../utils/boundaryUtils';
 
 const FIXED_DT = 1 / 60;
@@ -44,7 +44,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
 
     // Apply steering force and external forces
-    integrateForcesToVelocity(targetVelocity, entity, FIXED_DT);
+    applyQueuedForcesToRigidBody(targetVelocity, entity, FIXED_DT);
 
     // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
     if (entity.excitementLevel && entity.excitementLevel > 0.1) {
