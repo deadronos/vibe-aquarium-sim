@@ -26,6 +26,7 @@ uniform vec3 waterColor;
 uniform float opacity;
 uniform float causticsScale;
 uniform float causticsSpeed;
+uniform float causticsIntensity;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -126,7 +127,7 @@ void main() {
 
   // Caustics pattern
   float noise = snoise(vec3(vPosition.x * causticsScale, vPosition.y * causticsScale + time * causticsSpeed, vPosition.z * causticsScale));
-  float caustics = smoothstep(0.4, 0.6, noise) * 0.3; // Sharpen noise for caustic look
+  float caustics = smoothstep(0.4, 0.6, noise) * causticsIntensity; // Sharpen noise for caustic look
 
   // Fresnel
   vec3 viewDir = safeNormalize(vViewPosition);

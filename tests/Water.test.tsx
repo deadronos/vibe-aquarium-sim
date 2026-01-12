@@ -3,6 +3,7 @@ import { Water } from '../src/components/Water';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
 import React from 'react';
+import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 
 // Mock ResizeObserver which is needed by R3F/Three
 global.ResizeObserver = class ResizeObserver {
@@ -13,7 +14,11 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('Water', () => {
   it('renders mesh and shader material with correct uniforms', async () => {
-    const renderer = await ReactThreeTestRenderer.create(<Water />);
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <Water />
+      </VisualQualityProvider>
+    );
 
     const mesh = renderer.scene.children[0];
     expect(mesh.type).toBe('Mesh');
@@ -26,11 +31,16 @@ describe('Water', () => {
     expect(material.uniforms.opacity.value).toBe(0.3);
     expect(material.uniforms.causticsScale.value).toBe(2.0);
     expect(material.uniforms.causticsSpeed.value).toBe(0.5);
+    expect(material.uniforms.causticsIntensity.value).toBe(0.3);
     expect(material.uniforms.time.value).toBe(0);
   });
 
   it('updates time uniform on frame', async () => {
-    const renderer = await ReactThreeTestRenderer.create(<Water />);
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <Water />
+      </VisualQualityProvider>
+    );
     const mesh = renderer.scene.children[0];
     // @ts-expect-error - mesh.instance.material has no type in test environment
     const material = mesh.instance.material;
