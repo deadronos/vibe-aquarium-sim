@@ -41,7 +41,7 @@ export type Entity = {
   excitementDecay?: number; // Time remaining for excitement
 
   // Render / spawn properties
-  modelIndex?: 0 | 1; // which fish GLB model to use (assigned at spawn time)
+  modelIndex?: 0 | 1 | 2; // which fish GLB model to use (assigned at spawn time)
 };
 
 export const world = new World<Entity>();
