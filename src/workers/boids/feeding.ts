@@ -2,7 +2,6 @@ import type { BoidsCache, Float32Buffer } from './types';
 import { steerTo } from './steering';
 
 export function calculateFeeding(
-  i: number,
   px: number,
   py: number,
   pz: number,

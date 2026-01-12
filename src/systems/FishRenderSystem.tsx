@@ -75,10 +75,10 @@ export const FishRenderSystem = () => {
 
       // Assign model index to the entity if it doesn't already have one
       // We store it directly on the entity as `modelIndex` (0, 1, or 2) for simplicity
-      let modelIndex: number | undefined = entity.modelIndex;
-      if (![0, 1, 2].includes(modelIndex as number)) {
+      let modelIndex: 0 | 1 | 2 | undefined = entity.modelIndex;
+      if (modelIndex === undefined || ![0, 1, 2].includes(modelIndex)) {
         // Randomize across three models evenly
-        modelIndex = Math.floor(Math.random() * 3);
+        modelIndex = Math.floor(Math.random() * 3) as 0 | 1 | 2;
         entity.modelIndex = modelIndex;
       }
 

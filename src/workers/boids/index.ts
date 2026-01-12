@@ -202,7 +202,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
     // --- Feeding ---
     const feedForce = calculateFeeding(
-      i, px, py, pz, vx, vy, vz,
+      px, py, pz, vx, vy, vz,
       foodCount, foodPositions,
       maxSpeed, maxForceDouble, cache
     );

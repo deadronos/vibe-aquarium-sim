@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 
 // We'll load GLBs from the public folder so authors can drop models there.
-export const MODEL_URLS = ['/Copilot3D-fish.glb', '/Copilot3D-fish2.glb', '/Copilot3D-fish3.glb'];
+const base = import.meta.env.BASE_URL;
+export const MODEL_URLS = [
+  `${base}Copilot3D-fish.glb`,
+  `${base}Copilot3D-fish2.glb`,
+  `${base}Copilot3D-fish3.glb`,
+];
 
 // Exported helper used by the component and unit tests
 export function extractModelAssets(scene: THREE.Object3D) {
