@@ -2,6 +2,9 @@
 
 A relaxing, physics-driven aquarium simulation built with React, Three.js and Rapier physics — designed as a high-performance, ECS-driven interactive demo.
 
+Models were generated with experimental Copilot 3D:
+(https://copilot.microsoft.com/labs/experiments/3d-generations)
+
 Live demo: [deadronos.github.io/vibe-aquarium-sim](https://deadronos.github.io/vibe-aquarium-sim/)
 Image: ![vibe aquarium screenshot](./image.png)
 
