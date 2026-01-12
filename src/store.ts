@@ -39,6 +39,9 @@ export type Entity = {
   // Fish state
   excitementLevel?: number; // 0-1, triggers flash/speed boost
   excitementDecay?: number; // Time remaining for excitement
+
+  // Render / spawn properties
+  modelIndex?: 0 | 1; // which fish GLB model to use (assigned at spawn time)
 };
 
 export const world = new World<Entity>();
