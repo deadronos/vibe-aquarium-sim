@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import * as THREE from 'three';
-import { MODEL_URLS, extractModelAssets } from '../src/systems/FishRenderSystem';
+import { MODEL_URLS, extractModelAssets } from '../src/systems/fishModels';
 
 describe('FishRenderSystem model configuration', () => {
   it('exposes three model URLs and includes the 3rd model', () => {
