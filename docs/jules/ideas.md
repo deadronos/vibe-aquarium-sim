@@ -1,55 +1,41 @@
-# Feature Ideas for Vibe Aquarium Sim
+Based on my analysis of your codebase (specifically 
 
-Based on the analysis of the ECS architecture (Miniplex), Physics integration (Rapier), and Boids logic, here are 3 feature ideas that extend the simulation capabilities.
+App.tsx
+, 
 
-## 1. Predator Agent (The "Shark")
+Water.tsx
+, and the custom 
 
-**Concept:** Introduce a larger "Predator" entity that actively patrols the tank, adding emergent behavior.
+waterShader.ts
+) and the screenshot provided, here are 5 concrete ideas to significantly improve the visual quality of your aquarium simulation:
 
-**Behavior:**
+1. Cinematic Post-Processing (Instant "Vibe")
+Right now, the render looks very "raw." Adding post-processing is the single biggest upgrade you can make.
 
-- **Prey (Fish):** Update `BoidsSystem` to include a "Flee" behavior. Fish will apply a strong steering force _away_ from any entity tagged `isPredator` within a certain radius.
-- **Predator:** The predator seeks the "Center of Mass" of nearby fish clusters (Cohesion) but moves slower than the individual fish burst speed.
+Bloom: Make the corals and brighter parts of the fish "glow" slightly. This mimics how light scatters underwater.
+Color Grading: Shift the overall tone to a deep cyan/teal.
+Vignette: Darken the corners to focus the eye on the center.
+Implementation: Use @react-three/postprocessing with EffectComposer, Bloom, and Vignette.
+2. Real Caustics (Replacing Noise)
+Your current 
 
-**Technical Implementation:**
+waterShader.ts
+ uses Simplex Noise to fake caustic patterns (mix(waterColor * 0.5...). While clever, it looks flat.
 
-- **ECS:** Add `isPredator` tag to `Entity` in `src/store.ts`.
-- **Component:** Create `src/components/Shark.tsx`. Can reuse the existing `CopilotClownFish.glb` scaled 2x with a tinted material (e.g., grey/red) or import a new asset.
-- **System:** Update `BoidsSystem.tsx` to:
-  - Iterate over predators separately or include them in the spatial grid.
-  - Calculate `flee` force for fish when near a predator.
-  - Calculate `seek` force for predator towards fish.
+Idea: Use the <Caustics> component from @react-three/drei.
+Why: This projects actual light ray patterns onto your floor and the fish themselves, creating dynamic, sharp, shifting lines of light that react to the geometry. It looks next-gen compared to a noise texture.
+3. Volumetric "God Rays"
+Underwater scenes are defined by light shafts piercing through the surface.
 
-## 2. Interactive Feeding System
+Idea: Add volumetric lighting coming from your main directional light.
+Implementation: You can use @react-three/drei's <SpotLight> with the volumetric prop turned on, or a dedicated GodRays effect from post-processing. This adds a hazy, dense atmosphere that screams "underwater."
+4. Advanced Water Surface (Refraction & Reflection)
+Your current water box is a simple volume. The surface transparency is good, but it lacks interaction with the world.
 
-**Concept:** Allow users to interact with the simulation by clicking to drop "Food Pellets", which fish will swarm to eat.
+Idea: Apply <MeshTransmissionMaterial> (which you already use for the Tank glass!) to the Water volume itself, but with different settings (higher roughness, lower distortion).
+Alternatively: Use <MeshReflectorMaterial> on just the top face of the water to simulate real-time reflections of the fish and corals on the underside of the water surface.
+5. "Marine Snow" & Floating Particulates
+The water looks perfectly clear, which feels artificial. Real ocean water has tiny particles floating in it.
 
-**Behavior:**
-
-- **Physics:** Food pellets are small rigid bodies affected by gravity and water drag.
-- **Fish:** Fish break their standard schooling formation to "Seek" the nearest food pellet (a new steering force with high priority/weight).
-- **Consumption:** When a fish gets close enough to a food entity (e.g., < 0.1 units), the food entity is removed (eaten).
-
-**Technical Implementation:**
-
-- **ECS:** Add `isFood` tag to `Entity`.
-- **Component:** Create `src/components/Food.tsx` (simple Sphere mesh + small `RigidBody`).
-- **Input:** Add a click handler in `App.tsx` (using `useThree` raycaster) to spawn a Food entity at the cursor's world position (with a small random offset).
-- **System:** Update `BoidsSystem` (or create `FeedingSystem.tsx`) to query `isFood` entities and apply attraction forces to nearby fish.
-
-## 3. Environmental Obstacles & Avoidance
-
-**Concept:** Add static objects (Rocks, Coral, Ruins) that fish actively avoid, improving the realism of the navigation.
-
-**Behavior:**
-
-- Currently, fish only avoid the "Tank Walls" (simulation bounds).
-- Adding complex static geometry requires fish to "steer" around them rather than just colliding and bouncing physically (which looks unnatural for fish).
-
-**Technical Implementation:**
-
-- **ECS:** Add `isObstacle` tag to `Entity`.
-- **Component:** Create `src/components/Obstacle.tsx` using `RigidBody type="fixed"` and a `mesh` (e.g., low-poly rock or procedural shape).
-- **System:** Update `BoidsSystem` to include an "Obstacle Avoidance" rule.
-  - Use raycasting (via Rapier `world.castRay`) or simple sphere-sphere checks ahead of the fish's velocity vector.
-  - Apply a lateral steering force to guide the fish away before a collision occurs.
+Idea: Add a global particle system of tiny, slow-moving white specks ("marine snow") that drift with the current. This adds immense depth perception because it gives the camera parallax cues, making the tank feel like a 3D volume rather than a 2D image.
+Which of these would you like me to tackle first? (I recommend starting with Post-Processing or Caustics for the biggest immediate impact).

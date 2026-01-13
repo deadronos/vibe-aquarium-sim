@@ -42,6 +42,11 @@ export type Entity = {
 
   // Render / spawn properties
   modelIndex?: 0 | 1 | 2; // which fish GLB model to use (assigned at spawn time)
+
+  // FishRenderSystem bookkeeping (avoid Map allocations in useFrame hot path)
+  __vibeFishQuatIndex?: number; // >=0 index into pool; -1 for fallback
+  __vibeFishSeenFrame?: number;
+  __vibeFishRenderedFrame?: number;
 };
 
 export const world = new World<Entity>();

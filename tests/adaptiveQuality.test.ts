@@ -1,5 +1,6 @@
 import { describe, expect, test, vi, afterEach } from 'vitest';
 import {
+  QUALITY_PRESETS,
   getQualitySettings,
   getPresetDpr,
   nextLowerQuality,
@@ -29,6 +30,18 @@ describe('adaptive quality presets', () => {
     expect(s.tankTransmissionResolution).toBeGreaterThan(0);
     expect(s.tankTransmissionSamples).toBeGreaterThan(0);
     expect(s.shadowMapSize).toBeGreaterThan(0);
+  });
+
+  test('preset invariants: low keeps key flags stable', () => {
+    expect(QUALITY_PRESETS.low.causticsEnabled).toBe(true);
+    expect(QUALITY_PRESETS.low.fishRimLightingEnabled).toBe(true);
+    expect(QUALITY_PRESETS.low.depthOfFieldEnabled).toBe(false);
+  });
+
+  test('preset invariants: shipped presets keep caustics enabled', () => {
+    for (const preset of Object.values(QUALITY_PRESETS)) {
+      expect(preset.causticsEnabled).toBe(true);
+    }
   });
 
   test('nextLowerQuality returns correct levels', () => {

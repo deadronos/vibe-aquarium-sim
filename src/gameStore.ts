@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { VisualQualityFlags } from './performance/qualityPresets';
 
 export type DecorationType = 'seaweed' | 'coral' | 'rock';
 
@@ -17,12 +18,17 @@ interface GameState {
     id: string;
   }>;
 
+  // Visual overrides (optional; defaults to presets)
+  visualQualityOverrides: Partial<VisualQualityFlags>;
+
   // Actions
   setLastFedTime: (time: Date) => void;
   startPlacingDecoration: (type: DecorationType) => void;
   stopPlacingDecoration: () => void;
   addEffect: (effect: GameState['pendingEffects'][0]) => void;
   removeEffect: (id: string) => void;
+
+  setVisualQualityOverrides: (overrides: Partial<VisualQualityFlags>) => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -30,6 +36,7 @@ export const useGameStore = create<GameState>((set) => ({
   isPlacingDecoration: false,
   selectedDecorationType: 'seaweed',
   pendingEffects: [],
+  visualQualityOverrides: {},
 
   setLastFedTime: (time) => set({ lastFedTime: time }),
 
@@ -49,5 +56,13 @@ export const useGameStore = create<GameState>((set) => ({
   removeEffect: (id) =>
     set((state) => ({
       pendingEffects: state.pendingEffects.filter((e) => e.id !== id),
+    })),
+
+  setVisualQualityOverrides: (overrides) =>
+    set((state) => ({
+      visualQualityOverrides: {
+        ...state.visualQualityOverrides,
+        ...overrides,
+      },
     })),
 }));

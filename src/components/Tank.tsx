@@ -1,11 +1,21 @@
 import { RigidBody } from '@react-three/rapier';
 import { Box, Text, MeshTransmissionMaterial } from '@react-three/drei';
-import { BackSide, BoxGeometry } from 'three';
+import { useFrame } from '@react-three/fiber';
+import {
+  AdditiveBlending,
+  BoxGeometry,
+  BufferGeometry,
+  Color,
+  PlaneGeometry,
+  ShaderMaterial,
+} from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
+import { useVisualQuality } from '../performance/VisualQualityContext';
+import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
@@ -40,12 +50,25 @@ export const Tank = () => {
     const right = createWall(wallThickness, height, depth, width / 2 + wallThickness / 2, 0, 0);
     const left = createWall(wallThickness, height, depth, -width / 2 - wallThickness / 2, 0, 0);
 
-    const merged = BufferGeometryUtils.mergeGeometries([back, front, right, left]);
-    return merged;
+    const parts = [back, front, right, left];
+    try {
+      const merged = BufferGeometryUtils.mergeGeometries(parts);
+      return merged ?? new BufferGeometry();
+    } finally {
+      for (const g of parts) g.dispose();
+    }
   }, [width, height, depth, wallThickness]);
+
+  useEffect(() => {
+    return () => {
+      mergedGeometry.dispose();
+    };
+  }, [mergedGeometry]);
 
   return (
     <group>
+      <TankCausticsOverlay />
+
       {/* Floor */}
       <RigidBody
         type="fixed"
@@ -83,16 +106,23 @@ export const Tank = () => {
       {/* Visual Glass (Single Mesh) */}
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
         <MeshTransmissionMaterial
-          color="#aaddff"
+          color="#ffffff"
           samples={transmissionSamples}
           resolution={transmissionResolution}
-          thickness={0.012}
-          roughness={0.15}
-          chromaticAberration={0.01}
-          anisotropy={0.01}
+          thickness={0.2}
+          roughness={0.01}
+          chromaticAberration={0.06}
+          anisotropy={0.1}
           ior={1.5}
+          transmission={1}
+          transparent={true}
+          opacity={0.4}
+          envMapIntensity={0.1}
+          clearcoat={0.8}
+          attenuationDistance={0.01}
+          attenuationColor="#95abf6"
+          backside={true}
           toneMapped={true}
-          side={BackSide}
         />
       </mesh>
 
@@ -116,4 +146,83 @@ export const Tank = () => {
       </Text>
     </group>
   );
+};
+
+const CAUSTICS_OVERLAY_INSET = 0.003;
+
+const TankCausticsOverlayEnabled = () => {
+  const materialRef = useRef<ShaderMaterial>(null);
+  const { width, height, depth } = TANK_DIMENSIONS;
+
+  const uniforms = useMemo(
+    () => ({
+      time: { value: 0 },
+      intensity: { value: 0.85 },
+      scale: { value: 1.35 },
+      speed: { value: 0.45 },
+      color: { value: new Color('#aaddff') },
+    }),
+    []
+  );
+
+  const geometry = useMemo(() => {
+    const floor = new PlaneGeometry(width, depth);
+    floor.rotateX(-Math.PI / 2);
+    floor.translate(0, -height / 2 + CAUSTICS_OVERLAY_INSET, 0);
+
+    const back = new PlaneGeometry(width, height);
+    back.translate(0, 0, -depth / 2 + CAUSTICS_OVERLAY_INSET);
+
+    const front = new PlaneGeometry(width, height);
+    front.rotateY(Math.PI);
+    front.translate(0, 0, depth / 2 - CAUSTICS_OVERLAY_INSET);
+
+    const right = new PlaneGeometry(depth, height);
+    right.rotateY(-Math.PI / 2);
+    right.translate(width / 2 - CAUSTICS_OVERLAY_INSET, 0, 0);
+
+    const left = new PlaneGeometry(depth, height);
+    left.rotateY(Math.PI / 2);
+    left.translate(-width / 2 + CAUSTICS_OVERLAY_INSET, 0, 0);
+
+    const parts = [floor, back, front, right, left];
+    try {
+      const merged = BufferGeometryUtils.mergeGeometries(parts);
+      return merged ?? new BufferGeometry();
+    } finally {
+      for (const g of parts) g.dispose();
+    }
+  }, [depth, height, width]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+
+  useFrame((state) => {
+    if (!materialRef.current) return;
+    materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+  });
+
+  return (
+    <mesh geometry={geometry}>
+      <shaderMaterial
+        ref={materialRef}
+        vertexShader={causticsVertexShader}
+        fragmentShader={causticsFragmentShader}
+        uniforms={uniforms}
+        transparent={true}
+        blending={AdditiveBlending}
+        depthWrite={false}
+        depthTest={true}
+      />
+    </mesh>
+  );
+};
+
+export const TankCausticsOverlay = () => {
+  const { causticsEnabled } = useVisualQuality();
+  if (!causticsEnabled) return null;
+  return <TankCausticsOverlayEnabled />;
 };
