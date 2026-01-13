@@ -13,6 +13,7 @@
 - Added interactive feeding via `FeedingController` and `Food` entities.
 - Fixed food spawning reachability by clamping spawn position to simulation bounds.
 - Offloaded boids, food seeking, and water forces to `multithreading` workers; main thread now applies returned forces.
+- Backfilled tank visual materials and caustics values into `DES015` and created `TASK013` (completed) and `TASK014` (pending) to add verification tests (2026-01-13).
 
 ## Next steps
 

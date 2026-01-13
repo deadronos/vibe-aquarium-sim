@@ -6,7 +6,7 @@
 
 ## Pending
 
-- None
+- [TASK014] Add unit tests for Tank material defaults - Pending (2026-01-13)
 
 ## Completed
 
@@ -22,3 +22,4 @@
 - [TASK010] Gameplay/UX Improvements & Physics Scale Review - Completed (2025-12-16)
 - [TASK011] Fix Food Spawning Reachability - Completed (2025-12-17)
 - [TASK012] Offload boids + water forces to multithreading workers - Completed (2025-12-21)
+- [TASK013] Record tank material values & create design doc (DES015) - Completed (2026-01-13)
