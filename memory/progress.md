@@ -39,3 +39,8 @@
 
 - Offloaded boids, food seeking, and water forces to a `multithreading` worker kernel; main thread now applies results and side effects (TASK012).
 - App wiring updated to avoid double-applying water forces; format and lint run cleanly.
+
+### 2026-01-13
+
+- Backfilled the Tank visual material and caustics uniforms into a new design doc `DES015`. Recorded exact `MeshTransmissionMaterial` defaults (opacity, ior, attenuationColor, clearcoat, etc.) and caustics shader uniforms (intensity, scale, speed, color).
+- Created `TASK013` (completed) to record values and `TASK014` (pending) to add unit tests ensuring the Tank material defaults remain stable.
