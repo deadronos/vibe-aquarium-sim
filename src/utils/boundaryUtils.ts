@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
+import { checkBoundViolation, isAnyBoundViolated } from './boundaryMath';
 
 // Reusable vectors to avoid GC
 const tempSteer = new Vector3();
@@ -23,35 +24,13 @@ export function getBoundarySteeringForce(
   outForce: Vector3
 ): boolean {
   const { x, y, z } = position;
-  tempSteer.set(0, 0, 0);
-  let boundForce = false;
 
-  if (x < -SIMULATION_BOUNDS.x) {
-    tempSteer.x += 1;
-    boundForce = true;
-  }
-  if (x > SIMULATION_BOUNDS.x) {
-    tempSteer.x -= 1;
-    boundForce = true;
-  }
-  if (y < -SIMULATION_BOUNDS.y) {
-    tempSteer.y += 1;
-    boundForce = true;
-  }
-  if (y > SIMULATION_BOUNDS.y) {
-    tempSteer.y -= 1;
-    boundForce = true;
-  }
-  if (z < -SIMULATION_BOUNDS.z) {
-    tempSteer.z += 1;
-    boundForce = true;
-  }
-  if (z > SIMULATION_BOUNDS.z) {
-    tempSteer.z -= 1;
-    boundForce = true;
-  }
+  const boundDirX = checkBoundViolation(x, SIMULATION_BOUNDS.x);
+  const boundDirY = checkBoundViolation(y, SIMULATION_BOUNDS.y);
+  const boundDirZ = checkBoundViolation(z, SIMULATION_BOUNDS.z);
 
-  if (boundForce) {
+  if (isAnyBoundViolated(boundDirX, boundDirY, boundDirZ)) {
+    tempSteer.set(boundDirX, boundDirY, boundDirZ);
     tempSteer.normalize().multiplyScalar(maxSpeed);
     tempSteer.sub(velocity).clampLength(0, maxForce * 2);
     outForce.add(tempSteer);
