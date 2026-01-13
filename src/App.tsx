@@ -11,6 +11,8 @@ import { Food } from './components/Food';
 import { Decoration } from './components/Decoration';
 import { FeedingController } from './components/FeedingController';
 import { EffectsManager } from './components/EffectsManager';
+import { AmbientParticles } from './components/AmbientParticles';
+import { PostProcessing } from './components/PostProcessing';
 import { HUD } from './components/ui/HUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
@@ -21,6 +23,7 @@ import { Vector3 } from 'three';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from './config/constants';
 import * as THREE from 'three';
 import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
+import { VisualQualityProvider } from './performance/VisualQualityProvider';
 
 const Spawner = () => {
   useEffect(() => {
@@ -106,74 +109,79 @@ function App() {
       {/* HUD overlay outside Canvas */}
       <HUD />
 
-      <Canvas
-        camera={{ position: [0, 0, 4.5], fov: 50 }}
-        shadows
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
-          gl.outputColorSpace = THREE.SRGBColorSpace;
-        }}
-      >
-        <color attach="background" args={['#000510']} />
+      <VisualQualityProvider>
+        <Canvas
+          camera={{ position: [0, 0, 4.5], fov: 50 }}
+          shadows
+          onCreated={({ gl }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1.0;
+            gl.outputColorSpace = THREE.SRGBColorSpace;
+          }}
+        >
+          <color attach="background" args={['#000510']} />
 
-        <Physics gravity={[0, -9.81, 0]}>
-          <AdaptiveQualityManager
-            directionalLightRef={directionalLightRef}
-            spotLightRef={spotLightRef}
-          />
-          {/* Hemisphere light gives a soft sky/ground ambient */}
-          <hemisphereLight color={0xaaccff} groundColor={0x101020} intensity={0.8} />
-          {/* Directional key light to give stronger highlights */}
-          <directionalLight
-            ref={directionalLightRef}
-            position={[1.5, 3, 1]}
-            intensity={1.2}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
-          />
-          {/* Soft spot to add depth & visible speculars */}
-          <spotLight
-            ref={spotLightRef}
-            position={[2, 4, 2]}
-            angle={0.6}
-            penumbra={0.6}
-            intensity={1.2}
-            castShadow
-          />
-          {/* Cool fill from back */}
-          <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
-          {/* Environment map for realistic PBR reflections */}
-          <Environment preset="studio" background={true} />
+          <Physics gravity={[0, -9.81, 0]}>
+            <AdaptiveQualityManager
+              directionalLightRef={directionalLightRef}
+              spotLightRef={spotLightRef}
+            />
+            {/* Hemisphere light gives a soft sky/ground ambient */}
+            <hemisphereLight color={0xaaccff} groundColor={0x101020} intensity={0.8} />
+            {/* Directional key light to give stronger highlights */}
+            <directionalLight
+              ref={directionalLightRef}
+              position={[1.5, 3, 1]}
+              intensity={1.2}
+              castShadow
+              shadow-mapSize-width={1024}
+              shadow-mapSize-height={1024}
+            />
+            {/* Soft spot to add depth & visible speculars */}
+            <spotLight
+              ref={spotLightRef}
+              position={[2, 4, 2]}
+              angle={0.6}
+              penumbra={0.6}
+              intensity={1.2}
+              castShadow
+            />
+            {/* Cool fill from back */}
+            <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
+            {/* Environment map for realistic PBR reflections */}
+            <Environment preset="studio" background={true} />
 
-          <Tank />
-          <Water />
+            <Tank />
+            <Water />
 
-          <Spawner />
-          <SchedulerSystem />
-          <BoidsSystem />
-          <ExcitementSystem />
-          <FishRenderSystem />
+            <Spawner />
+            <SchedulerSystem />
+            <BoidsSystem />
+            <ExcitementSystem />
+            <FishRenderSystem />
 
-          <ECS.Entities in={world.with('isFish')}>
-            {(entity: Entity) => <Fish entity={entity} />}
-          </ECS.Entities>
+            <ECS.Entities in={world.with('isFish')}>
+              {(entity: Entity) => <Fish entity={entity} />}
+            </ECS.Entities>
 
-          <ECS.Entities in={world.with('isFood')}>
-            {(entity: Entity) => <Food entity={entity} />}
-          </ECS.Entities>
+            <ECS.Entities in={world.with('isFood')}>
+              {(entity: Entity) => <Food entity={entity} />}
+            </ECS.Entities>
 
-          <ECS.Entities in={world.with('isDecoration')}>
-            {(entity: Entity) => <Decoration entity={entity} />}
-          </ECS.Entities>
+            <ECS.Entities in={world.with('isDecoration')}>
+              {(entity: Entity) => <Decoration entity={entity} />}
+            </ECS.Entities>
 
-          <FeedingController />
-          <EffectsManager />
-        </Physics>
+            <FeedingController />
+            <EffectsManager />
+          </Physics>
 
-        <OrbitControls target={[0, 0, 0]} />
-      </Canvas>
+          <AmbientParticles />
+          <PostProcessing />
+
+          <OrbitControls target={[0, 0, 0]} />
+        </Canvas>
+      </VisualQualityProvider>
     </>
   );
 }

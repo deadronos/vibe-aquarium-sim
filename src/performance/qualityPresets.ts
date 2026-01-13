@@ -7,7 +7,20 @@ export interface QualitySettings {
   tankTransmissionSamples: number;
   shadowMapSize: number;
   effectParticleMultiplier: number;
+  causticsEnabled: boolean;
+  fishRimLightingEnabled: boolean;
+  fishSubsurfaceScatteringEnabled: boolean;
+  waterSurfaceUpgradeEnabled: boolean;
+  waterVolumeUpgradeEnabled: boolean;
+  ambientParticlesEnabled: boolean;
+  depthOfFieldEnabled: boolean;
 }
+
+type EnabledBooleanKey<T> = {
+  [K in keyof T]-?: K extends `${string}Enabled` ? (T[K] extends boolean ? K : never) : never;
+}[keyof T];
+
+export type VisualQualityFlags = Pick<QualitySettings, EnabledBooleanKey<QualitySettings>>;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -24,6 +37,13 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     tankTransmissionSamples: 2,
     shadowMapSize: 512,
     effectParticleMultiplier: 0.5,
+    causticsEnabled: true,
+    fishRimLightingEnabled: true,
+    fishSubsurfaceScatteringEnabled: true,
+    waterSurfaceUpgradeEnabled: false,
+    waterVolumeUpgradeEnabled: false,
+    ambientParticlesEnabled: false,
+    depthOfFieldEnabled: false,
   },
   medium: {
     level: 'medium',
@@ -31,6 +51,13 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     tankTransmissionSamples: 4,
     shadowMapSize: 768,
     effectParticleMultiplier: 0.75,
+    causticsEnabled: true,
+    fishRimLightingEnabled: true,
+    fishSubsurfaceScatteringEnabled: true,
+    waterSurfaceUpgradeEnabled: true,
+    waterVolumeUpgradeEnabled: true,
+    ambientParticlesEnabled: true,
+    depthOfFieldEnabled: false,
   },
   high: {
     level: 'high',
@@ -38,6 +65,13 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     tankTransmissionSamples: 6,
     shadowMapSize: 1024,
     effectParticleMultiplier: 1,
+    causticsEnabled: true,
+    fishRimLightingEnabled: true,
+    fishSubsurfaceScatteringEnabled: true,
+    waterSurfaceUpgradeEnabled: true,
+    waterVolumeUpgradeEnabled: true,
+    ambientParticlesEnabled: true,
+    depthOfFieldEnabled: false,
   },
   ultra: {
     level: 'ultra',
@@ -45,6 +79,13 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     tankTransmissionSamples: 8,
     shadowMapSize: 1536,
     effectParticleMultiplier: 1.25,
+    causticsEnabled: true,
+    fishRimLightingEnabled: true,
+    fishSubsurfaceScatteringEnabled: true,
+    waterSurfaceUpgradeEnabled: true,
+    waterVolumeUpgradeEnabled: true,
+    ambientParticlesEnabled: true,
+    depthOfFieldEnabled: true,
   },
 };
 
