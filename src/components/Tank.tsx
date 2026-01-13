@@ -3,7 +3,6 @@ import { Box, Text, MeshTransmissionMaterial } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import {
   AdditiveBlending,
-  BackSide,
   BoxGeometry,
   BufferGeometry,
   Color,
@@ -107,16 +106,23 @@ export const Tank = () => {
       {/* Visual Glass (Single Mesh) */}
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
         <MeshTransmissionMaterial
-          color="#aaddff"
+          color="#ffffff"
           samples={transmissionSamples}
           resolution={transmissionResolution}
-          thickness={0.012}
-          roughness={0.15}
-          chromaticAberration={0.01}
-          anisotropy={0.01}
+          thickness={0.2}
+          roughness={0.01}
+          chromaticAberration={0.06}
+          anisotropy={0.1}
           ior={1.5}
+          transmission={1}
+          transparent={true}
+          opacity={0.4}
+          envMapIntensity={0.1}
+          clearcoat={0.8}
+          attenuationDistance={0.01}
+          attenuationColor="#95abf6"
+          backside={true}
           toneMapped={true}
-          side={BackSide}
         />
       </mesh>
 
