@@ -11,6 +11,8 @@ import { Food } from './components/Food';
 import { Decoration } from './components/Decoration';
 import { FeedingController } from './components/FeedingController';
 import { EffectsManager } from './components/EffectsManager';
+import { AmbientParticles } from './components/AmbientParticles';
+import { PostProcessing } from './components/PostProcessing';
 import { HUD } from './components/ui/HUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
@@ -173,6 +175,9 @@ function App() {
             <FeedingController />
             <EffectsManager />
           </Physics>
+
+          <AmbientParticles />
+          <PostProcessing />
 
           <OrbitControls target={[0, 0, 0]} />
         </Canvas>
