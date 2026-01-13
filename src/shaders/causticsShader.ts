@@ -53,10 +53,7 @@ float snoise(vec3 v){
   vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
 
   i = mod(i, 289.0 );
-  vec4 p = permute( permute( permute(
-             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
-           + i.x + vec4(0.0, i1.x, i2.x, 1.0 )));
+  vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
 
   float n_ = 1.0/7.0;
   vec3  ns = n_ * D.wyz - D.xzx;

@@ -48,7 +48,9 @@ const particleVertexShader = /* glsl */ `
     gl_Position = projectionMatrix * mvPosition;
 
     // Perspective-correct point sizing
-    gl_PointSize = pointSize * (300.0 / -mvPosition.z);
+    // Avoid division-by-zero when mvPosition.z is near 0 (some drivers warn or error)
+    float depth = max(-mvPosition.z, 0.001);
+    gl_PointSize = pointSize * (300.0 / depth);
   }
 `;
 
