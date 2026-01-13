@@ -7,13 +7,11 @@ import {
   waterSurfaceFragmentShader,
   waterSurfaceVertexShader,
 } from '../shaders/waterSurfaceShader';
+import { TANK_DIMENSIONS } from '../config/constants';
 
 const CAUSTICS_INTENSITY_ENABLED = 0.3;
 const VOLUME_SPECULAR_STRENGTH_ENABLED = 0.18;
 const VOLUME_SHIMMER_STRENGTH_ENABLED = 0.12;
-
-const SURFACE_Y = 1.988 / 2;
-const SURFACE_INSET = 0.002;
 
 export const Water = () => {
   const volumeMaterialRef = useRef<ShaderMaterial>(null);
@@ -75,11 +73,17 @@ export const Water = () => {
     }
   });
 
+  // Calculate water dimensions to fit perfectly inside the tank
+  const waterWidth = TANK_DIMENSIONS.width - TANK_DIMENSIONS.wallThickness * 2 - 0.002; // Small gap
+  const waterDepth = TANK_DIMENSIONS.depth - TANK_DIMENSIONS.wallThickness * 2 - 0.002;
+  const waterHeight = TANK_DIMENSIONS.height - 0.002;
+
+  const waterSurfaceY = waterHeight / 2 - 0.002;
+
   return (
     <>
       <mesh position={[0, 0, 0]} renderOrder={0}>
-        {/* 3.976m x 1.988m x 1.976m */}
-        <boxGeometry args={[3.976, 1.988, 1.976]} />
+        <boxGeometry args={[waterWidth, waterHeight, waterDepth]} />
         <shaderMaterial
           ref={volumeMaterialRef}
           vertexShader={waterVertexShader}
@@ -93,11 +97,11 @@ export const Water = () => {
 
       {waterSurfaceUpgradeEnabled ? (
         <mesh
-          position={[0, SURFACE_Y - SURFACE_INSET, 0]}
+          position={[0, waterSurfaceY, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
           renderOrder={1}
         >
-          <planeGeometry args={[3.976, 1.976]} />
+          <planeGeometry args={[waterWidth, waterDepth]} />
           <shaderMaterial
             ref={surfaceMaterialRef}
             vertexShader={waterSurfaceVertexShader}

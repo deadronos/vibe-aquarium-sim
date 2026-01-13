@@ -122,9 +122,9 @@ const AmbientParticlesEnabled = () => {
 
   const farVolume = useMemo(
     () => ({
-      x: TANK_DIMENSIONS.width * 1.6,
-      y: TANK_DIMENSIONS.height * 1.4,
-      z: TANK_DIMENSIONS.depth * 1.6,
+      x: TANK_DIMENSIONS.width * 0.98,
+      y: TANK_DIMENSIONS.height * 0.98,
+      z: TANK_DIMENSIONS.depth * 0.98,
     }),
     []
   );
