@@ -27,6 +27,8 @@ uniform float opacity;
 uniform float causticsScale;
 uniform float causticsSpeed;
 uniform float causticsIntensity;
+uniform float volumeSpecularStrength;
+uniform float volumeShimmerStrength;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -135,8 +137,28 @@ void main() {
   float dotValue = max(dot(viewDir, vNormal), 0.0);
   float fresnel = pow(1.0 - dotValue, 3.0);
 
+  // Optional volume upgrade: subtle specular + shimmer (strengths are 0 when disabled)
+  vec3 upgradedNormal = vNormal;
+  if (volumeShimmerStrength > 0.0) {
+    float shimmer = snoise(vec3(
+      vPosition.x * 1.4 + time * 0.25,
+      vPosition.y * 1.1 + time * 0.18,
+      vPosition.z * 1.4 - time * 0.22
+    ));
+    upgradedNormal = safeNormalize(vNormal + volumeShimmerStrength * 0.18 * vec3(shimmer, shimmer * 0.5, -shimmer));
+  }
+
+  float volumeSpec = 0.0;
+  if (volumeSpecularStrength > 0.0) {
+    vec3 lightDir = safeNormalize(vec3(0.25, 1.0, 0.15));
+    vec3 halfDir = safeNormalize(lightDir + viewDir);
+    // Sharper spec helps suggest a “liquid” highlight.
+    float rawSpec = pow(max(dot(upgradedNormal, halfDir), 0.0), 48.0);
+    volumeSpec = rawSpec * (0.25 + 0.75 * fresnel) * volumeSpecularStrength;
+  }
+
   // Combine
-  vec3 finalColor = gradientColor + vec3(caustics) + fresnel * 0.2;
+  vec3 finalColor = gradientColor + vec3(caustics) + fresnel * 0.2 + vec3(volumeSpec);
 
   gl_FragColor = vec4(finalColor, opacity * (0.6 + 0.4 * fresnel));
 }
