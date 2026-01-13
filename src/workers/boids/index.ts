@@ -4,6 +4,7 @@ import { populateSpatialHash } from './spatialHash';
 import { steerTo } from './steering';
 import { calculateFeeding } from './feeding';
 import { calculateDragForce, calculateWaterCurrent } from '../../utils/physicsMath';
+import { checkBoundViolation, isAnyBoundViolated } from '../../utils/boundaryMath';
 
 export function simulateStep(input: SimulationInput): SimulationOutput {
   const {
@@ -163,38 +164,12 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     let steerZ = sepZ + aliZ + cohZ;
 
     // --- Soft boundary ---
-    let boundX = 0;
-    let boundY = 0;
-    let boundZ = 0;
-    let boundForce = false;
+    const boundDirX = checkBoundViolation(px, bounds.x);
+    const boundDirY = checkBoundViolation(py, bounds.y);
+    const boundDirZ = checkBoundViolation(pz, bounds.z);
 
-    if (px < -bounds.x) {
-      boundX += 1;
-      boundForce = true;
-    }
-    if (px > bounds.x) {
-      boundX -= 1;
-      boundForce = true;
-    }
-    if (py < -bounds.y) {
-      boundY += 1;
-      boundForce = true;
-    }
-    if (py > bounds.y) {
-      boundY -= 1;
-      boundForce = true;
-    }
-    if (pz < -bounds.z) {
-      boundZ += 1;
-      boundForce = true;
-    }
-    if (pz > bounds.z) {
-      boundZ -= 1;
-      boundForce = true;
-    }
-
-    if (boundForce) {
-      steerTo(boundX, boundY, boundZ, vx, vy, vz, maxSpeed, maxForceDouble, cache);
+    if (isAnyBoundViolated(boundDirX, boundDirY, boundDirZ)) {
+      steerTo(boundDirX, boundDirY, boundDirZ, vx, vy, vz, maxSpeed, maxForceDouble, cache);
       steerX += tempSteer.x;
       steerY += tempSteer.y;
       steerZ += tempSteer.z;

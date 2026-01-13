@@ -54,6 +54,9 @@ export const Tank = () => {
     try {
       const merged = BufferGeometryUtils.mergeGeometries(parts);
       return merged ?? new BufferGeometry();
+    } catch (error) {
+      console.error('Failed to merge tank geometries:', error);
+      return new BufferGeometry();
     } finally {
       for (const g of parts) g.dispose();
     }
@@ -189,6 +192,9 @@ const TankCausticsOverlayEnabled = () => {
     try {
       const merged = BufferGeometryUtils.mergeGeometries(parts);
       return merged ?? new BufferGeometry();
+    } catch (error) {
+      console.error('Failed to merge caustics geometries:', error);
+      return new BufferGeometry();
     } finally {
       for (const g of parts) g.dispose();
     }
