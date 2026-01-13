@@ -61,6 +61,10 @@ export const HUD = () => {
     stopPlacingDecoration,
   } = useGameStore();
 
+  const calloutText = isPlacingDecoration
+    ? 'Click tank floor to place • Esc to cancel'
+    : 'Click tank to feed fish';
+
   // Poll ECS for entity counts
   useEffect(() => {
     const interval = setInterval(() => {
@@ -129,6 +133,8 @@ export const HUD = () => {
         <button
           type="button"
           className="hud-handle"
+          aria-expanded={panelOpen}
+          aria-controls="hud-content"
           onClick={() => {
             const next = !panelOpen;
             setPanelOpen(next);
@@ -144,6 +150,10 @@ export const HUD = () => {
 
         {panelOpen && (
           <div id="hud-content" className="hud-content">
+            <div className="hud-callout" role="status">
+              {calloutText}
+            </div>
+
             <details
               className="hud-section"
               open={statsOpen}
