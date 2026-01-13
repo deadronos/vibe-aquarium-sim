@@ -40,7 +40,7 @@ const createUniforms = (): VibeFishLightingUniforms => ({
 type ShaderLike = {
   fragmentShader: string;
   vertexShader?: string;
-  uniforms: Record<string, { value: any }>;
+  uniforms: Record<string, { value: unknown }>;
 };
 
 const injectRimAndSSS = (shader: ShaderLike) => {
@@ -67,11 +67,13 @@ const enhanceSingle = (source: THREE.Material) => {
   const cloned = source.clone();
   const uniforms = createUniforms();
 
-  const prevOnBeforeCompile = cloned.onBeforeCompile;
+  const prevOnBeforeCompile = (cloned.onBeforeCompile as unknown) as ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void) | undefined;
   cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
-    // prevOnBeforeCompile may have been set by other decorators; cast to any to preserve runtime behavior.
-    (prevOnBeforeCompile as any)?.(shader, renderer);
-    Object.assign(shader.uniforms, uniforms);
+    // Preserve runtime behavior of any existing onBeforeCompile handlers.
+    prevOnBeforeCompile?.(shader, renderer);
+    // Cast via unknown first to satisfy TypeScript when converting between
+    // differently-shaped record types.
+    Object.assign(shader.uniforms, uniforms as unknown as Record<string, { value: unknown }>);
     injectRimAndSSS(shader);
   };
 
