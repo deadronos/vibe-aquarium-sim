@@ -34,7 +34,16 @@ const createUniforms = (): VibeFishLightingUniforms => ({
   vibeSSSPower: { value: DEFAULT_VIBE_FISH_SSS_POWER },
 });
 
-const injectRimAndSSS = (shader: THREE.Shader) => {
+// Minimal local shader shape used by onBeforeCompile.
+// `@types/three` does not reliably export a `Shader` type across versions, so
+// use a compact local interface to avoid depending on that symbol.
+type ShaderLike = {
+  fragmentShader: string;
+  vertexShader?: string;
+  uniforms: Record<string, { value: any }>;
+};
+
+const injectRimAndSSS = (shader: ShaderLike) => {
   // Idempotency: onBeforeCompile can run multiple times (program cache, renderer reuse).
   // If we've already injected our chunk, skip to avoid duplicating uniforms/logic.
   if (shader.fragmentShader.includes(VIBE_FISH_LIGHTING_MARKER)) return;
@@ -59,14 +68,14 @@ const enhanceSingle = (source: THREE.Material) => {
   const uniforms = createUniforms();
 
   const prevOnBeforeCompile = cloned.onBeforeCompile;
-  cloned.onBeforeCompile = (shader, renderer) => {
-    prevOnBeforeCompile?.(shader, renderer);
+  cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
+    // prevOnBeforeCompile may have been set by other decorators; cast to any to preserve runtime behavior.
+    (prevOnBeforeCompile as any)?.(shader, renderer);
     Object.assign(shader.uniforms, uniforms);
     injectRimAndSSS(shader);
   };
 
   // Ensure program cache differentiates the modified shader.
-  // @ts-expect-error - customProgramCacheKey exists on Material in runtime Three.
   cloned.customProgramCacheKey = () => 'vibe_fish_rim_sss_v1';
 
   (cloned.userData as FishLightingUserData).vibeFishLighting = { uniforms };
