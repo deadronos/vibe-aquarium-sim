@@ -38,8 +38,8 @@ vi.mock('@react-three/drei', async () => {
       return null;
     },
     // simple stubs for other drei primitives used by Tank
-    Box: (props: any) => null,
-    Text: (props: any) => null,
+    Box: () => null,
+    Text: () => null,
   };
 });
 
