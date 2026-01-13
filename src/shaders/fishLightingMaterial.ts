@@ -71,7 +71,9 @@ const enhanceSingle = (source: THREE.Material) => {
   cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
     // Preserve runtime behavior of any existing onBeforeCompile handlers.
     prevOnBeforeCompile?.(shader, renderer);
-    Object.assign(shader.uniforms, uniforms as Record<string, { value: unknown }>);
+    // Cast via unknown first to satisfy TypeScript when converting between
+    // differently-shaped record types.
+    Object.assign(shader.uniforms, uniforms as unknown as Record<string, { value: unknown }>);
     injectRimAndSSS(shader);
   };
 
