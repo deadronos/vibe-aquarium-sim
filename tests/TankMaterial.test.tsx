@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import React from 'react';
+import React, { act } from 'react';
 import { useGameStore } from '../src/gameStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { getQualitySettings } from '../src/performance/qualityPresets';
@@ -57,8 +57,10 @@ global.ResizeObserver = class ResizeObserver {
 describe('Tank material defaults', () => {
   beforeEach(() => {
     // deterministic defaults
-    useQualityStore.setState({ settings: getQualitySettings('low', 2) });
-    useGameStore.setState({ visualQualityOverrides: {} });
+    act(() => {
+      useQualityStore.setState({ settings: getQualitySettings('low', 2) });
+      useGameStore.setState({ visualQualityOverrides: {} });
+    });
     useFrameSpy.mockClear();
   });
 
@@ -86,7 +88,9 @@ describe('Tank material defaults', () => {
   });
 
   it('respects quality preset for transmission samples/resolution', async () => {
-    useQualityStore.setState({ settings: getQualitySettings('ultra', 2) });
+    act(() => {
+      useQualityStore.setState({ settings: getQualitySettings('ultra', 2) });
+    });
 
     await ReactThreeTestRenderer.create(
       <VisualQualityProvider>

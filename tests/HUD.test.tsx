@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { act } from 'react';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,17 +18,19 @@ describe('HUD', () => {
       .mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    useGameStore.setState(
-      {
-        ...initialGameState,
-        lastFedTime: null,
-        isPlacingDecoration: false,
-        selectedDecorationType: 'seaweed',
-        pendingEffects: [],
-        visualQualityOverrides: {},
-      },
-      true
-    );
+    act(() => {
+      useGameStore.setState(
+        {
+          ...initialGameState,
+          lastFedTime: null,
+          isPlacingDecoration: false,
+          selectedDecorationType: 'seaweed',
+          pendingEffects: [],
+          visualQualityOverrides: {},
+        },
+        true
+      );
+    });
   });
 
   afterEach(() => {
@@ -39,7 +41,9 @@ describe('HUD', () => {
 
     window.matchMedia = originalMatchMedia;
 
-    useGameStore.setState(initialGameState, true);
+    act(() => {
+      useGameStore.setState(initialGameState, true);
+    });
   });
 
   it('renders the default callout text', () => {
@@ -51,9 +55,11 @@ describe('HUD', () => {
   });
 
   it('renders the placement callout text when placing decoration', () => {
-    useGameStore.setState({
-      isPlacingDecoration: true,
-      selectedDecorationType: 'seaweed',
+    act(() => {
+      useGameStore.setState({
+        isPlacingDecoration: true,
+        selectedDecorationType: 'seaweed',
+      });
     });
 
     const { unmount } = render(<HUD />);

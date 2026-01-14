@@ -111,7 +111,7 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('fishRim')).toHaveTextContent('false');
     expect(screen.getByTestId('dof')).toHaveTextContent('true');
     // overrides should also affect adaptive flags
-    useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true, adaptiveSchedulerEnabled: true } });
+    act(() => { useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true, adaptiveSchedulerEnabled: true } }); });
     // cleanup previous render to avoid duplicated nodes
     first.unmount();
     render(
