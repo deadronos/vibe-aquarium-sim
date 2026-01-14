@@ -73,7 +73,9 @@
   border: 1px solid rgba(100, 180, 255, 0.2);
   border-radius: 12px;
   width: clamp(150px, 42vw, 280px);
-  padding: 16px 20px;
+  --hud-controls-inset: 10px;
+  --hud-panel-padding-y: 16px;
+  padding: var(--hud-panel-padding-y) 20px;
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -89,7 +91,7 @@
 
 .hud-handle {
   position: absolute;
-  top: 10px;
+  top: var(--hud-controls-inset);
   right: 10px;
   width: 32px;
   height: 32px;
@@ -102,6 +104,33 @@
   align-items: center;
   justify-content: center;
   padding: 0;
+}
+
+.hud-settings {
+  position: absolute;
+  top: var(--hud-controls-inset);
+  left: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  background: rgba(20, 40, 80, 0.55);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.hud-settings:hover {
+  background: rgba(40, 80, 160, 0.65);
+  border-color: rgba(100, 180, 255, 0.55);
+}
+
+.hud-settings:focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
 }
 
 .hud-handle:hover {
@@ -125,8 +154,15 @@
 }
 
 .hud-callout {
-  margin: 0 0 12px 0;
-  padding: 8px 10px;
+  /* Visually align between the left settings and right collapse buttons */
+  /* Offset the panel padding so the callout's top aligns with icon tops */
+  margin: calc(var(--hud-controls-inset) - var(--hud-panel-padding-y)) 44px 12px 44px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6px 10px;
   background: rgba(20, 40, 80, 0.75);
   border: 1px solid rgba(100, 180, 255, 0.35);
   border-radius: 10px;
@@ -144,13 +180,20 @@
   }
 
   .hud-panel {
-    padding: 12px 14px;
+    --hud-controls-inset: 8px;
+    --hud-panel-padding-y: 12px;
+    padding: var(--hud-panel-padding-y) 14px;
     border-radius: 10px;
   }
 
   .hud-handle {
-    top: 8px;
+    top: var(--hud-controls-inset);
     right: 8px;
+  }
+
+  .hud-settings {
+    top: var(--hud-controls-inset);
+    left: 8px;
   }
 
   .hud-title {
@@ -159,6 +202,11 @@
 
   .hud-section-content {
     padding-top: 8px;
+  }
+
+  .hud-callout {
+    margin: calc(var(--hud-controls-inset) - var(--hud-panel-padding-y)) 40px 12px 40px;
+    min-height: 32px;
   }
 
   .hud-stat-label {
@@ -194,7 +242,8 @@
 @media (max-width: 380px) {
   .hud-panel {
     width: min(88vw, 240px);
-    padding: 10px 12px;
+    --hud-panel-padding-y: 10px;
+    padding: var(--hud-panel-padding-y) 12px;
   }
 
   .hud-divider {

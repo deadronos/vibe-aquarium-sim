@@ -6,6 +6,10 @@ import { useQualityStore } from '../../performance/qualityStore';
 import { readBoolFromStorage, writeBoolToStorage } from '../../utils/storageUtils';
 import './HUD.css';
 
+type HUDProps = {
+  onOpenSettings?: () => void;
+};
+
 const getDefaultPanelOpen = (): boolean => {
   if (typeof window === 'undefined') return true;
   try {
@@ -31,7 +35,7 @@ const formatTimeAgo = (date: Date | null): string => {
   return `${hours}h ago`;
 };
 
-export const HUD = () => {
+export const HUD = ({ onOpenSettings }: HUDProps) => {
   const [fishCount, setFishCount] = useState(0);
   const [foodCount, setFoodCount] = useState(0);
   const [, forceUpdate] = useState(0);
@@ -130,10 +134,21 @@ export const HUD = () => {
   return (
     <div className="hud-container">
       <div className={`hud-panel ${panelOpen ? '' : 'is-collapsed'}`}>
+        {panelOpen && onOpenSettings && (
+          <button
+            type="button"
+            className="hud-settings"
+            onClick={onOpenSettings}
+            aria-label="Open settings"
+            title="Settings"
+          >
+            <span aria-hidden="true">⚙</span>
+          </button>
+        )}
         <button
           type="button"
           className="hud-handle"
-          aria-expanded={panelOpen}
+          aria-expanded={panelOpen ? 'true' : 'false'}
           aria-controls="hud-content"
           onClick={() => {
             const next = !panelOpen;

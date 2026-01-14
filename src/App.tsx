@@ -1,6 +1,8 @@
 import { HUD } from './components/ui/HUD';
 import DebugHUD from './components/DebugHUD';
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
+import { readBoolFromStorage, writeBoolToStorage } from './utils/storageUtils';
+import { SettingsModal } from './components/ui/SettingsModal';
 
 import './App.css';
 
@@ -8,9 +10,26 @@ const SimulationScene = React.lazy(() => import('./SimulationScene'));
 
 function App() {
   const [started, setStarted] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(() =>
+    readBoolFromStorage('hud.debug.visible', false)
+  );
 
   const start = useCallback(() => {
     setStarted(true);
+  }, []);
+
+  const openSettings = useCallback(() => {
+    setSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+  }, []);
+
+  const setDebugVisible = useCallback((next: boolean) => {
+    setShowDebugPanel(next);
+    writeBoolToStorage('hud.debug.visible', next);
   }, []);
 
   useEffect(() => {
@@ -59,8 +78,15 @@ function App() {
   return (
     <>
       {/* HUD overlay outside Canvas */}
-      <HUD />
-      <DebugHUD />
+      <HUD onOpenSettings={openSettings} />
+      {showDebugPanel && <DebugHUD />}
+
+      <SettingsModal
+        open={settingsOpen}
+        onClose={closeSettings}
+        showDebugPanel={showDebugPanel}
+        setShowDebugPanel={setDebugVisible}
+      />
 
       {started ? (
         <Suspense fallback={loadingOverlay}>
