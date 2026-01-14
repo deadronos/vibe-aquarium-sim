@@ -9,13 +9,14 @@ type Counts = { simulate: number; render: number; fishUse: number; scheduler: nu
 
 declare global {
   interface SimEntry { duration: number; time?: number; fishCount?: number }
-  interface RenderEntry { frame?: number; duration: number; counts?: { countA:number; countB:number; countC:number }; activeEntities?: number; updateFreq?: number }
-  interface SchedEntry { duration: number; subSteps?: number; time?: number }
+  interface RenderEntry { frame?: number; duration: number; counts?: { countA:number; countB:number; countC:number }; activeEntities?: number; updateFreq?: number; ema?: number; flushed?: number }
+  interface SchedEntry { duration: number; subSteps?: number; time?: number; ema?: number }
+  interface SchedulerTuningEntry { time: number; action: 'reduce' | 'restore'; from?: number; to: number }
 
   interface Window {
     __vibe_renderStatus?: RenderStatus;
     __vibe_schedStatus?: SchedStatus;
-    __vibe_debug?: { simulateStep: SimEntry[]; fishRender: RenderEntry[]; fishUseFrame: Array<{duration:number; modelIndex:number|null}>; scheduler?: SchedEntry[]; download?: () => boolean };
+    __vibe_debug?: { simulateStep: SimEntry[]; fishRender: RenderEntry[]; fishUseFrame: Array<{duration:number; modelIndex:number|null}>; scheduler?: SchedEntry[]; schedulerTuning?: SchedulerTuningEntry[]; reset?: () => void; download?: () => boolean };
     __vibe_addFish?: (n: number) => number;
   }
 }

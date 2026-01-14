@@ -47,6 +47,8 @@ export type Entity = {
   __vibeFishQuatIndex?: number; // >=0 index into pool; -1 for fallback
   __vibeFishSeenFrame?: number;
   __vibeFishRenderedFrame?: number;
+  // Lightweight debug sampling counter (optional)
+  __vibe_dbgCounter?: number;
 };
 
 export const world = new World<Entity>();

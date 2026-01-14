@@ -44,7 +44,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     } catch {
       /* ignore */
     }
-    const sampleThis = ent.__vibe_dbgCounter % 10 === 0;
+    const sampleThis = ((ent.__vibe_dbgCounter ?? 0) % 10) === 0;
     const t0 = sampleThis ? performance.now() : 0;
 
     const rb = rigidBody.current;

@@ -25,6 +25,7 @@ declare global {
     duration: number;
     counts: { countA: number; countB: number; countC: number };
     activeEntities: number;
+    ema?: number;
     flushed?: number;
   };
   type VibeFishUseFrameEntry = { duration: number; modelIndex: number | null };
