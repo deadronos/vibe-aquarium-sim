@@ -15,10 +15,11 @@ console.error = (...args: unknown[]) => {
   try {
     const msg = String(args[0] ?? '');
     if (msg.includes('THREE.WARNING: Multiple instances of Three.js being imported')) return;
-  } catch (e) {
+  } catch {
     // ignore
   }
-  return _consoleError.apply(console, args as any);
+  type ConsoleFn = (...a: unknown[]) => void;
+  return (_consoleError as ConsoleFn).call(console, ...args);
 };
 
 const _consoleWarn = console.warn;
@@ -26,10 +27,11 @@ console.warn = (...args: unknown[]) => {
   try {
     const msg = String(args[0] ?? '');
     if (msg.includes('THREE.WARNING: Multiple instances of Three.js being imported')) return;
-  } catch (e) {
+  } catch {
     // ignore
   }
-  return _consoleWarn.apply(console, args as any);
+  type ConsoleFn = (...a: unknown[]) => void;
+  return (_consoleWarn as ConsoleFn).call(console, ...args);
 };
 
 // Wrap common Zustand stores' setState to call React's act automatically in tests
@@ -38,9 +40,9 @@ import { act } from 'react';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { useGameStore } from '../src/gameStore';
 
-function wrapSetState<T extends unknown[]>(store: { setState: (...args: T) => void }) {
-  const orig = store.setState.bind(store);
-  store.setState = ((...args: T) => {
+function wrapSetState(store: { setState: (...args: unknown[]) => void }) {
+  const orig = store.setState.bind(store) as (...args: unknown[]) => void;
+  store.setState = ((...args: unknown[]) => {
     // Wrap sync state updates in act so React does not warn during tests.
     act(() => {
       orig(...args);
@@ -48,6 +50,6 @@ function wrapSetState<T extends unknown[]>(store: { setState: (...args: T) => vo
   }) as typeof store.setState;
 }
 
-wrapSetState(useQualityStore as any);
-wrapSetState(useGameStore as any);
+wrapSetState(useQualityStore);
+wrapSetState(useGameStore);
 
