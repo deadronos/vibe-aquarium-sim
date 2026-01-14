@@ -187,6 +187,11 @@ export const FishRenderSystem = () => {
     frameId.current++;
     if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
 
+    const pocEnabledFromFlag = !!adaptiveInstanceUpdatesEnabled;
+    const pocEnabledFromWindow =
+      typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
+    const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
+
     const quaternionFreeList = quaternionFreeListRef.current!;
 
     const activeEntities = activeEntitiesRef.current;
@@ -196,6 +201,10 @@ export const FishRenderSystem = () => {
     let countA = 0;
     let countB = 0;
     let countC = 0;
+
+    let wroteA = false;
+    let wroteB = false;
+    let wroteC = false;
 
     const fishEntities = fishEntitiesQuery.entities;
     for (let i = 0, len = fishEntities.length; i < len; i++) {
@@ -257,13 +266,28 @@ export const FishRenderSystem = () => {
       // Record matrix into per-model pool and mark dirty for chunked flush
       if (modelIndex === 0) {
         matrixPoolARef.current[idx]!.copy(tempObj.matrix);
-        dirtyARef.current[idx] = 1;
+        if (pocEnabled) {
+          dirtyARef.current[idx] = 1;
+        } else {
+          meshRefA.current.setMatrixAt(idx, tempObj.matrix);
+          wroteA = true;
+        }
       } else if (modelIndex === 1) {
         matrixPoolBRef.current[idx]!.copy(tempObj.matrix);
-        dirtyBRef.current[idx] = 1;
+        if (pocEnabled) {
+          dirtyBRef.current[idx] = 1;
+        } else {
+          meshRefB.current.setMatrixAt(idx, tempObj.matrix);
+          wroteB = true;
+        }
       } else {
         matrixPoolCRef.current[idx]!.copy(tempObj.matrix);
-        dirtyCRef.current[idx] = 1;
+        if (pocEnabled) {
+          dirtyCRef.current[idx] = 1;
+        } else {
+          meshRefC.current.setMatrixAt(idx, tempObj.matrix);
+          wroteC = true;
+        }
       }
     }
 
@@ -330,10 +354,6 @@ export const FishRenderSystem = () => {
         : frameDuration;
 
       const ema = instanceUpdateEmaRef.current;
-      // Skip adaptive PoC when explicitly disabled at runtime
-      const pocEnabledFromFlag = !!adaptiveInstanceUpdatesEnabled;
-      const pocEnabledFromWindow = typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
-      const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
 
       if (pocEnabled) {
         // Chunked flush
@@ -370,10 +390,10 @@ export const FishRenderSystem = () => {
         const dbg = window.__vibe_debug;
         if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, ema, flushed: flushedA + flushedB + flushedC });
       } else {
-        // PoC disabled: always update instanceMatrix every frame (baseline behavior)
-        meshRefA.current.instanceMatrix.needsUpdate = true;
-        meshRefB.current.instanceMatrix.needsUpdate = true;
-        meshRefC.current.instanceMatrix.needsUpdate = true;
+        // PoC disabled: matrices were written directly in the loop above.
+        if (wroteA) meshRefA.current.instanceMatrix.needsUpdate = true;
+        if (wroteB) meshRefB.current.instanceMatrix.needsUpdate = true;
+        if (wroteC) meshRefC.current.instanceMatrix.needsUpdate = true;
       }
 
       // Lightweight per-frame status for external sampling
