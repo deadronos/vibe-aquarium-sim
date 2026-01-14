@@ -327,6 +327,18 @@ export const FishRenderSystem = () => {
 
       const dbg = (window as any).__vibe_debug;
       if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, updateFreq: updateFrequencyRef.current });
+
+      // Lightweight per-frame status for external sampling
+      try {
+        (window as any).__vibe_renderStatus = {
+          updateFreq: updateFrequencyRef.current,
+          ema: instanceUpdateEmaRef.current || 0,
+          activeEntities: activeEntities.length,
+          frameDuration,
+        };
+      } catch (err) {
+        /* ignore */
+      }
     } catch (e) {
       /* ignore */
     }

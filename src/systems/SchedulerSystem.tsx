@@ -32,6 +32,13 @@ export const SchedulerSystem = () => {
       const dbg = (window as any).__vibe_debug;
       if (dbg) dbg.scheduler = dbg.scheduler || [];
       if (dbg) dbg.scheduler.push({ duration: dur, subSteps, time: Date.now(), ema: emaRef.current });
+
+      // Publish lightweight status
+      try {
+        (window as any).__vibe_schedStatus = { ema: emaRef.current, currentMax: fixedScheduler.getMaxSubSteps(), lastDuration: dur };
+      } catch (err) {
+        /* ignore */
+      }
     } catch (e) {
       /* ignore */
     }
