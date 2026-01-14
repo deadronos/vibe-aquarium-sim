@@ -33,7 +33,4 @@ console.warn = (...args: unknown[]) => {
 
 
 
-import { act } from 'react';
-import { useQualityStore } from '../src/performance/qualityStore';
-import { useGameStore } from '../src/gameStore';
 
