@@ -42,7 +42,10 @@ export default defineConfig(({ command }) => {
           // Custom manual chunks to split large dependencies and keep the main bundle small.
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('three')) return 'three';
+              // Some environments can exhibit library initialization order issues when
+              // large libs are split into separate chunks; merge `three` into the
+              // vendor chunk to ensure consistent evaluation order on deployed hosts.
+              if (id.includes('three')) return 'vendor';
               if (id.includes('@react-three') || id.includes('drei')) return 'r3f-drei';
               if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'rapier';
               if (id.includes('miniplex')) return 'miniplex';
