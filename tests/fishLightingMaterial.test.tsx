@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import * as THREE from 'three';
-import React from 'react';
+import React, { act } from 'react';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 
 import { useGameStore } from '../src/gameStore';
@@ -69,7 +69,9 @@ describe('fish lighting material injection', () => {
     resetUseGLTFMock();
 
     // Reset overrides first to avoid cross-test contamination.
-    useGameStore.setState({ visualQualityOverrides: {} });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: {} });
+    });
 
     // Ensure the mocked GLTF loader returns stable, Three-backed scenes.
     const makeScene = (material: THREE.Material) => {
@@ -87,7 +89,9 @@ describe('fish lighting material injection', () => {
   });
 
   afterEach(() => {
-    useGameStore.setState({ visualQualityOverrides: {} });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: {} });
+    });
   });
 
   it('injects shader markers into onBeforeCompile-modified shader source', () => {
@@ -136,11 +140,13 @@ describe('fish lighting material injection', () => {
   it('sets rim/sss strengths to 0 when disabled via visualQualityOverrides', async () => {
     useFrameSpy.mockClear();
 
-    useGameStore.setState({
-      visualQualityOverrides: {
-        fishRimLightingEnabled: false,
-        fishSubsurfaceScatteringEnabled: false,
-      },
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          fishRimLightingEnabled: false,
+          fishSubsurfaceScatteringEnabled: false,
+        },
+      });
     });
 
     const renderer = await ReactThreeTestRenderer.create(

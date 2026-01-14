@@ -1,6 +1,6 @@
 export function ensurePerfDebug() {
   if (typeof window === 'undefined') return null;
-  const w = window as any;
+  const w = window;
   if (!w.__vibe_debug) {
     w.__vibe_debug = {
       simulateStep: [] as Array<{duration:number; time:number; fishCount:number}>,
@@ -29,7 +29,7 @@ export function ensurePerfDebug() {
           a.remove();
           URL.revokeObjectURL(url);
           return true;
-        } catch (e) {
+        } catch {
           // ignore
           return false;
         }

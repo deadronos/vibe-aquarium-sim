@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act } from 'react';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import React from 'react';
 
@@ -35,31 +36,33 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('PostProcessing', () => {
   beforeEach(() => {
-    const qualityState = useQualityStore.getState();
-    useQualityStore.setState(
-      {
-        ...qualityState,
-        // Make tests deterministic and order-independent.
-        isAdaptiveEnabled: true,
-        level: 'low',
-        settings: getQualitySettings('low', 2),
-        fpsEma: 60,
-      },
-      true
-    );
+    act(() => {
+      const qualityState = useQualityStore.getState();
+      useQualityStore.setState(
+        {
+          ...qualityState,
+          // Make tests deterministic and order-independent.
+          isAdaptiveEnabled: true,
+          level: 'low',
+          settings: getQualitySettings('low', 2),
+          fpsEma: 60,
+        },
+        true
+      );
 
-    const gameState = useGameStore.getState();
-    useGameStore.setState(
-      {
-        ...gameState,
-        lastFedTime: null,
-        isPlacingDecoration: false,
-        selectedDecorationType: 'seaweed',
-        pendingEffects: [],
-        visualQualityOverrides: {},
-      },
-      true
-    );
+      const gameState = useGameStore.getState();
+      useGameStore.setState(
+        {
+          ...gameState,
+          lastFedTime: null,
+          isPlacingDecoration: false,
+          selectedDecorationType: 'seaweed',
+          pendingEffects: [],
+          visualQualityOverrides: {},
+        },
+        true
+      );
+    });
   });
 
   it('does not mount EffectComposer when depthOfFieldEnabled is false', async () => {

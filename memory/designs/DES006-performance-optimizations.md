@@ -26,6 +26,11 @@ Replaced individual `Fish.tsx` rendering with a centralized `FishRenderSystem`.
   - **Update Loop**: Iterates through ECS entities with `isFish` tag. Updates the `matrixAt(index)` of the InstancedMesh based on entity position and velocity.
   - **Scaling**: Set default scale to `0.3` to match intended visual size (since InstancedMesh uses raw geometry scale).
   - **Entity Mapping**: Currently uses implicit index (0..N) based on query order. For future robustness (adding/removing fish), a Map<EntityID, InstanceIndex> should be added.
+
+  - **Adaptive Instance Updates (PoC)**: An opt-in PoC was added to reduce GL buffer update bursts under load by chunking instanceMatrix writes across frames. When enabled, the system marks per-instance matrices as "dirty" and flushes a budgeted number of writes per frame. When disabled (baseline), matrices are written directly every frame.
+
+  **Bug (fixed 2026-01-14):** An implementation oversight left the baseline (PoC disabled) path without writing per-instance matrices in the hot loop — only the adaptive chunked flush path performed writes. This caused most instances to remain at the identity matrix and appear as a single overlapping fish. The fix writes instance matrices directly in the non-adaptive path and uses the dirty/chunked flush only when the PoC is enabled.
+
 - **Benefit**: 1 Draw call for all fish. Capable of rendering thousands of instances.
 
 ### 3. Zero-Allocation Spatial Grid

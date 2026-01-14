@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
-import React from 'react';
+import React, { act } from 'react';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
@@ -42,8 +42,10 @@ global.ResizeObserver = class ResizeObserver {
 describe('Water', () => {
   beforeEach(() => {
     // Make tests deterministic: default to Low (no water upgrades).
-    useQualityStore.setState({ settings: getQualitySettings('low', 2) });
-    useGameStore.setState({ visualQualityOverrides: {} });
+    act(() => {
+      useQualityStore.setState({ settings: getQualitySettings('low', 2) });
+      useGameStore.setState({ visualQualityOverrides: {} });
+    });
 
     useFrameSpy.mockClear();
     resetCapturedFrameCallback();
@@ -72,10 +74,12 @@ describe('Water', () => {
   });
 
   it('renders a dedicated surface mesh when waterSurfaceUpgradeEnabled is enabled via overrides', async () => {
-    useGameStore.setState({
-      visualQualityOverrides: {
-        waterSurfaceUpgradeEnabled: true,
-      },
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          waterSurfaceUpgradeEnabled: true,
+        },
+      });
     });
 
     const renderer = await ReactThreeTestRenderer.create(
@@ -90,10 +94,12 @@ describe('Water', () => {
   });
 
   it('renders only the volume mesh when waterSurfaceUpgradeEnabled is disabled via overrides', async () => {
-    useGameStore.setState({
-      visualQualityOverrides: {
-        waterSurfaceUpgradeEnabled: false,
-      },
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          waterSurfaceUpgradeEnabled: false,
+        },
+      });
     });
 
     const renderer = await ReactThreeTestRenderer.create(
@@ -107,10 +113,12 @@ describe('Water', () => {
   });
 
   it('includes volume upgrade uniforms and sets strength to 0 when waterVolumeUpgradeEnabled is disabled', async () => {
-    useGameStore.setState({
-      visualQualityOverrides: {
-        waterVolumeUpgradeEnabled: false,
-      },
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          waterVolumeUpgradeEnabled: false,
+        },
+      });
     });
 
     const renderer = await ReactThreeTestRenderer.create(
@@ -131,10 +139,12 @@ describe('Water', () => {
   });
 
   it('sets volume upgrade strength > 0 when waterVolumeUpgradeEnabled is enabled', async () => {
-    useGameStore.setState({
-      visualQualityOverrides: {
-        waterVolumeUpgradeEnabled: true,
-      },
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          waterVolumeUpgradeEnabled: true,
+        },
+      });
     });
 
     const renderer = await ReactThreeTestRenderer.create(

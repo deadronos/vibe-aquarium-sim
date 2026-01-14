@@ -14,6 +14,7 @@ import { EffectsManager } from './components/EffectsManager';
 import { AmbientParticles } from './components/AmbientParticles';
 import { PostProcessing } from './components/PostProcessing';
 import { HUD } from './components/ui/HUD';
+import DebugHUD from './components/DebugHUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { ExcitementSystem } from './systems/ExcitementSystem';
@@ -101,7 +102,7 @@ const Spawner = () => {
       // Debug helper: add N fish at runtime to stress test performance
       // Usage: window.__vibe_addFish(100);
       // Returns number added
-      (window as any).__vibe_addFish = (n: number) => {
+      window.__vibe_addFish = (n: number) => {
         let added = 0;
         for (let i = 0; i < n; i++) {
           world.add({
@@ -136,6 +137,7 @@ function App() {
     <>
       {/* HUD overlay outside Canvas */}
       <HUD />
+      <DebugHUD />
 
       <VisualQualityProvider>
         <Canvas
