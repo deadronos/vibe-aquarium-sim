@@ -1,0 +1,60 @@
+.vibe-start-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 10;
+  background: radial-gradient(
+    1200px 600px at 50% 40%,
+    rgba(0, 36, 70, 0.65),
+    rgba(0, 0, 0, 0.85)
+  );
+}
+
+.vibe-start-card {
+  width: min(520px, calc(100vw - 48px));
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(10, 18, 28, 0.75);
+  border: 1px solid rgba(140, 190, 255, 0.18);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  color: #e8f2ff;
+  text-align: center;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.vibe-start-title {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.vibe-start-subtitle {
+  margin-top: 8px;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.vibe-start-button {
+  cursor: pointer;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(140, 190, 255, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(40, 120, 220, 0.95),
+    rgba(20, 80, 160, 0.95)
+  );
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.vibe-start-button:hover {
+  filter: brightness(1.05);
+}
+
+.vibe-start-button:active {
+  transform: translateY(1px);
+}
