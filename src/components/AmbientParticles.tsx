@@ -35,6 +35,8 @@ const particleVertexShader = /* glsl */ `
 
   varying float vSeed;
 
+  const float EPS = 0.001;
+
   void main() {
     vSeed = seed;
     vec3 p = position;
@@ -50,7 +52,7 @@ const particleVertexShader = /* glsl */ `
 
     // Perspective-correct point sizing
     // Avoid division-by-zero when mvPosition.z is near 0 (some drivers warn or error)
-    float depth = max(-mvPosition.z, 0.001);
+    float depth = max(abs(mvPosition.z), EPS);
     gl_PointSize = pointSize * (300.0 / depth);
   }
 `;

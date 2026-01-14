@@ -4,10 +4,12 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 
+const float EPS = 1e-6;
+
 vec3 safeNormalize(vec3 v) {
   // Avoid division-by-zero inside normalize() on some drivers (ANGLE/D3D).
   // max() prevents inversesqrt(0).
-  return v * inversesqrt(max(dot(v, v), 1e-12));
+  return v * inversesqrt(max(dot(v, v), EPS));
 }
 
 void main() {
@@ -35,9 +37,11 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 varying vec3 vViewPosition;
 
+const float EPS = 1e-6;
+
 vec3 safeNormalize(vec3 v) {
   // Avoid division-by-zero inside normalize() on some drivers (ANGLE/D3D).
-  return v * inversesqrt(max(dot(v, v), 1e-12));
+  return v * inversesqrt(max(dot(v, v), EPS));
 }
 
 // Simplex 3D Noise
@@ -45,13 +49,13 @@ vec3 safeNormalize(vec3 v) {
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){
   // Clamp to avoid division by zero and improve precision
-  r = max(r, vec4(1e-6));
+  r = max(r, vec4(EPS));
   // Keep constants at float-like precision to reduce ANGLE/D3D double-precision warnings.
   return 1.7928429 - 0.8537347 * r;
 }
 
 float snoise(vec3 v){
-  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+  const vec2  C = vec2(0.16666667, 0.33333334);
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
 // First corner
@@ -78,7 +82,7 @@ float snoise(vec3 v){
 
 // Gradients
 // ( N*N points uniformly over a square, mapped onto an octahedron.)
-  float n_ = 1.0/7.0; // N=7
+  float n_ = 0.14285715; // N=7
   vec3  ns = n_ * D.wyz - D.xzx;
 
   vec4 j = p - 49.0 * floor(p * ns.z *ns.z);  //  mod(p,N*N)
@@ -108,7 +112,7 @@ float snoise(vec3 v){
 //Normalise gradients
   vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
   // Add epsilon to avoid division by zero
-  norm = max(norm, vec4(1e-8));
+  norm = max(norm, vec4(EPS));
   p0 *= norm.x;
   p1 *= norm.y;
   p2 *= norm.z;
