@@ -15,7 +15,9 @@ import { AmbientParticles } from './components/AmbientParticles';
 import { PostProcessing } from './components/PostProcessing';
 import { HUD } from './components/ui/HUD';
 import DebugHUD from './components/DebugHUD';
-import { FishRenderSystem } from './systems/FishRenderSystem';
+import React, { Suspense } from 'react';
+const FishRenderSystem = React.lazy(() => import('./systems/FishRenderSystem').then((m) => ({ default: m.FishRenderSystem })));
+
 import { BoidsSystem } from './systems/BoidsSystem';
 import { ExcitementSystem } from './systems/ExcitementSystem';
 import { SchedulerSystem } from './systems/SchedulerSystem';
@@ -188,7 +190,9 @@ function App() {
             <SchedulerSystem />
             <BoidsSystem />
             <ExcitementSystem />
-            <FishRenderSystem />
+            <Suspense fallback={null}>
+              <FishRenderSystem />
+            </Suspense>
 
             <ECS.Entities in={world.with('isFish')}>
               {(entity: Entity) => <Fish entity={entity} />}

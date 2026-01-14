@@ -36,5 +36,23 @@ export default defineConfig(({ command }) => {
       // leading to missing prebundled worker modules and repeated worker crashes.
       exclude: ['multithreading'],
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Custom manual chunks to split large dependencies and keep the main bundle small.
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('three')) return 'three';
+              if (id.includes('@react-three') || id.includes('drei')) return 'r3f-drei';
+              if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'rapier';
+              if (id.includes('miniplex')) return 'miniplex';
+              if (id.includes('zustand')) return 'zustand';
+              if (id.includes('tween') || id.includes('gsap')) return 'tweening';
+              return 'vendor';
+            }
+          },
+        },
+      },
+    },
   };
 });
