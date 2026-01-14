@@ -14,6 +14,9 @@ export interface QualitySettings {
   waterVolumeUpgradeEnabled: boolean;
   ambientParticlesEnabled: boolean;
   depthOfFieldEnabled: boolean;
+  // New adaptive flags (PoC opt-in)
+  adaptiveInstanceUpdatesEnabled: boolean;
+  adaptiveSchedulerEnabled: boolean;
 }
 
 type EnabledBooleanKey<T> = {
@@ -44,6 +47,8 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     waterVolumeUpgradeEnabled: false,
     ambientParticlesEnabled: false,
     depthOfFieldEnabled: false,
+    adaptiveInstanceUpdatesEnabled: false,
+    adaptiveSchedulerEnabled: false,
   },
   medium: {
     level: 'medium',
@@ -58,6 +63,8 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     waterVolumeUpgradeEnabled: true,
     ambientParticlesEnabled: true,
     depthOfFieldEnabled: false,
+    adaptiveInstanceUpdatesEnabled: false,
+    adaptiveSchedulerEnabled: false,
   },
   high: {
     level: 'high',
@@ -72,6 +79,8 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     waterVolumeUpgradeEnabled: true,
     ambientParticlesEnabled: true,
     depthOfFieldEnabled: false,
+    adaptiveInstanceUpdatesEnabled: false,
+    adaptiveSchedulerEnabled: false,
   },
   ultra: {
     level: 'ultra',
@@ -86,6 +95,8 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     waterVolumeUpgradeEnabled: true,
     ambientParticlesEnabled: true,
     depthOfFieldEnabled: true,
+    adaptiveInstanceUpdatesEnabled: false,
+    adaptiveSchedulerEnabled: false,
   },
 };
 
@@ -105,7 +116,9 @@ export const getQualitySettings = (level: QualityLevel, deviceMaxDpr: number): Q
   return {
     ...preset,
     dpr: getPresetDpr(level, deviceMaxDpr),
-  };
+    adaptiveInstanceUpdatesEnabled: preset.adaptiveInstanceUpdatesEnabled ?? false,
+    adaptiveSchedulerEnabled: preset.adaptiveSchedulerEnabled ?? false,
+  } as QualitySettings;
 };
 
 export const clampShadowMapSize = (size: number): number => {

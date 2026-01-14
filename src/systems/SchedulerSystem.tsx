@@ -15,6 +15,14 @@ export const SchedulerSystem = () => {
     }
   }, []);
 
+  const { adaptiveSchedulerEnabled } = ((): any => {
+    try {
+      return useVisualQuality();
+    } catch(e) {
+      return { adaptiveSchedulerEnabled: false };
+    }
+  })();
+
   useFrame((_, delta) => {
     const t0 = performance.now();
     const subSteps = fixedScheduler.update(delta);
@@ -47,7 +55,10 @@ export const SchedulerSystem = () => {
     // If EMA exceeds threshold and we have more than 1 substep allowed, reduce to 1 temporarily
     try {
       const currentMax = fixedScheduler.getMaxSubSteps();
-      const pocEnabled = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
+      const pocEnabledFromFlag = !!adaptiveSchedulerEnabled;
+      const pocEnabledFromWindow = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
+      const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
+
       if (pocEnabled && emaRef.current > SCHED_EMA_THRESHOLD && currentMax > 1 && cooldownRef.current === 0) {
         // reduce
         if (originalMaxRef.current === null) originalMaxRef.current = currentMax;

@@ -14,6 +14,8 @@ const VisualQualityReader = () => {
       <div data-testid="caustics">{String(flags.causticsEnabled)}</div>
       <div data-testid="fishRim">{String(flags.fishRimLightingEnabled)}</div>
       <div data-testid="dof">{String(flags.depthOfFieldEnabled)}</div>
+      <div data-testid="adaptiveInstance">{String(flags.adaptiveInstanceUpdatesEnabled ?? false)}</div>
+      <div data-testid="adaptiveSched">{String(flags.adaptiveSchedulerEnabled ?? false)}</div>
     </>
   );
 };
@@ -74,6 +76,9 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('caustics')).toHaveTextContent('true');
     expect(screen.getByTestId('fishRim')).toHaveTextContent('true');
     expect(screen.getByTestId('dof')).toHaveTextContent('false');
+    // defaults for PoC adaptive flags
+    expect(screen.getByTestId('adaptiveInstance')).toHaveTextContent('false');
+    expect(screen.getByTestId('adaptiveSched')).toHaveTextContent('false');
   });
 
   it('prefers per-flag overrides over store values', () => {
@@ -105,6 +110,18 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('caustics')).toHaveTextContent('false');
     expect(screen.getByTestId('fishRim')).toHaveTextContent('false');
     expect(screen.getByTestId('dof')).toHaveTextContent('true');
+    // overrides should also affect adaptive flags
+    useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true, adaptiveSchedulerEnabled: true } });
+    // cleanup previous render to avoid duplicated nodes
+    // eslint-disable-next-line testing-library/no-node-access
+    document.body.innerHTML = '';
+    render(
+      <VisualQualityProvider>
+        <VisualQualityReader />
+      </VisualQualityProvider>
+    );
+    expect(screen.getByTestId('adaptiveInstance')).toHaveTextContent('true');
+    expect(screen.getByTestId('adaptiveSched')).toHaveTextContent('true');
   });
 
   it('throws when used outside VisualQualityProvider', () => {

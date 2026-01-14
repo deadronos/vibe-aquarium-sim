@@ -18,6 +18,9 @@ export const VisualQualityProvider = ({ children }: { children: ReactNode }) => 
 
   const overrides = useGameStore((s) => s.visualQualityOverrides ?? {});
 
+  const adaptiveInstanceUpdatesEnabled = useQualityStore((s) => s.settings.adaptiveInstanceUpdatesEnabled);
+  const adaptiveSchedulerEnabled = useQualityStore((s) => s.settings.adaptiveSchedulerEnabled);
+
   const value = useMemo<VisualQualityFlags>(
     () => ({
       causticsEnabled: overrides.causticsEnabled ?? causticsEnabled,
@@ -29,6 +32,10 @@ export const VisualQualityProvider = ({ children }: { children: ReactNode }) => 
       waterVolumeUpgradeEnabled: overrides.waterVolumeUpgradeEnabled ?? waterVolumeUpgradeEnabled,
       ambientParticlesEnabled: overrides.ambientParticlesEnabled ?? ambientParticlesEnabled,
       depthOfFieldEnabled: overrides.depthOfFieldEnabled ?? depthOfFieldEnabled,
+      // New adaptive flags
+      adaptiveInstanceUpdatesEnabled:
+        overrides.adaptiveInstanceUpdatesEnabled ?? adaptiveInstanceUpdatesEnabled,
+      adaptiveSchedulerEnabled: overrides.adaptiveSchedulerEnabled ?? adaptiveSchedulerEnabled,
     }),
     [
       ambientParticlesEnabled,
@@ -43,8 +50,12 @@ export const VisualQualityProvider = ({ children }: { children: ReactNode }) => 
       overrides.fishSubsurfaceScatteringEnabled,
       overrides.waterSurfaceUpgradeEnabled,
       overrides.waterVolumeUpgradeEnabled,
+      overrides.adaptiveInstanceUpdatesEnabled,
+      overrides.adaptiveSchedulerEnabled,
       waterSurfaceUpgradeEnabled,
       waterVolumeUpgradeEnabled,
+      adaptiveInstanceUpdatesEnabled,
+      adaptiveSchedulerEnabled,
     ]
   );
 

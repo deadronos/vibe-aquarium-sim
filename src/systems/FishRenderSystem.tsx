@@ -26,7 +26,7 @@ const FORWARD = new Vector3(0, 0, 1);
 const fishEntitiesQuery = world.with('isFish', 'position', 'velocity');
 
 export const FishRenderSystem = () => {
-  const { fishRimLightingEnabled, fishSubsurfaceScatteringEnabled } = useVisualQuality();
+  const { fishRimLightingEnabled, fishSubsurfaceScatteringEnabled, adaptiveInstanceUpdatesEnabled } = useVisualQuality();
 
   // Load GLTF scenes
   const gltfA = useGLTF(MODEL_URLS[0]);
@@ -308,7 +308,9 @@ export const FishRenderSystem = () => {
 
       const ema = instanceUpdateEmaRef.current;
       // Skip adaptive PoC when explicitly disabled at runtime
-      const pocEnabled = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
+      const pocEnabledFromFlag = !!adaptiveInstanceUpdatesEnabled;
+      const pocEnabledFromWindow = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
+      const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
 
       if (pocEnabled) {
         // Target budget for this system (ms)
