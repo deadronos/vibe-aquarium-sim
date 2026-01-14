@@ -16,6 +16,7 @@ import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
+import { logShaderOnce } from '../utils/shaderDebug';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
@@ -217,6 +218,7 @@ const TankCausticsOverlayEnabled = () => {
         ref={materialRef}
         vertexShader={causticsVertexShader}
         fragmentShader={causticsFragmentShader}
+        onBeforeCompile={(shader) => logShaderOnce('Tank/Caustics', shader)}
         uniforms={uniforms}
         transparent={true}
         blending={AdditiveBlending}

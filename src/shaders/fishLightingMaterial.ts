@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { logShaderOnce } from '../utils/shaderDebug';
 
 export const VIBE_FISH_LIGHTING_MARKER = '// VIBE_RIM_LIGHTING';
 
@@ -75,6 +76,7 @@ const enhanceSingle = (source: THREE.Material) => {
     // differently-shaped record types.
     Object.assign(shader.uniforms, uniforms as unknown as Record<string, { value: unknown }>);
     injectRimAndSSS(shader);
+    logShaderOnce('Fish/Standard+RimSSS', shader);
   };
 
   // Ensure program cache differentiates the modified shader.
