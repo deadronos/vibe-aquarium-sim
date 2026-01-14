@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import React from 'react';
+import React, { act } from 'react';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
 import { TankCausticsOverlay } from '../src/components/Tank';
@@ -37,13 +37,17 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('TankCausticsOverlay', () => {
   beforeEach(() => {
-    useGameStore.setState({ visualQualityOverrides: {} });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: {} });
+    });
     useFrameSpy.mockClear();
     resetCapturedFrameCallback();
   });
 
   it('renders overlay shader with expected uniforms when caustics enabled', async () => {
-    useGameStore.setState({ visualQualityOverrides: { causticsEnabled: true } });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: true } });
+    });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
@@ -82,7 +86,9 @@ describe('TankCausticsOverlay', () => {
   });
 
   it('does not render overlay when caustics disabled via visualQualityOverrides', async () => {
-    useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
+    });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>

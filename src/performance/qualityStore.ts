@@ -7,11 +7,13 @@ interface QualityState {
   level: QualityLevel;
   settings: QualitySettings;
   fpsEma: number;
+  instanceUpdateBudget: number;
 
   setAdaptiveEnabled: (enabled: boolean) => void;
   setLevel: (level: QualityLevel) => void;
   setFpsEma: (fpsEma: number) => void;
   applyLevelWithDeviceClamp: (level: QualityLevel) => void;
+  setInstanceUpdateBudget: (budget: number) => void;
 }
 
 const deviceMaxDpr = getDeviceMaxDpr();
@@ -29,13 +31,17 @@ export const useQualityStore = create<QualityState>((set) => ({
     set({
       level,
       settings: getQualitySettings(level, getDeviceMaxDpr()),
+      instanceUpdateBudget: getQualitySettings(level, getDeviceMaxDpr()).instanceUpdateBudget,
     }),
 
   applyLevelWithDeviceClamp: (level) =>
     set({
       level,
       settings: getQualitySettings(level, getDeviceMaxDpr()),
+      instanceUpdateBudget: getQualitySettings(level, getDeviceMaxDpr()).instanceUpdateBudget,
     }),
 
   setFpsEma: (fpsEma) => set({ fpsEma }),
+
+  setInstanceUpdateBudget: (budget: number) => set({ instanceUpdateBudget: Math.max(8, Math.min(4096, Math.round(budget))) }),
 }));

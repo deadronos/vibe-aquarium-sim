@@ -7,6 +7,7 @@ import { world } from '../store';
 import type { Entity } from '../store';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
+import { useQualityStore } from '../performance/qualityStore';
 
 import { MODEL_URLS, extractModelAssets } from './fishModels';
 import {
@@ -23,10 +24,22 @@ const tempVec = new Vector3();
 const tempQuat = new Quaternion();
 const FORWARD = new Vector3(0, 0, 1);
 
+function createMatrixPool() {
+  const pool: THREE.Matrix4[] = new Array(MAX_INSTANCES_PER_MODEL);
+  for (let i = 0; i < MAX_INSTANCES_PER_MODEL; i++) pool[i] = new THREE.Matrix4();
+  return pool;
+}
+
+function createQuaternionFreeList() {
+  const list = new Int32Array(QUATERNION_POOL_SIZE);
+  for (let i = 0; i < QUATERNION_POOL_SIZE; i++) list[i] = i;
+  return list;
+}
+
 const fishEntitiesQuery = world.with('isFish', 'position', 'velocity');
 
 export const FishRenderSystem = () => {
-  const { fishRimLightingEnabled, fishSubsurfaceScatteringEnabled } = useVisualQuality();
+  const { fishRimLightingEnabled, fishSubsurfaceScatteringEnabled, adaptiveInstanceUpdatesEnabled } = useVisualQuality();
 
   // Load GLTF scenes
   const gltfA = useGLTF(MODEL_URLS[0]);
@@ -120,20 +133,15 @@ export const FishRenderSystem = () => {
 
   const quaternionFallback = useMemo(() => new Quaternion(), []);
 
-  const quaternionFreeListRef = useRef<Int32Array | null>(null);
-  if (quaternionFreeListRef.current === null) {
-    const list = new Int32Array(QUATERNION_POOL_SIZE);
-    for (let i = 0; i < QUATERNION_POOL_SIZE; i++) list[i] = i;
-    quaternionFreeListRef.current = list;
-  }
+  const quaternionFreeListRef = useRef<Int32Array>(createQuaternionFreeList());
 
   const quaternionFreeTop = useRef(QUATERNION_POOL_SIZE);
 
   useEffect(() => {
+    const quaternionFreeList = quaternionFreeListRef.current;
     return () => {
       const activeEntities = activeEntitiesRef.current;
       const prevEntities = prevEntitiesRef.current;
-      const quaternionFreeList = quaternionFreeListRef.current!;
 
       // Release any in-flight entities and scrub bookkeeping fields.
       for (let i = 0; i < activeEntities.length; i++) {
@@ -159,9 +167,30 @@ export const FishRenderSystem = () => {
     };
   }, []);
 
+  // Adaptive instance update controls (PoC)
+  const instanceUpdateEmaRef = useRef<number>(0);
+  const updateFrequencyRef = useRef<number>(1); // 1 = every frame, 2 = every other frame, etc.
+
+  // Chunked update data structures (mutable via refs)
+  const matrixPoolARef = useRef(createMatrixPool());
+  const matrixPoolBRef = useRef(createMatrixPool());
+  const matrixPoolCRef = useRef(createMatrixPool());
+  const dirtyARef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
+  const dirtyBRef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
+  const dirtyCRef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
+  const nextFlushARef = useRef<number>(0);
+  const nextFlushBRef = useRef<number>(0);
+  const nextFlushCRef = useRef<number>(0);
+
   useFrame(() => {
+    const frameStart = performance.now();
     frameId.current++;
     if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
+
+    const pocEnabledFromFlag = !!adaptiveInstanceUpdatesEnabled;
+    const pocEnabledFromWindow =
+      typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
+    const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
 
     const quaternionFreeList = quaternionFreeListRef.current!;
 
@@ -172,6 +201,10 @@ export const FishRenderSystem = () => {
     let countA = 0;
     let countB = 0;
     let countC = 0;
+
+    let wroteA = false;
+    let wroteB = false;
+    let wroteC = false;
 
     const fishEntities = fishEntitiesQuery.entities;
     for (let i = 0, len = fishEntities.length; i < len; i++) {
@@ -190,12 +223,6 @@ export const FishRenderSystem = () => {
       }
 
       // Choose which mesh and count to use
-      const mesh =
-        modelIndex === 0
-          ? meshRefA.current!
-          : modelIndex === 1
-            ? meshRefB.current!
-            : meshRefC.current!;
       const idx = modelIndex === 0 ? countA++ : modelIndex === 1 ? countB++ : countC++;
 
       if (idx >= MAX_INSTANCES_PER_MODEL) {
@@ -236,7 +263,32 @@ export const FishRenderSystem = () => {
       tempObj.scale.setScalar(0.3);
       tempObj.updateMatrix();
 
-      mesh.setMatrixAt(idx, tempObj.matrix);
+      // Record matrix into per-model pool and mark dirty for chunked flush
+      if (modelIndex === 0) {
+        matrixPoolARef.current[idx]!.copy(tempObj.matrix);
+        if (pocEnabled) {
+          dirtyARef.current[idx] = 1;
+        } else {
+          meshRefA.current.setMatrixAt(idx, tempObj.matrix);
+          wroteA = true;
+        }
+      } else if (modelIndex === 1) {
+        matrixPoolBRef.current[idx]!.copy(tempObj.matrix);
+        if (pocEnabled) {
+          dirtyBRef.current[idx] = 1;
+        } else {
+          meshRefB.current.setMatrixAt(idx, tempObj.matrix);
+          wroteB = true;
+        }
+      } else {
+        matrixPoolCRef.current[idx]!.copy(tempObj.matrix);
+        if (pocEnabled) {
+          dirtyCRef.current[idx] = 1;
+        } else {
+          meshRefC.current.setMatrixAt(idx, tempObj.matrix);
+          wroteC = true;
+        }
+      }
     }
 
     // Cleanup: sweep entities that were active last frame but not seen this frame.
@@ -285,13 +337,79 @@ export const FishRenderSystem = () => {
     prevEntitiesRef.current = activeEntitiesRef.current;
     activeEntitiesRef.current = tmp;
 
-    // Update counts and flag instance buffer updates
+    // Update counts
     meshRefA.current.count = Math.min(countA, MAX_INSTANCES_PER_MODEL);
     meshRefB.current.count = Math.min(countB, MAX_INSTANCES_PER_MODEL);
     meshRefC.current.count = Math.min(countC, MAX_INSTANCES_PER_MODEL);
-    meshRefA.current.instanceMatrix.needsUpdate = true;
-    meshRefB.current.instanceMatrix.needsUpdate = true;
-    meshRefC.current.instanceMatrix.needsUpdate = true;
+
+    // Adaptive instanceMatrix update frequency
+    try {
+      const frameEnd = performance.now();
+      const frameDuration = frameEnd - frameStart;
+
+      // EMA for frame duration
+      const alpha = 0.06;
+      instanceUpdateEmaRef.current = instanceUpdateEmaRef.current
+        ? instanceUpdateEmaRef.current + (frameDuration - instanceUpdateEmaRef.current) * alpha
+        : frameDuration;
+
+      const ema = instanceUpdateEmaRef.current;
+
+      if (pocEnabled) {
+        // Chunked flush
+        // Budget derived from quality store (default fallback 128)
+        const TOTAL_BUDGET = useQualityStore.getState().instanceUpdateBudget || 128;
+
+        const flushModel = (mesh: InstancedMesh | null, pool: THREE.Matrix4[], dirty: Uint8Array, nextRef: React.MutableRefObject<number>, count: number, perModelBudget: number) => {
+          if (!mesh || count <= 0) return 0;
+          const meshCount = Math.min(count, MAX_INSTANCES_PER_MODEL);
+          let flushed = 0;
+          let scanned = 0;
+          let idx = nextRef.current % meshCount;
+
+          while (flushed < perModelBudget && scanned < meshCount) {
+            if (dirty[idx]) {
+              mesh.setMatrixAt(idx, pool[idx]);
+              dirty[idx] = 0;
+              flushed++;
+            }
+            idx = (idx + 1) % meshCount;
+            scanned++;
+          }
+
+          nextRef.current = idx;
+          if (flushed > 0) mesh.instanceMatrix.needsUpdate = true;
+          return flushed;
+        };
+
+        const perModel = Math.ceil(TOTAL_BUDGET / 3);
+        const flushedA = flushModel(meshRefA.current, matrixPoolARef.current, dirtyARef.current, nextFlushARef, meshRefA.current.count, perModel);
+        const flushedB = flushModel(meshRefB.current, matrixPoolBRef.current, dirtyBRef.current, nextFlushBRef, meshRefB.current.count, perModel);
+        const flushedC = flushModel(meshRefC.current, matrixPoolCRef.current, dirtyCRef.current, nextFlushCRef, meshRefC.current.count, perModel);
+
+        const dbg = window.__vibe_debug;
+        if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, ema, flushed: flushedA + flushedB + flushedC });
+      } else {
+        // PoC disabled: matrices were written directly in the loop above.
+        if (wroteA) meshRefA.current.instanceMatrix.needsUpdate = true;
+        if (wroteB) meshRefB.current.instanceMatrix.needsUpdate = true;
+        if (wroteC) meshRefC.current.instanceMatrix.needsUpdate = true;
+      }
+
+      // Lightweight per-frame status for external sampling
+      try {
+        window.__vibe_renderStatus = {
+          updateFreq: updateFrequencyRef.current,
+          ema: instanceUpdateEmaRef.current || 0,
+          activeEntities: activeEntities.length,
+          frameDuration,
+        };
+      } catch {
+        /* ignore */
+      }
+    } catch {
+      /* ignore */
+    }
   });
 
   return (

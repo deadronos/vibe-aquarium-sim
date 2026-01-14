@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import React from 'react';
+import React, { act } from 'react';
 
 import { AmbientParticles } from '../src/components/AmbientParticles';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
@@ -17,35 +17,39 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('AmbientParticles', () => {
   beforeEach(() => {
-    const qualityState = useQualityStore.getState();
-    useQualityStore.setState(
-      {
-        ...qualityState,
-        // Make tests deterministic and order-independent.
-        isAdaptiveEnabled: true,
-        level: 'low',
-        settings: getQualitySettings('low', 2),
-        fpsEma: 60,
-      },
-      true
-    );
+    act(() => {
+      const qualityState = useQualityStore.getState();
+      useQualityStore.setState(
+        {
+          ...qualityState,
+          // Make tests deterministic and order-independent.
+          isAdaptiveEnabled: true,
+          level: 'low',
+          settings: getQualitySettings('low', 2),
+          fpsEma: 60,
+        },
+        true
+      );
 
-    const gameState = useGameStore.getState();
-    useGameStore.setState(
-      {
-        ...gameState,
-        lastFedTime: null,
-        isPlacingDecoration: false,
-        selectedDecorationType: 'seaweed',
-        pendingEffects: [],
-        visualQualityOverrides: {},
-      },
-      true
-    );
+      const gameState = useGameStore.getState();
+      useGameStore.setState(
+        {
+          ...gameState,
+          lastFedTime: null,
+          isPlacingDecoration: false,
+          selectedDecorationType: 'seaweed',
+          pendingEffects: [],
+          visualQualityOverrides: {},
+        },
+        true
+      );
+    });
   });
 
   it('renders particles when ambientParticlesEnabled override is true', async () => {
-    useGameStore.setState({ visualQualityOverrides: { ambientParticlesEnabled: true } });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { ambientParticlesEnabled: true } });
+    });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
@@ -73,7 +77,9 @@ describe('AmbientParticles', () => {
   });
 
   it('does not render particles when ambientParticlesEnabled override is false', async () => {
-    useGameStore.setState({ visualQualityOverrides: { ambientParticlesEnabled: false } });
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { ambientParticlesEnabled: false } });
+    });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
