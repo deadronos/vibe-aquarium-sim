@@ -5,6 +5,7 @@ import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, ShaderMateria
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
+import { logShaderOnce } from '../utils/shaderDebug';
 
 type ParticleUniforms = {
   time: { value: number };
@@ -158,6 +159,7 @@ const AmbientParticlesEnabled = () => {
       depthTest: true,
       blending: AdditiveBlending,
     });
+    nm.onBeforeCompile = (shader) => logShaderOnce('Particles/Near', shader);
 
     const fm = new ShaderMaterial({
       uniforms: farUniforms,
@@ -168,6 +170,7 @@ const AmbientParticlesEnabled = () => {
       depthTest: true,
       blending: AdditiveBlending,
     });
+    fm.onBeforeCompile = (shader) => logShaderOnce('Particles/Far', shader);
 
     return {
       nearGeometry: ng,

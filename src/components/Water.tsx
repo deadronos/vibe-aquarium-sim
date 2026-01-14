@@ -8,6 +8,7 @@ import {
   waterSurfaceVertexShader,
 } from '../shaders/waterSurfaceShader';
 import { TANK_DIMENSIONS } from '../config/constants';
+import { logShaderOnce } from '../utils/shaderDebug';
 
 const CAUSTICS_INTENSITY_ENABLED = 0.3;
 const VOLUME_SPECULAR_STRENGTH_ENABLED = 0.18;
@@ -88,6 +89,7 @@ export const Water = () => {
           ref={volumeMaterialRef}
           vertexShader={waterVertexShader}
           fragmentShader={waterFragmentShader}
+          onBeforeCompile={(shader) => logShaderOnce('Water/Volume', shader)}
           uniforms={volumeUniforms}
           transparent={true}
           side={DoubleSide}
@@ -106,6 +108,7 @@ export const Water = () => {
             ref={surfaceMaterialRef}
             vertexShader={waterSurfaceVertexShader}
             fragmentShader={waterSurfaceFragmentShader}
+            onBeforeCompile={(shader) => logShaderOnce('Water/Surface', shader)}
             uniforms={surfaceUniforms}
             transparent={true}
             side={DoubleSide}
