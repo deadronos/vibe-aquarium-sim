@@ -23,3 +23,5 @@
 - [TASK011] Fix Food Spawning Reachability - Completed (2025-12-17)
 - [TASK012] Offload boids + water forces to multithreading workers - Completed (2025-12-21)
 - [TASK013] Record tank material values & create design doc (DES015) - Completed (2026-01-13)
+- [TASK015] Fix build + code-splitting + lazy-load Rapier - Completed (2026-01-14)
+- [TASK016] Fix InstancedMesh matrix update bug (single fish rendered) - Completed (2026-01-14)

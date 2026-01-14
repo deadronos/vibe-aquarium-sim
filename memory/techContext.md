@@ -23,3 +23,9 @@
 - Keep render-loop allocations to a minimum: create module-level temporary vectors and reuse in `useFrame`.
 - Physics is authoritative — systems should apply impulses/velocities to `RigidBody` rather than manually setting transforms.
 - Follow the project's ESLint / Prettier rules. Run `npm run lint --max-warnings=0` and `npm run format` as part of development workflow.
+
+## Bundling notes
+
+- Production builds use Vite/Rollup `manualChunks` to split major dependencies (notably `three` and `rapier`).
+- The simulation scene is lazy-loaded to defer physics (Rapier) startup cost until simulation start.
+- React StrictMode is disabled in `src/main.tsx` to avoid dev-only WebGL context loss from R3F double-mount behavior.
