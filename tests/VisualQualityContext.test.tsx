@@ -101,7 +101,7 @@ describe('useVisualQuality', () => {
       });
     });
 
-    render(
+    const first = render(
       <VisualQualityProvider>
         <VisualQualityReader />
       </VisualQualityProvider>
@@ -113,8 +113,7 @@ describe('useVisualQuality', () => {
     // overrides should also affect adaptive flags
     useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true, adaptiveSchedulerEnabled: true } });
     // cleanup previous render to avoid duplicated nodes
-    // eslint-disable-next-line testing-library/no-node-access
-    document.body.innerHTML = '';
+    first.unmount();
     render(
       <VisualQualityProvider>
         <VisualQualityReader />

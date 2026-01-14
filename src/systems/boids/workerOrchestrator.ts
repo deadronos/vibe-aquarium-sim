@@ -14,8 +14,7 @@ export class WorkerOrchestrator {
 
     // Expose toggle via window for testing
     if (typeof window !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).toggleBoidsWorker = () => {
+      window.toggleBoidsWorker = () => {
         this.useWorker = !this.useWorker;
         console.log(`[BoidsSystem] Worker enabled: ${this.useWorker}`);
       };
@@ -84,12 +83,11 @@ export class WorkerOrchestrator {
         const t1 = performance.now();
         // Record timing to debug collector
         try {
-          const w = window as any;
-          const dbg = w && w.__vibe_debug ? w.__vibe_debug : null;
+            const dbg = window.__vibe_debug || null;
           if (dbg) {
             dbg.simulateStep.push({ duration: t1 - t0, time: Date.now(), fishCount: input.fishCount });
           }
-        } catch (e) {
+          } catch {
           /* ignore */
         }
       } catch (error) {

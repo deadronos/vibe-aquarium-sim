@@ -102,7 +102,7 @@ const Spawner = () => {
       // Debug helper: add N fish at runtime to stress test performance
       // Usage: window.__vibe_addFish(100);
       // Returns number added
-      (window as any).__vibe_addFish = (n: number) => {
+      window.__vibe_addFish = (n: number) => {
         let added = 0;
         for (let i = 0; i < n; i++) {
           world.add({

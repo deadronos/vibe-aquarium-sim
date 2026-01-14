@@ -13,6 +13,11 @@ const clampOutVelocity = { x: 0, y: 0, z: 0 };
 
 export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
+  const entityRef = useRef<Entity>(entity);
+
+  useEffect(() => {
+    entityRef.current = entity;
+  }, [entity]);
 
   useEffect(() => {
     return () => {
@@ -32,20 +37,21 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // Physics interactions and visuals in render loop
   // useFrame runs after the automatic physics step, making it safe to read/write
   useFrame(() => {
+    const ent = entityRef.current;
     // Lightweight sampling: measure every 10th call per-entity to avoid heavy logging
     try {
-      entity.__vibe_dbgCounter = (entity.__vibe_dbgCounter || 0) + 1;
-    } catch (e) {
+      ent.__vibe_dbgCounter = (ent.__vibe_dbgCounter || 0) + 1;
+    } catch {
       /* ignore */
     }
-    const sampleThis = (entity.__vibe_dbgCounter % 10) === 0;
+    const sampleThis = ent.__vibe_dbgCounter % 10 === 0;
     const t0 = sampleThis ? performance.now() : 0;
 
     const rb = rigidBody.current;
     if (!rb) return;
 
     // Use pre-existing targetVelocity from entity (initialized by Spawner)
-    const targetVelocity = entity.targetVelocity;
+    const targetVelocity = ent.targetVelocity;
     if (!targetVelocity) return;
 
     const currentPos = rb.translation();
@@ -53,15 +59,15 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
 
     // Apply steering force and external forces
-    applyQueuedForcesToRigidBody(targetVelocity, entity, FIXED_DT);
+    applyQueuedForcesToRigidBody(targetVelocity, ent, FIXED_DT);
 
     // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
-    if (entity.excitementLevel && entity.excitementLevel > 0.1) {
+    if (ent.excitementLevel && ent.excitementLevel > 0.1) {
       // Add extra speed in the current direction, capped
       const speedSq = targetVelocity.lengthSq();
       if (speedSq > 0.0001) {
         const speed = Math.sqrt(speedSq);
-        const boostAmount = entity.excitementLevel * 0.15; // Gentler boost
+        const boostAmount = ent.excitementLevel * 0.15; // Gentler boost
         targetVelocity.multiplyScalar((speed + boostAmount) / speed);
       }
     }
@@ -96,21 +102,21 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     }
 
     // Sync Physics -> ECS
-    if (entity.position) {
+    if (ent.position) {
       const pos = clamped ? clampOutPosition : currentPos;
-      entity.position.set(pos.x, pos.y, pos.z);
+      ent.position.set(pos.x, pos.y, pos.z);
     }
-    if (entity.velocity) {
+    if (ent.velocity) {
       const vel = clamped ? clampOutVelocity : targetVelocity;
-      entity.velocity.set(vel.x, vel.y, vel.z);
+      ent.velocity.set(vel.x, vel.y, vel.z);
     }
 
     if (sampleThis) {
       try {
         const t1 = performance.now();
-        const dbg = (window as any).__vibe_debug;
-        if (dbg) dbg.fishUseFrame.push({ duration: t1 - t0, modelIndex: entity.modelIndex ?? null });
-      } catch (e) {
+        const dbg = window.__vibe_debug;
+        if (dbg) dbg.fishUseFrame.push({ duration: t1 - t0, modelIndex: ent.modelIndex ?? null });
+      } catch {
         /* ignore */
       }
     }

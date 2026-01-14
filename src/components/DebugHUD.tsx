@@ -83,20 +83,6 @@ export const DebugHUD: React.FC = () => {
     }
   };
 
-  // Quality store integration for toggles/budget
-  const currentSettings = useQualityStore.getState();
-  const toggleAdaptiveInstance = () => {
-    const cur = useQualityStore.getState();
-    useQualityStore.setState({ settings: { ...cur.settings, adaptiveInstanceUpdatesEnabled: !cur.settings.adaptiveInstanceUpdatesEnabled } });
-  };
-  const toggleAdaptiveScheduler = () => {
-    const cur = useQualityStore.getState();
-    useQualityStore.setState({ settings: { ...cur.settings, adaptiveSchedulerEnabled: !cur.settings.adaptiveSchedulerEnabled } });
-  };
-  const setBudget = (value: number) => {
-    useQualityStore.getState().setInstanceUpdateBudget(value);
-  };
-
   return (
     <div className="vibe-debug-hud">
       <div className="title">Debug HUD</div>
