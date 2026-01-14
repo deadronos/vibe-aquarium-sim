@@ -163,6 +163,34 @@ export const FishRenderSystem = () => {
   const instanceUpdateEmaRef = useRef<number>(0);
   const updateFrequencyRef = useRef<number>(1); // 1 = every frame, 2 = every other frame, etc.
 
+  // Chunked update data structures
+  const matrixPoolARef = useRef<THREE.Matrix4[] | null>(null);
+  const matrixPoolBRef = useRef<THREE.Matrix4[] | null>(null);
+  const matrixPoolCRef = useRef<THREE.Matrix4[] | null>(null);
+  const dirtyARef = useRef<Uint8Array | null>(null);
+  const dirtyBRef = useRef<Uint8Array | null>(null);
+  const dirtyCRef = useRef<Uint8Array | null>(null);
+  const nextFlushARef = useRef<number>(0);
+  const nextFlushBRef = useRef<number>(0);
+  const nextFlushCRef = useRef<number>(0);
+
+  if (matrixPoolARef.current === null) {
+    const a: THREE.Matrix4[] = new Array(MAX_INSTANCES_PER_MODEL);
+    const b: THREE.Matrix4[] = new Array(MAX_INSTANCES_PER_MODEL);
+    const c: THREE.Matrix4[] = new Array(MAX_INSTANCES_PER_MODEL);
+    for (let i = 0; i < MAX_INSTANCES_PER_MODEL; i++) {
+      a[i] = new THREE.Matrix4();
+      b[i] = new THREE.Matrix4();
+      c[i] = new THREE.Matrix4();
+    }
+    matrixPoolARef.current = a;
+    matrixPoolBRef.current = b;
+    matrixPoolCRef.current = c;
+
+    dirtyARef.current = new Uint8Array(MAX_INSTANCES_PER_MODEL);
+    dirtyBRef.current = new Uint8Array(MAX_INSTANCES_PER_MODEL);
+    dirtyCRef.current = new Uint8Array(MAX_INSTANCES_PER_MODEL);
+  }
   useFrame(() => {
     const frameStart = performance.now();
     frameId.current++;
@@ -241,7 +269,17 @@ export const FishRenderSystem = () => {
       tempObj.scale.setScalar(0.3);
       tempObj.updateMatrix();
 
-      mesh.setMatrixAt(idx, tempObj.matrix);
+      // Record matrix into per-model pool and mark dirty for chunked flush
+      if (modelIndex === 0) {
+        matrixPoolARef.current![idx].copy(tempObj.matrix);
+        dirtyARef.current![idx] = 1;
+      } else if (modelIndex === 1) {
+        matrixPoolBRef.current![idx].copy(tempObj.matrix);
+        dirtyBRef.current![idx] = 1;
+      } else {
+        matrixPoolCRef.current![idx].copy(tempObj.matrix);
+        dirtyCRef.current![idx] = 1;
+      }
     }
 
     // Cleanup: sweep entities that were active last frame but not seen this frame.
@@ -313,32 +351,44 @@ export const FishRenderSystem = () => {
       const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
 
       if (pocEnabled) {
-        // Target budget for this system (ms)
-        const target = 12; // PoC threshold
+        // Chunked flush
+        const TOTAL_BUDGET = 128; // writes per frame across models
 
-        // Increase update frequency (less frequent updates) when ema exceeds target
-        let desiredFreq = 1;
-        if (ema > target) {
-          desiredFreq = Math.min(4, Math.ceil(ema / target));
-        }
-        updateFrequencyRef.current = desiredFreq;
+        const flushModel = (mesh: InstancedMesh | null, pool: THREE.Matrix4[], dirty: Uint8Array, nextRef: React.MutableRefObject<number>, count: number, perModelBudget: number) => {
+          if (!mesh || count <= 0) return 0;
+          const meshCount = Math.min(count, MAX_INSTANCES_PER_MODEL);
+          let flushed = 0;
+          let scanned = 0;
+          let idx = nextRef.current % meshCount;
 
-        const shouldUpdateThisFrame = frameId.current % updateFrequencyRef.current === 0;
+          while (flushed < perModelBudget && scanned < meshCount) {
+            if (dirty[idx]) {
+              mesh.setMatrixAt(idx, pool[idx]);
+              dirty[idx] = 0;
+              flushed++;
+            }
+            idx = (idx + 1) % meshCount;
+            scanned++;
+          }
 
-        if (shouldUpdateThisFrame) {
-          meshRefA.current.instanceMatrix.needsUpdate = true;
-          meshRefB.current.instanceMatrix.needsUpdate = true;
-          meshRefC.current.instanceMatrix.needsUpdate = true;
-        }
+          nextRef.current = idx;
+          if (flushed > 0) mesh.instanceMatrix.needsUpdate = true;
+          return flushed;
+        };
+
+        const perModel = Math.ceil(TOTAL_BUDGET / 3);
+        const flushedA = flushModel(meshRefA.current, matrixPoolARef.current!, dirtyARef.current!, nextFlushARef, meshRefA.current.count, perModel);
+        const flushedB = flushModel(meshRefB.current, matrixPoolBRef.current!, dirtyBRef.current!, nextFlushBRef, meshRefB.current.count, perModel);
+        const flushedC = flushModel(meshRefC.current, matrixPoolCRef.current!, dirtyCRef.current!, nextFlushCRef, meshRefC.current.count, perModel);
+
+        const dbg = (window as any).__vibe_debug;
+        if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, ema, flushed: flushedA + flushedB + flushedC });
       } else {
         // PoC disabled: always update instanceMatrix every frame (baseline behavior)
         meshRefA.current.instanceMatrix.needsUpdate = true;
         meshRefB.current.instanceMatrix.needsUpdate = true;
         meshRefC.current.instanceMatrix.needsUpdate = true;
       }
-
-      const dbg = (window as any).__vibe_debug;
-      if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, updateFreq: updateFrequencyRef.current });
 
       // Lightweight per-frame status for external sampling
       try {
