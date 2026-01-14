@@ -14,6 +14,7 @@ import { EffectsManager } from './components/EffectsManager';
 import { AmbientParticles } from './components/AmbientParticles';
 import { PostProcessing } from './components/PostProcessing';
 import { HUD } from './components/ui/HUD';
+import DebugHUD from './components/DebugHUD';
 import { FishRenderSystem } from './systems/FishRenderSystem';
 import { BoidsSystem } from './systems/BoidsSystem';
 import { ExcitementSystem } from './systems/ExcitementSystem';
@@ -136,6 +137,7 @@ function App() {
     <>
       {/* HUD overlay outside Canvas */}
       <HUD />
+      <DebugHUD />
 
       <VisualQualityProvider>
         <Canvas

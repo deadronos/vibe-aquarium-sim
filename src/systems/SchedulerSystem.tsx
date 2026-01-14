@@ -1,4 +1,5 @@
 import { useFrame } from '@react-three/fiber';
+import { useEffect, useRef } from 'react';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 
 export const SchedulerSystem = () => {
