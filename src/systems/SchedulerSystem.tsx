@@ -34,8 +34,10 @@ export const SchedulerSystem = () => {
 
     try {
       const dbg = window.__vibe_debug;
-      if (dbg) dbg.scheduler = dbg.scheduler || [];
-      if (dbg) dbg.scheduler.push({ duration: dur, subSteps, time: Date.now(), ema: emaRef.current });
+      if (dbg) {
+        const scheduler = (dbg.scheduler ||= []);
+        scheduler.push({ duration: dur, subSteps, time: Date.now(), ema: emaRef.current });
+      }
 
       // Publish lightweight status
       try {

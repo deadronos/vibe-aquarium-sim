@@ -1,4 +1,4 @@
-# TASK009 - Fix InstancedMesh matrix update bug (single fish rendered)
+# TASK016 - Fix InstancedMesh matrix update bug (single fish rendered)
 
 **Status:** Completed 2026-01-14  
 **Added:** 2026-01-14  

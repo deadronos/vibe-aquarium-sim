@@ -19,6 +19,11 @@
 - Avoid creating transient math objects inside `useFrame` loops — reuse module-level `Vector3` objects to minimize GC spikes.
 - Prefer `for...of` iteration over arrays / `world.with(...)` queries in performance-critical systems.
 
+## Bundling / runtime pattern
+
+- Keep the initial app shell lightweight; load the full `Canvas` + `Physics` scene lazily.
+- Rapier/physics-heavy code is gated behind the simulation start (or autostart) flow to reduce initial JS and defer WASM initialization.
+
 ## Files of interest
 
 - `src/store.ts` — ECS world and entity definitions

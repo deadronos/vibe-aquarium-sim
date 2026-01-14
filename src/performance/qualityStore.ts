@@ -24,6 +24,7 @@ export const useQualityStore = create<QualityState>((set) => ({
   level: initialLevel,
   settings: getQualitySettings(initialLevel, deviceMaxDpr),
   fpsEma: 60,
+  instanceUpdateBudget: getQualitySettings(initialLevel, deviceMaxDpr).instanceUpdateBudget,
 
   setAdaptiveEnabled: (enabled) => set({ isAdaptiveEnabled: enabled }),
 
