@@ -40,6 +40,10 @@
 - Offloaded boids, food seeking, and water forces to a `multithreading` worker kernel; main thread now applies results and side effects (TASK012).
 - App wiring updated to avoid double-applying water forces; format and lint run cleanly.
 
+### 2026-01-14
+
+- **Fix:** Resolved an instancing bug where only one fish was visible when many were spawned. Cause: per-instance matrices were not being written in the non-adaptive baseline path (PoC disabled), so instances used identity matrices and overlapped. Fix: `FishRenderSystem.tsx` now writes instance matrices directly in the hot loop when adaptive instance updates are disabled, and retains the chunked dirty-flush behavior when the PoC flag is enabled. (Files: `src/systems/FishRenderSystem.tsx`). Created `TASK009` documenting the fix and verification steps.
+
 ### 2026-01-13
 
 - Backfilled the Tank visual material and caustics uniforms into a new design doc `DES015`. Recorded exact `MeshTransmissionMaterial` defaults (opacity, ior, attenuationColor, clearcoat, etc.) and caustics shader uniforms (intensity, scale, speed, color).
