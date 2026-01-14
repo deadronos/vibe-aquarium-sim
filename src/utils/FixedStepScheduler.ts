@@ -3,12 +3,21 @@ export type Callback = (fixedDelta: number) => void;
 export class FixedStepScheduler {
   private accumulator = 0;
   private readonly fixedStep: number;
-  private readonly maxSubSteps: number;
+  private maxSubSteps: number;
   private callbacks: Set<Callback> = new Set();
 
   constructor(fixedStep = 1 / 60, maxSubSteps = 5) {
     this.fixedStep = fixedStep;
     this.maxSubSteps = maxSubSteps;
+  }
+
+  // PoC: allow dynamic tuning of max sub-steps
+  setMaxSubSteps(n: number) {
+    this.maxSubSteps = Math.max(1, Math.floor(n));
+  }
+
+  getMaxSubSteps() {
+    return this.maxSubSteps;
   }
 
   add(callback: Callback) {
@@ -32,6 +41,7 @@ export class FixedStepScheduler {
     if (this.accumulator > this.fixedStep * this.maxSubSteps) {
       this.accumulator = 0;
     }
+    return subSteps;
   }
 
   get alpha() {

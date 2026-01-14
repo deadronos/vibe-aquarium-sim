@@ -96,6 +96,34 @@ const Spawner = () => {
     spawnDecoration('seaweed', 5);
     spawnDecoration('coral', 5);
     spawnDecoration('rock', 5);
+
+    if (typeof window !== 'undefined') {
+      // Debug helper: add N fish at runtime to stress test performance
+      // Usage: window.__vibe_addFish(100);
+      // Returns number added
+      (window as any).__vibe_addFish = (n: number) => {
+        let added = 0;
+        for (let i = 0; i < n; i++) {
+          world.add({
+            isFish: true,
+            isBoid: true,
+            position: new Vector3(
+              (Math.random() - 0.5) * (SIMULATION_BOUNDS.x * 2),
+              (Math.random() - 0.5) * (SIMULATION_BOUNDS.y * 2),
+              (Math.random() - 0.5) * (SIMULATION_BOUNDS.z * 2)
+            ),
+            velocity: new Vector3((Math.random() - 0.5) * 1, (Math.random() - 0.5) * 1, (Math.random() - 0.5) * 1),
+            steeringForce: new Vector3(),
+            externalForce: new Vector3(),
+            targetVelocity: new Vector3(),
+            excitementLevel: 0,
+            excitementDecay: 0,
+          });
+          added++;
+        }
+        return added;
+      };
+    }
   }, []);
   return null;
 };

@@ -32,6 +32,15 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // Physics interactions and visuals in render loop
   // useFrame runs after the automatic physics step, making it safe to read/write
   useFrame(() => {
+    // Lightweight sampling: measure every 10th call per-entity to avoid heavy logging
+    try {
+      entity.__vibe_dbgCounter = (entity.__vibe_dbgCounter || 0) + 1;
+    } catch (e) {
+      /* ignore */
+    }
+    const sampleThis = (entity.__vibe_dbgCounter % 10) === 0;
+    const t0 = sampleThis ? performance.now() : 0;
+
     const rb = rigidBody.current;
     if (!rb) return;
 
@@ -94,6 +103,16 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     if (entity.velocity) {
       const vel = clamped ? clampOutVelocity : targetVelocity;
       entity.velocity.set(vel.x, vel.y, vel.z);
+    }
+
+    if (sampleThis) {
+      try {
+        const t1 = performance.now();
+        const dbg = (window as any).__vibe_debug;
+        if (dbg) dbg.fishUseFrame.push({ duration: t1 - t0, modelIndex: entity.modelIndex ?? null });
+      } catch (e) {
+        /* ignore */
+      }
     }
   });
 

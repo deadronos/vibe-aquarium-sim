@@ -159,7 +159,12 @@ export const FishRenderSystem = () => {
     };
   }, []);
 
+  // Adaptive instance update controls (PoC)
+  const instanceUpdateEmaRef = useRef<number>(0);
+  const updateFrequencyRef = useRef<number>(1); // 1 = every frame, 2 = every other frame, etc.
+
   useFrame(() => {
+    const frameStart = performance.now();
     frameId.current++;
     if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
 
@@ -285,13 +290,46 @@ export const FishRenderSystem = () => {
     prevEntitiesRef.current = activeEntitiesRef.current;
     activeEntitiesRef.current = tmp;
 
-    // Update counts and flag instance buffer updates
+    // Update counts
     meshRefA.current.count = Math.min(countA, MAX_INSTANCES_PER_MODEL);
     meshRefB.current.count = Math.min(countB, MAX_INSTANCES_PER_MODEL);
     meshRefC.current.count = Math.min(countC, MAX_INSTANCES_PER_MODEL);
-    meshRefA.current.instanceMatrix.needsUpdate = true;
-    meshRefB.current.instanceMatrix.needsUpdate = true;
-    meshRefC.current.instanceMatrix.needsUpdate = true;
+
+    // Adaptive instanceMatrix update frequency
+    try {
+      const frameEnd = performance.now();
+      const frameDuration = frameEnd - frameStart;
+
+      // EMA for frame duration
+      const alpha = 0.06;
+      instanceUpdateEmaRef.current = instanceUpdateEmaRef.current
+        ? instanceUpdateEmaRef.current + (frameDuration - instanceUpdateEmaRef.current) * alpha
+        : frameDuration;
+
+      const ema = instanceUpdateEmaRef.current;
+      // Target budget for this system (ms)
+      const target = 12; // PoC threshold
+
+      // Increase update frequency (less frequent updates) when ema exceeds target
+      let desiredFreq = 1;
+      if (ema > target) {
+        desiredFreq = Math.min(4, Math.ceil(ema / target));
+      }
+      updateFrequencyRef.current = desiredFreq;
+
+      const shouldUpdateThisFrame = frameId.current % updateFrequencyRef.current === 0;
+
+      if (shouldUpdateThisFrame) {
+        meshRefA.current.instanceMatrix.needsUpdate = true;
+        meshRefB.current.instanceMatrix.needsUpdate = true;
+        meshRefC.current.instanceMatrix.needsUpdate = true;
+      }
+
+      const dbg = (window as any).__vibe_debug;
+      if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, updateFreq: updateFrequencyRef.current });
+    } catch (e) {
+      /* ignore */
+    }
   });
 
   return (
