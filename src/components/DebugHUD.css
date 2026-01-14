@@ -4,3 +4,8 @@
 .vibe-debug-hud .controls{display:flex;gap:6px}
 .vibe-debug-hud button{cursor:pointer}
 .vibe-debug-hud .note{margin-top:8px;opacity:0.8;font-size:11px}
+.vibe-debug-hud .toggles{margin-top:8px}
+.vibe-debug-hud .toggles label{margin-right:8px}
+.vibe-debug-hud .toggles label.right{margin-left:8px}
+.vibe-debug-hud .budget{margin-top:6px}
+.vibe-debug-hud input[type='number']{width:80px;margin-left:8px}

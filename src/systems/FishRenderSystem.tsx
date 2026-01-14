@@ -352,7 +352,8 @@ export const FishRenderSystem = () => {
 
       if (pocEnabled) {
         // Chunked flush
-        const TOTAL_BUDGET = 128; // writes per frame across models
+        // Budget derived from quality store (default fallback 128)
+        const TOTAL_BUDGET = useQualityStore.getState().instanceUpdateBudget || 128;
 
         const flushModel = (mesh: InstancedMesh | null, pool: THREE.Matrix4[], dirty: Uint8Array, nextRef: React.MutableRefObject<number>, count: number, perModelBudget: number) => {
           if (!mesh || count <= 0) return 0;

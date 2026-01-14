@@ -17,6 +17,8 @@ export interface QualitySettings {
   // New adaptive flags (PoC opt-in)
   adaptiveInstanceUpdatesEnabled: boolean;
   adaptiveSchedulerEnabled: boolean;
+  // Control for chunked instance flush budget (writes per frame)
+  instanceUpdateBudget: number;
 }
 
 type EnabledBooleanKey<T> = {
@@ -49,6 +51,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     depthOfFieldEnabled: false,
     adaptiveInstanceUpdatesEnabled: false,
     adaptiveSchedulerEnabled: false,
+    instanceUpdateBudget: 128,
   },
   medium: {
     level: 'medium',
@@ -65,6 +68,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     depthOfFieldEnabled: false,
     adaptiveInstanceUpdatesEnabled: false,
     adaptiveSchedulerEnabled: false,
+    instanceUpdateBudget: 128,
   },
   high: {
     level: 'high',
@@ -81,6 +85,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     depthOfFieldEnabled: false,
     adaptiveInstanceUpdatesEnabled: false,
     adaptiveSchedulerEnabled: false,
+    instanceUpdateBudget: 128,
   },
   ultra: {
     level: 'ultra',
@@ -97,6 +102,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, Omit<QualitySettings, 'dpr'>>
     depthOfFieldEnabled: true,
     adaptiveInstanceUpdatesEnabled: false,
     adaptiveSchedulerEnabled: false,
+    instanceUpdateBudget: 128,
   },
 };
 
@@ -118,6 +124,7 @@ export const getQualitySettings = (level: QualityLevel, deviceMaxDpr: number): Q
     dpr: getPresetDpr(level, deviceMaxDpr),
     adaptiveInstanceUpdatesEnabled: preset.adaptiveInstanceUpdatesEnabled ?? false,
     adaptiveSchedulerEnabled: preset.adaptiveSchedulerEnabled ?? false,
+    instanceUpdateBudget: preset.instanceUpdateBudget ?? 128,
   } as QualitySettings;
 };
 

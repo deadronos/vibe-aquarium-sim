@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQualityStore } from '../performance/qualityStore';
 
 import './DebugHUD.css';
 
@@ -78,9 +79,22 @@ export const DebugHUD: React.FC = () => {
       const dbg = window.__vibe_debug;
       if (dbg && dbg.download) dbg.download();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.debug('DebugHUD download failed', err);
     }
+  };
+
+  // Quality store integration for toggles/budget
+  const currentSettings = useQualityStore.getState();
+  const toggleAdaptiveInstance = () => {
+    const cur = useQualityStore.getState();
+    useQualityStore.setState({ settings: { ...cur.settings, adaptiveInstanceUpdatesEnabled: !cur.settings.adaptiveInstanceUpdatesEnabled } });
+  };
+  const toggleAdaptiveScheduler = () => {
+    const cur = useQualityStore.getState();
+    useQualityStore.setState({ settings: { ...cur.settings, adaptiveSchedulerEnabled: !cur.settings.adaptiveSchedulerEnabled } });
+  };
+  const setBudget = (value: number) => {
+    useQualityStore.getState().setInstanceUpdateBudget(value);
   };
 
   return (
@@ -95,6 +109,49 @@ export const DebugHUD: React.FC = () => {
         <button onClick={() => addFish(100)}>+100 fish</button>
         <button onClick={() => addFish(300)}>+300 fish</button>
         <button onClick={downloadDebug}>Download trace</button>
+      </div>
+
+      <div className="toggles">
+        <label>
+          <input
+            type="checkbox"
+            checked={!!useQualityStore.getState().settings.adaptiveInstanceUpdatesEnabled}
+            onChange={() => {
+              const cur = useQualityStore.getState();
+              useQualityStore.setState({ settings: { ...cur.settings, adaptiveInstanceUpdatesEnabled: !cur.settings.adaptiveInstanceUpdatesEnabled } });
+            }}
+          />
+          Adaptive Instance Updates
+        </label>
+
+        <label className="right">
+          <input
+            type="checkbox"
+            checked={!!useQualityStore.getState().settings.adaptiveSchedulerEnabled}
+            onChange={() => {
+              const cur = useQualityStore.getState();
+              useQualityStore.setState({ settings: { ...cur.settings, adaptiveSchedulerEnabled: !cur.settings.adaptiveSchedulerEnabled } });
+            }}
+          />
+          Adaptive Scheduler
+        </label>
+
+        <div className="budget">
+          <label>
+            Instance budget:
+            <input
+              type="number"
+              defaultValue={useQualityStore.getState().instanceUpdateBudget}
+              min={8}
+              max={4096}
+              step={8}
+              onBlur={(e) => {
+                const v = Number(e.currentTarget.value) || 128;
+                useQualityStore.getState().setInstanceUpdateBudget(v);
+              }}
+            />
+          </label>
+        </div>
       </div>
 
       <div className="note">Note: PoC HUD — temporary for profiling. ✅</div>
