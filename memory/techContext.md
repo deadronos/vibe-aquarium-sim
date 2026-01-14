@@ -29,3 +29,4 @@
 - Production builds use Vite/Rollup `manualChunks` to split major dependencies (notably `three` and `rapier`).
 - The simulation scene is lazy-loaded to defer physics (Rapier) startup cost until simulation start.
 - React StrictMode is disabled in `src/main.tsx` to avoid dev-only WebGL context loss from R3F double-mount behavior.
+- Note: Production environments (CDNs, GitHub Pages) can evaluate JS module chunks in ways that expose module initialization ordering bugs when critical dependencies are split into tiny chunks. When that happens merge critical runtime dependencies into a single vendor chunk or add deployment smoke tests that validate the live site for console errors.

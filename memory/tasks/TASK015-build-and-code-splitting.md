@@ -49,3 +49,15 @@
 ## Notes / follow-ups
 
 - `rapier` and `three` chunks remain large (expected). Future improvements would be progressive loading of optional visual features (e.g. postprocessing) and/or deeper vendor chunking.
+
+### Deployed issue & patch (2026-01-14)
+
+- After deploying to GitHub Pages we observed runtime errors on the live site:
+  - `ReferenceError: Cannot access 'I' before initialization` in a small `zustand` chunk (manifested as a runtime bootstrap ordering bug).
+  - `TypeError: Cannot read properties of undefined (reading 'useLayoutEffect')` traced to the `three` chunk in production.
+- Root cause: subtle module evaluation ordering differences when vendor libraries are split into separate chunks on some hosting environments (observed on GitHub Pages). Tiny vendor chunks can evaluate before their dependencies are ready.
+- Fix applied:
+  - Merged `zustand` into the `vendor` chunk and rebuilt; this resolved the initial ReferenceError.
+  - To be safe, merged `three` into the `vendor` chunk as well (ensures React + three + related libs evaluate in a single vendor file), rebuilt, and validated by serving `dist/` under the `/vibe-aquarium-sim` base path and verifying no console errors.
+- Validation: production preview served locally (via a static server) showed no console errors and the simulation autostarted successfully.
+- Recommendation: redeploy the current `dist/` to GitHub Pages. Add an automated smoke-test that loads the deployed URL and scans the browser console for exceptions (tracked as `TASK017`).

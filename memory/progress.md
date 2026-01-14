@@ -47,6 +47,7 @@
 - **Build:** Fixed `npm run build` errors caused by debug/perf typings and store state drift; aligned `window.__vibe_debug` entry types and added missing fields (`instanceUpdateBudget`, `__vibe_dbgCounter`).
 - **Performance/UX:** Added code-splitting via Vite `manualChunks`, moved the full `Canvas` + `Physics` tree into a lazy-loaded `SimulationScene`, and gated Rapier behind a start/autostart flow.
 - **Stability:** Removed React StrictMode wrapper in `src/main.tsx` to avoid dev-only WebGL context loss from double-mounting.
+- **Deployed fix:** Observed runtime console errors on GitHub Pages due to module evaluation ordering; merged `zustand` (and then `three`) into the `vendor` chunk to ensure stable evaluation order, rebuilt and validated locally. Created follow-up `TASK017` to add deployment smoke tests.
 - Recorded as `TASK015`.
 
 ### 2026-01-13
