@@ -47,7 +47,8 @@ export const SchedulerSystem = () => {
     // If EMA exceeds threshold and we have more than 1 substep allowed, reduce to 1 temporarily
     try {
       const currentMax = fixedScheduler.getMaxSubSteps();
-      if (emaRef.current > SCHED_EMA_THRESHOLD && currentMax > 1 && cooldownRef.current === 0) {
+      const pocEnabled = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
+      if (pocEnabled && emaRef.current > SCHED_EMA_THRESHOLD && currentMax > 1 && cooldownRef.current === 0) {
         // reduce
         if (originalMaxRef.current === null) originalMaxRef.current = currentMax;
         fixedScheduler.setMaxSubSteps(1);

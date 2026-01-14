@@ -307,19 +307,29 @@ export const FishRenderSystem = () => {
         : frameDuration;
 
       const ema = instanceUpdateEmaRef.current;
-      // Target budget for this system (ms)
-      const target = 12; // PoC threshold
+      // Skip adaptive PoC when explicitly disabled at runtime
+      const pocEnabled = typeof window !== 'undefined' ? (window as any).__vibe_poc_enabled !== false : true;
 
-      // Increase update frequency (less frequent updates) when ema exceeds target
-      let desiredFreq = 1;
-      if (ema > target) {
-        desiredFreq = Math.min(4, Math.ceil(ema / target));
-      }
-      updateFrequencyRef.current = desiredFreq;
+      if (pocEnabled) {
+        // Target budget for this system (ms)
+        const target = 12; // PoC threshold
 
-      const shouldUpdateThisFrame = frameId.current % updateFrequencyRef.current === 0;
+        // Increase update frequency (less frequent updates) when ema exceeds target
+        let desiredFreq = 1;
+        if (ema > target) {
+          desiredFreq = Math.min(4, Math.ceil(ema / target));
+        }
+        updateFrequencyRef.current = desiredFreq;
 
-      if (shouldUpdateThisFrame) {
+        const shouldUpdateThisFrame = frameId.current % updateFrequencyRef.current === 0;
+
+        if (shouldUpdateThisFrame) {
+          meshRefA.current.instanceMatrix.needsUpdate = true;
+          meshRefB.current.instanceMatrix.needsUpdate = true;
+          meshRefC.current.instanceMatrix.needsUpdate = true;
+        }
+      } else {
+        // PoC disabled: always update instanceMatrix every frame (baseline behavior)
         meshRefA.current.instanceMatrix.needsUpdate = true;
         meshRefB.current.instanceMatrix.needsUpdate = true;
         meshRefC.current.instanceMatrix.needsUpdate = true;
