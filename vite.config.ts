@@ -46,7 +46,11 @@ export default defineConfig(({ command }) => {
               if (id.includes('@react-three') || id.includes('drei')) return 'r3f-drei';
               if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'rapier';
               if (id.includes('miniplex')) return 'miniplex';
-              if (id.includes('zustand')) return 'zustand';
+              // Merge zustand into vendor to avoid module initialization ordering issues that
+              // can cause runtime "Cannot access 'I' before initialization" errors in some
+              // deployed environments (observed on GitHub Pages). Keeping Zustand in the
+              // larger vendor chunk ensures correct evaluation order.
+              if (id.includes('zustand')) return 'vendor';
               if (id.includes('tween') || id.includes('gsap')) return 'tweening';
               return 'vendor';
             }
