@@ -12,7 +12,8 @@ type ParticleUniforms = {
   color: { value: Color };
   opacity: { value: number };
   pointSize: { value: number };
-  driftStrength: { value: number };
+  tankVolume: { value: [number, number, number] };
+  driftVelocity: { value: [number, number, number] };
 };
 
 const mulberry32 = (seed: number) => {
@@ -29,7 +30,8 @@ const mulberry32 = (seed: number) => {
 const particleVertexShader = /* glsl */ `
   uniform float time;
   uniform float pointSize;
-  uniform float driftStrength;
+  uniform vec3 tankVolume;
+  uniform vec3 driftVelocity;
 
   attribute float seed;
 
@@ -39,19 +41,36 @@ const particleVertexShader = /* glsl */ `
 
   void main() {
     vSeed = seed;
+    
+    // Initial position in the box volume
     vec3 p = position;
+    
+    // 1. Add infinite drift based on time
+    vec3 driftOffset = driftVelocity * time;
+    
+    // 2. Add some per-particle variation to the drift speed so they don't move as a rigid block
+    // We use the seed to vary the speed slightly (e.g., 0.8x to 1.2x)
+    float speedVar = 0.8 + 0.4 * fract(seed * 123.45);
+    p += driftOffset * speedVar;
 
-    // Subtle drift, no per-frame CPU buffer updates.
-    float t = time * 0.25 + seed * 12.345;
-    p.x += (sin(t) * 0.35 + sin(t * 0.73) * 0.2) * driftStrength;
-    p.y += (cos(t * 0.91) * 0.35 + sin(t * 0.41) * 0.2) * driftStrength;
-    p.z += (sin(t * 0.63) * 0.35 + cos(t * 0.57) * 0.2) * driftStrength;
+    // 3. Wrap around the volume (modulo) so they stay in the tank
+    // We assume 'p' can go outside, so we wrap it back to [-volume/2, volume/2]
+    // GLSL mod(x, y) returns x - y * floor(x/y)
+    // We offset by half volume to make the math easier (0..volume), mod, then shift back
+    vec3 halfVol = tankVolume * 0.5;
+    p = mod(p + halfVol, tankVolume) - halfVol;
+
+    // 4. Add "flutter" or "wobble" (existing logic retained but tuned)
+    // This makes the snow look like it's drifting in turbulent water
+    float t = time * 0.5 + seed * 50.0;
+    p.x += (sin(t) * 0.05 + sin(t * 1.7) * 0.03); 
+    p.y += (cos(t * 1.3) * 0.05 + sin(t * 0.8) * 0.03); 
+    p.z += (sin(t * 1.1) * 0.05 + cos(t * 1.5) * 0.03);
 
     vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
     // Perspective-correct point sizing
-    // Avoid division-by-zero when mvPosition.z is near 0 (some drivers warn or error)
     float depth = max(abs(mvPosition.z), EPS);
     gl_PointSize = pointSize * (300.0 / depth);
   }
@@ -66,15 +85,16 @@ const particleFragmentShader = /* glsl */ `
     vec2 uv = gl_PointCoord * 2.0 - 1.0;
     float r2 = dot(uv, uv);
 
+    if (r2 > 1.0) discard;
+
     // Soft round sprite
     float alpha = smoothstep(1.0, 0.0, r2);
-    alpha *= alpha;
-
-    // Tiny per-particle variation
-    float twinkle = 0.75 + 0.25 * fract(sin(vSeed * 43758.5453) * 43758.5453);
+    
+    // vSeed based flicker / twinkle
+    // Slower twinkle for snow
+    float twinkle = 0.6 + 0.4 * sin(vSeed * 99.0 + color.r); 
 
     gl_FragColor = vec4(color, opacity * alpha * twinkle);
-    if (gl_FragColor.a < 0.01) discard;
   }
 `;
 
@@ -110,20 +130,13 @@ const AmbientParticlesEnabled = () => {
 
   const particleMultiplier = useQualityStore((s) => s.settings.effectParticleMultiplier);
 
-  // Conservative counts; keep draw calls low (2 Points).
-  const nearCount = Math.max(100, Math.floor(220 * particleMultiplier));
-  const farCount = Math.max(150, Math.floor(320 * particleMultiplier));
+  // Increased counts for "snow" density
+  const nearCount = Math.max(150, Math.floor(400 * particleMultiplier));
+  const farCount = Math.max(300, Math.floor(600 * particleMultiplier));
 
-  const nearVolume = useMemo(
-    () => ({
-      x: TANK_DIMENSIONS.width * 0.95,
-      y: TANK_DIMENSIONS.height * 0.9,
-      z: TANK_DIMENSIONS.depth * 0.95,
-    }),
-    []
-  );
-
-  const farVolume = useMemo(
+  // Use nearly full tank dimensions for the wrap volume
+  // We reduce slightly to ensure they don't clip through walls too obviously if the camera is outside
+  const volume = useMemo(
     () => ({
       x: TANK_DIMENSIONS.width * 0.98,
       y: TANK_DIMENSIONS.height * 0.98,
@@ -133,23 +146,29 @@ const AmbientParticlesEnabled = () => {
   );
 
   const { nearGeometry, farGeometry, nearMaterial, farMaterial } = useMemo(() => {
-    const ng = createParticlesGeometry(nearCount, 0x1234abcd, nearVolume);
-    const fg = createParticlesGeometry(farCount, 0xdeadbeef, farVolume);
+    const ng = createParticlesGeometry(nearCount, 0x1234abcd, volume);
+    const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
+
+    const commonUniforms = {
+        tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
+        // Drift vector: slight X movement, downward Y movement
+        driftVelocity: { value: [0.08, -0.05, 0.02] as [number, number, number] }, 
+    };
 
     const nearUniforms: ParticleUniforms = {
+      ...commonUniforms,
       time: { value: 0 },
-      color: { value: new Color('#a9c7ff') },
-      opacity: { value: 0.12 },
-      pointSize: { value: 0.9 },
-      driftStrength: { value: 0.04 },
+      color: { value: new Color('#ffffff') }, // Pure white snow
+      opacity: { value: 0.4 }, // Subtle
+      pointSize: { value: 0.06 }, // Tiny specks (was 1.5)
     };
 
     const farUniforms: ParticleUniforms = {
+      ...commonUniforms,
       time: { value: 0 },
-      color: { value: new Color('#7aa5ff') },
-      opacity: { value: 0.06 },
-      pointSize: { value: 0.7 },
-      driftStrength: { value: 0.025 },
+      color: { value: new Color('#eeeeee') }, // Slightly dimmed
+      opacity: { value: 0.2 },
+      pointSize: { value: 0.04 }, // Even smaller (was 1.0)
     };
 
     const nm = new ShaderMaterial({
@@ -170,7 +189,7 @@ const AmbientParticlesEnabled = () => {
       transparent: true,
       depthWrite: false,
       depthTest: true,
-      blending: AdditiveBlending,
+       blending: AdditiveBlending,
     });
     fm.onBeforeCompile = (shader) => logShaderOnce('Particles/Far', shader);
 
@@ -180,7 +199,7 @@ const AmbientParticlesEnabled = () => {
       nearMaterial: nm,
       farMaterial: fm,
     };
-  }, [farCount, farVolume, nearCount, nearVolume]);
+  }, [farCount, nearCount, volume]);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;

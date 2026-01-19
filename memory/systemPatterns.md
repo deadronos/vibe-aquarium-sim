@@ -19,6 +19,13 @@
 - Avoid creating transient math objects inside `useFrame` loops — reuse module-level `Vector3` objects to minimize GC spikes.
 - Prefer `for...of` iteration over arrays / `world.with(...)` queries in performance-critical systems.
 
+## GPU / Shader Patterns
+
+- **Infinite Particle Volumes**: For ambient particles (marine snow, dust), avoid CPU-side position updates or recycling logic.
+  - Instead, use `mod(position + time * speed, volume)` in the vertex shader to wrap particles endlessly within a bounding box.
+  - Pass simulation bounds as uniforms to the shader.
+  - Use per-particle `seed` attributes for drift variation and offset to prevent rigid block movement.
+
 ## Bundling / runtime pattern
 
 - Keep the initial app shell lightweight; load the full `Canvas` + `Physics` scene lazily.
