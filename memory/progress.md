@@ -54,3 +54,11 @@
 
 - Backfilled the Tank visual material and caustics uniforms into a new design doc `DES015`. Recorded exact `MeshTransmissionMaterial` defaults (opacity, ior, attenuationColor, clearcoat, etc.) and caustics shader uniforms (intensity, scale, speed, color).
 - Created `TASK013` (completed) to record values and `TASK014` (pending) to add unit tests ensuring the Tank material defaults remain stable.
+
+### 2026-01-19
+
+- **Feature (Visuals):** Implemented Marine Snow particle system (`AmbientParticles.tsx`) to add depth.
+  - Replaced the static/wobbling ambient particles with a directional drift system.
+  - Implemented infinite wrapping via vertex shader (`mod()` based on volume bounds).
+  - Tuned for high subtlety (tiny white specks) to avoid visual noise.
+  - Validated with `npm run typecheck`.
