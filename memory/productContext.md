@@ -18,5 +18,6 @@ The project exists to provide a lightweight, extendable sandbox for experimentin
 ## User experience goals
 
 - A calm, visually pleasing default scene with a handful of fishes moving naturally
+- **Environmental Depth**: Visual cues (like marine snow/particulates) should provide parallax to make the tank feel like a 3D volume, not a flat image.
 - Gentle UI to tweak simulation parameters, spawn fish, or toggle debugging overlays
 - Fast feedback loop for developers via `npm run dev` and a clean test & lint workflow

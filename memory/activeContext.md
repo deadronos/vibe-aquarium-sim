@@ -7,6 +7,10 @@
 
 ## Recent changes
 
+- Implemented **Marine Snow** particle system:
+  - Replaced `AmbientParticles` with a directional drift + wrap-around shader.
+  - Used `mod()` logic in vertex shader for infinite snow volume without CPU overhead.
+  - Tuned visuals for subtle white specks to enhance depth perception.
 - Implemented hybrid water simulation (visual shader, drag/resistance system, procedural currents).
 - Implemented fixed-step scheduler and moved Boids logic into the scheduler.
 - Added physics-safe force-queue utilities and reworked components (Fish/Food) to apply queued forces safely.
@@ -26,5 +30,6 @@
 
 ## Active decisions / considerations
 
+- **Particle Systems**: Use GPU-side wrapping (modulo arithmetic) for ambient/environmental particles to create infinite volumes without CPU allocation or complex buffer management.
 - Physics is the authoritative source of truth for simulation state; systems must drive the physics, not directly mutate positions.
 - Keep render-loop allocations to a minimum (module-level vector reuse). This is a strict performance constraint for `useFrame`-driven systems.

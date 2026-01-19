@@ -55,12 +55,12 @@ const injectRimAndSSS = (shader: ShaderLike) => {
 
   shader.fragmentShader = shader.fragmentShader.replace(
     '#include <common>',
-    `#include <common>\n${VIBE_FISH_LIGHTING_MARKER}\nuniform vec3 vibeRimColor;\nuniform float vibeRimStrength;\nuniform float vibeRimPower;\nuniform vec3 vibeSSSColor;\nuniform float vibeSSSStrength;\nuniform float vibeSSSPower;\n`
+    `#include <common>\n${VIBE_FISH_LIGHTING_MARKER}\nuniform vec3 vibeRimColor;\nuniform float vibeRimStrength;\nuniform float vibeRimPower;\nuniform vec3 vibeSSSColor;\nuniform float vibeSSSStrength;\nuniform float vibeSSSPower;\nconst float VIBE_EPS = 1e-6;\nvec3 vibeSafeNormalize(vec3 v){ return v * inversesqrt(max(dot(v, v), VIBE_EPS)); }\n`
   );
 
   shader.fragmentShader = shader.fragmentShader.replace(
     '#include <output_fragment>',
-    `\n${VIBE_FISH_LIGHTING_MARKER}\nvec3 vibeN = normalize( normal );\nvec3 vibeV = normalize( vViewPosition );\nfloat vibeNdotV = saturate( dot( vibeN, vibeV ) );\n\n// Subtle rim (fresnel-ish)\nfloat vibeRim = pow( 1.0 - vibeNdotV, vibeRimPower ) * vibeRimStrength;\noutgoingLight += vibeRimColor * vibeRim;\n\n// Faux wrap/SSS tint (soft edge lift)\nfloat vibeSSS = pow( 1.0 - vibeNdotV, vibeSSSPower ) * vibeSSSStrength;\noutgoingLight += vibeSSSColor * vibeSSS;\n\n#include <output_fragment>`
+    `\n${VIBE_FISH_LIGHTING_MARKER}\nvec3 vibeN = vibeSafeNormalize( normal );\nvec3 vibeV = vibeSafeNormalize( vViewPosition );\nfloat vibeNdotV = saturate( dot( vibeN, vibeV ) );\n\n// Subtle rim (fresnel-ish)\nfloat vibeRim = pow( 1.0 - vibeNdotV, vibeRimPower ) * vibeRimStrength;\noutgoingLight += vibeRimColor * vibeRim;\n\n// Faux wrap/SSS tint (soft edge lift)\nfloat vibeSSS = pow( 1.0 - vibeNdotV, vibeSSSPower ) * vibeSSSStrength;\noutgoingLight += vibeSSSColor * vibeSSS;\n\n#include <output_fragment>`
   );
 };
 
