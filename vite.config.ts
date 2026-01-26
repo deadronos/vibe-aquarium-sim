@@ -24,13 +24,15 @@ export default defineConfig(({ command }) => {
       },
     },
     resolve: {
-        alias: [
-          // Force a single resolution of `three` to avoid multiple-instance warnings in tests
-          { find: 'three', replacement: path.resolve(__dirname, 'node_modules/three') },
-          // Also map deep imports like 'three/src/...' to the same package
-          { find: /^three\/(.*)/, replacement: path.resolve(__dirname, 'node_modules/three/$1') },
-        ],
-      },
+      alias: [
+        // Specific alias for three/webgpu to point to the correct build file
+        { find: 'three/webgpu', replacement: path.resolve(__dirname, 'node_modules/three/build/three.webgpu.js') },
+        // Force a single resolution of `three` to avoid multiple-instance warnings in tests
+        { find: 'three', replacement: path.resolve(__dirname, 'node_modules/three') },
+        // Also map deep imports like 'three/src/...' to the same package
+        { find: /^three\/(.*)/, replacement: path.resolve(__dirname, 'node_modules/three/$1') },
+      ],
+    },
     optimizeDeps: {
       // multithreading uses a worker entry import that the dep optimizer can choke on in dev,
       // leading to missing prebundled worker modules and repeated worker crashes.
