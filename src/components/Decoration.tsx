@@ -21,7 +21,7 @@ const Seaweed: React.FC<{ blades?: { height: number; offset: number; phase: numb
     { height: 0.35, offset: -0.04, phase: 2 },
   ];
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!groupRef.current) return;
     const time = state.clock.elapsedTime;
 

@@ -31,7 +31,7 @@ export const BubbleTrail = ({ parentPosition, bubbles: propBubbles }: BubbleTrai
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   const bubbles = propBubbles ?? DEFAULT_BUBBLES;
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!instancedMeshRef.current) return;
     const time = state.clock.elapsedTime;
 

@@ -14,13 +14,13 @@ export const ClickRipple = ({ position, onComplete }: ClickRippleProps) => {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
   const startTime = useRef<number | null>(null);
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!meshRef.current || !materialRef.current) return;
     if (startTime.current === null) {
       startTime.current = state.clock.elapsedTime;
     }
 
-    const elapsed = state.clock.elapsedTime - startTime.current;
+    const elapsed = state.clock.elapsedTime - startTime.current!;
     const progress = elapsed / DURATION_SECONDS;
 
     if (progress >= 1) {

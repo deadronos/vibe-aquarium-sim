@@ -21,7 +21,7 @@ export const Food = ({ entity }: { entity: Entity }) => {
   }, [entity.velocity]);
 
   // Sync physics back to ECS
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!rigidBody.current || !entity.position) return;
 
     const pos = rigidBody.current.translation();
@@ -35,7 +35,7 @@ export const Food = ({ entity }: { entity: Entity }) => {
         spawnStartTimeRef.current = state.clock.elapsedTime;
       }
 
-      const elapsed = state.clock.elapsedTime - spawnStartTimeRef.current;
+      const elapsed = state.clock.elapsedTime - spawnStartTimeRef.current!;
       const progress = elapsed / SPAWN_DURATION_SECONDS;
 
       if (progress >= 1) {

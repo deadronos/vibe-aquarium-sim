@@ -150,9 +150,9 @@ const AmbientParticlesEnabled = () => {
     const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
 
     const commonUniforms = {
-        tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
-        // Drift vector: slight X movement, downward Y movement
-        driftVelocity: { value: [0.08, -0.05, 0.02] as [number, number, number] }, 
+      tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
+      // Drift vector: slight X movement, downward Y movement
+      driftVelocity: { value: [0.08, -0.05, 0.02] as [number, number, number] },
     };
 
     const nearUniforms: ParticleUniforms = {
@@ -180,7 +180,7 @@ const AmbientParticlesEnabled = () => {
       depthTest: true,
       blending: AdditiveBlending,
     });
-    nm.onBeforeCompile = (shader) => logShaderOnce('Particles/Near', shader);
+    nm.onBeforeCompile = (shader: any) => logShaderOnce('Particles/Near', shader);
 
     const fm = new ShaderMaterial({
       uniforms: farUniforms,
@@ -189,9 +189,9 @@ const AmbientParticlesEnabled = () => {
       transparent: true,
       depthWrite: false,
       depthTest: true,
-       blending: AdditiveBlending,
+      blending: AdditiveBlending,
     });
-    fm.onBeforeCompile = (shader) => logShaderOnce('Particles/Far', shader);
+    fm.onBeforeCompile = (shader: any) => logShaderOnce('Particles/Far', shader);
 
     return {
       nearGeometry: ng,
@@ -201,7 +201,7 @@ const AmbientParticlesEnabled = () => {
     };
   }, [farCount, nearCount, volume]);
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     const t = state.clock.elapsedTime;
     if (nearTimeUniformRef.current) nearTimeUniformRef.current.value = t;
     if (farTimeUniformRef.current) farTimeUniformRef.current.value = t;

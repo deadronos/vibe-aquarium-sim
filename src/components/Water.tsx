@@ -64,7 +64,7 @@ export const Water = () => {
     }
   }, [waterVolumeUpgradeEnabled]);
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     const t = state.clock.elapsedTime;
     if (volumeMaterialRef.current) {
       volumeMaterialRef.current.uniforms.time.value = t;
@@ -89,7 +89,7 @@ export const Water = () => {
           ref={volumeMaterialRef}
           vertexShader={waterVertexShader}
           fragmentShader={waterFragmentShader}
-          onBeforeCompile={(shader) => logShaderOnce('Water/Volume', shader)}
+          onBeforeCompile={(shader: any) => logShaderOnce('Water/Volume', shader)}
           uniforms={volumeUniforms}
           transparent={true}
           side={DoubleSide}
@@ -108,7 +108,7 @@ export const Water = () => {
             ref={surfaceMaterialRef}
             vertexShader={waterSurfaceVertexShader}
             fragmentShader={waterSurfaceFragmentShader}
-            onBeforeCompile={(shader) => logShaderOnce('Water/Surface', shader)}
+            onBeforeCompile={(shader: any) => logShaderOnce('Water/Surface', shader)}
             uniforms={surfaceUniforms}
             transparent={true}
             side={DoubleSide}

@@ -25,12 +25,8 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        // Specific alias for three/webgpu to point to the correct build file
-        { find: 'three/webgpu', replacement: path.resolve(__dirname, 'node_modules/three/build/three.webgpu.js') },
-        // Force a single resolution of `three` to avoid multiple-instance warnings in tests
-        { find: 'three', replacement: path.resolve(__dirname, 'node_modules/three') },
-        // Also map deep imports like 'three/src/...' to the same package
-        { find: /^three\/(.*)/, replacement: path.resolve(__dirname, 'node_modules/three/$1') },
+        { find: 'three/webgpu', replacement: path.resolve('node_modules/three/build/three.webgpu.js') },
+        { find: 'three/addons', replacement: path.resolve('node_modules/three/examples/jsm') },
       ],
     },
     optimizeDeps: {

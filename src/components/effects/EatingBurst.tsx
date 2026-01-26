@@ -17,13 +17,13 @@ export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurs
   const startTime = useRef<number | null>(null);
   const particleCount = particles.length || 10; // Use actual particle count
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!instancedMeshRef.current || !materialRef.current) return;
     if (startTime.current === null) {
       startTime.current = state.clock.elapsedTime;
     }
 
-    const elapsed = state.clock.elapsedTime - startTime.current;
+    const elapsed = state.clock.elapsedTime - startTime.current!;
     const progress = elapsed / DURATION_SECONDS;
 
     if (progress >= 1) {
