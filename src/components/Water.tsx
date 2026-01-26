@@ -65,7 +65,7 @@ export const Water = () => {
   }, [waterVolumeUpgradeEnabled]);
 
   useFrame((state: any) => {
-    const t = state.clock.elapsedTime;
+    const t = state.clock?.elapsedTime || performance.now() / 1000;
     if (volumeMaterialRef.current) {
       volumeMaterialRef.current.uniforms.time.value = t;
     }

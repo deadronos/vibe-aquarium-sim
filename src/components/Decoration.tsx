@@ -23,7 +23,7 @@ const Seaweed: React.FC<{ blades?: { height: number; offset: number; phase: numb
 
   useFrame((state: any) => {
     if (!groupRef.current) return;
-    const time = state.clock.elapsedTime;
+    const time = state.clock?.elapsedTime || performance.now() / 1000;
 
     // Subtle swaying animation
     groupRef.current.children.forEach((child, i) => {

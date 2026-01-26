@@ -205,7 +205,7 @@ const TankCausticsOverlayEnabled = () => {
 
   useFrame((state: any) => {
     if (!materialRef.current) return;
-    materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+    materialRef.current.uniforms.time.value = state.clock?.elapsedTime || performance.now() / 1000;
   });
 
   return (

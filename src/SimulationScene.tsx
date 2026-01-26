@@ -162,7 +162,7 @@ export default function SimulationScene() {
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows
-        gl={async (canvas) => {
+        renderer={async ({ canvas }) => {
           const Renderer = rendererConfig.ctor;
           const renderer = new Renderer({
             canvas,
