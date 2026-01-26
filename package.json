@@ -16,8 +16,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
+    "@react-three/drei": "^11.0.0-alpha.4",
+    "@react-three/fiber": "^10.0.0-alpha.2",
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/rapier": "^2.2.0",
     "@types/three": "^0.182.0",
@@ -29,8 +29,8 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@react-three/test-renderer": "^9.1.0",
+    "@eslint/js": "^10.0.0-rc.0",
+    "@react-three/test-renderer": "^10.0.0-alpha.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.0.10",
@@ -39,17 +39,17 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.18",
     "babel-plugin-react-compiler": "^1.0.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0-rc.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.26",
+    "eslint-plugin-react-refresh": "^0.5.0-alpha.2",
     "globals": "^17.1.0",
     "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
-    "vite": "^7.3.1",
+    "typescript": "^6.0.0-dev.20260126",
+    "typescript-eslint": "^8.53.2-alpha.8",
+    "vite": "^8.0.0-beta.10",
     "vitest": "^4.0.18"
   }
 }
