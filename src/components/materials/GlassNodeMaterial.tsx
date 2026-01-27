@@ -42,7 +42,8 @@ export const GlassNodeMaterial = ({
       ior={ior}
       dispersion={chromaticAberration} // 'dispersion' is the new standard property for chromatic aberration in Three.js
       transparent={true}
-      side={THREE.DoubleSide}
+      depthWrite={false}
+      side={THREE.FrontSide}
     />
   );
 };

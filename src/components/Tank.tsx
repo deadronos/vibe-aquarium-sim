@@ -5,13 +5,13 @@ import { Box } from '@react-three/drei';
 // import { Text, MeshTransmissionMaterial } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import {
-  AdditiveBlending,
   BoxGeometry,
   BufferGeometry,
   Color,
   PlaneGeometry,
   ShaderMaterial,
 } from 'three';
+import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -21,6 +21,7 @@ import { useVisualQuality } from '../performance/VisualQualityContext';
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
 import { logShaderOnce } from '../utils/shaderDebug';
 import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
+import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
@@ -165,6 +166,7 @@ const CAUSTICS_OVERLAY_INSET = 0.003;
 const TankCausticsOverlayEnabled = () => {
   const materialRef = useRef<ShaderMaterial>(null);
   const { width, height, depth } = TANK_DIMENSIONS;
+  const { isWebGPU } = useVisualQuality();
 
   const uniforms = useMemo(
     () => ({
@@ -222,23 +224,32 @@ const TankCausticsOverlayEnabled = () => {
 
   return (
     <mesh geometry={geometry}>
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={causticsVertexShader}
-        fragmentShader={causticsFragmentShader}
-        onBeforeCompile={(shader: any) => logShaderOnce('Tank/Caustics', shader)}
-        uniforms={uniforms}
-        transparent={true}
-        blending={AdditiveBlending}
-        depthWrite={false}
-        depthTest={true}
-      />
+      {isWebGPU ? (
+        <TankCausticsNodeMaterial
+          color="#aaddff"
+          intensity={0.85}
+          scale={1.35}
+          speed={0.45}
+        />
+      ) : (
+        <shaderMaterial
+          ref={materialRef}
+          vertexShader={causticsVertexShader}
+          fragmentShader={causticsFragmentShader}
+          onBeforeCompile={(shader: any) => logShaderOnce('Tank/Caustics', shader)}
+          uniforms={uniforms}
+          transparent={true}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          depthTest={true}
+        />
+      )}
     </mesh>
   );
 };
 
 export const TankCausticsOverlay = () => {
-  const { causticsEnabled, isWebGPU } = useVisualQuality();
-  if (!causticsEnabled || isWebGPU) return null;
+  const { causticsEnabled } = useVisualQuality();
+  if (!causticsEnabled) return null;
   return <TankCausticsOverlayEnabled />;
 };

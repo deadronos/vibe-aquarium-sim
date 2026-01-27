@@ -5,7 +5,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  PointsMaterial,
   ShaderMaterial,
 } from 'three';
 
@@ -159,31 +158,11 @@ const AmbientParticlesEnabled = () => {
     const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
 
     if (isWebGPU) {
-      const nm = (
-        <ParticleNodeMaterial
-          color="#ffffff"
-          pointSize={0.06}
-          opacity={0.4}
-          tankVolume={[volume.x, volume.y, volume.z]}
-          driftVelocity={[0.08, -0.05, 0.02]}
-        />
-      );
-
-      const fm = (
-        <ParticleNodeMaterial
-          color="#eeeeee"
-          pointSize={0.04}
-          opacity={0.2}
-          tankVolume={[volume.x, volume.y, volume.z]}
-          driftVelocity={[0.08, -0.05, 0.02]}
-        />
-      );
-
       return {
         nearGeometry: ng,
         farGeometry: fg,
-        nearMaterial: nm as any,
-        farMaterial: fm as any,
+        nearMaterial: null as any, // Will render as JSX child
+        farMaterial: null as any,
       };
     }
 
@@ -252,8 +231,8 @@ const AmbientParticlesEnabled = () => {
     return () => {
       nearGeometry.dispose();
       farGeometry.dispose();
-      nearMaterial.dispose();
-      farMaterial.dispose();
+      nearMaterial?.dispose?.();
+      farMaterial?.dispose?.();
     };
   }, [farGeometry, farMaterial, nearGeometry, nearMaterial]);
 
@@ -271,8 +250,28 @@ const AmbientParticlesEnabled = () => {
 
   return (
     <group>
-      <points geometry={farGeometry} material={farMaterial} frustumCulled={false} />
-      <points geometry={nearGeometry} material={nearMaterial} frustumCulled={false} />
+      <points geometry={farGeometry} material={isWebGPU ? undefined : farMaterial} frustumCulled={false}>
+        {isWebGPU && (
+          <ParticleNodeMaterial
+            color="#eeeeee"
+            pointSize={0.04}
+            opacity={0.2}
+            tankVolume={[volume.x, volume.y, volume.z]}
+            driftVelocity={[0.08, -0.05, 0.02]}
+          />
+        )}
+      </points>
+      <points geometry={nearGeometry} material={isWebGPU ? undefined : nearMaterial} frustumCulled={false}>
+        {isWebGPU && (
+          <ParticleNodeMaterial
+            color="#ffffff"
+            pointSize={0.06}
+            opacity={0.4}
+            tankVolume={[volume.x, volume.y, volume.z]}
+            driftVelocity={[0.08, -0.05, 0.02]}
+          />
+        )}
+      </points>
     </group>
   );
 };
