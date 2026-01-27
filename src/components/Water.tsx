@@ -9,6 +9,7 @@ import {
 } from '../shaders/waterSurfaceShader';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { WaterSurfaceNodeMaterial, WaterVolumeNodeMaterial } from './materials/WaterNodeMaterial';
 
 const CAUSTICS_INTENSITY_ENABLED = 0.3;
 const VOLUME_SPECULAR_STRENGTH_ENABLED = 0.18;
@@ -90,12 +91,12 @@ export const Water = () => {
       <mesh position={[0, 0, 0]} renderOrder={0}>
         <boxGeometry args={[waterWidth, waterHeight, waterDepth]} />
         {isWebGPU ? (
-          <meshStandardMaterial
-            color="#1a4d6d"
-            transparent
+          <WaterVolumeNodeMaterial
+            waterColor="#1a4d6d"
             opacity={0.3}
-            side={DoubleSide}
-            depthWrite={false}
+            causticsIntensity={causticsEnabled ? CAUSTICS_INTENSITY_ENABLED : 0}
+            volumeSpecularStrength={waterVolumeUpgradeEnabled ? VOLUME_SPECULAR_STRENGTH_ENABLED : 0}
+            volumeShimmerStrength={waterVolumeUpgradeEnabled ? VOLUME_SHIMMER_STRENGTH_ENABLED : 0}
           />
         ) : (
           <shaderMaterial
@@ -119,12 +120,12 @@ export const Water = () => {
         >
           <planeGeometry args={[waterWidth, waterDepth]} />
           {isWebGPU ? (
-            <meshStandardMaterial
-              color="#aaddff"
-              transparent
-              opacity={0.18}
-              side={DoubleSide}
-              depthWrite={false}
+            <WaterSurfaceNodeMaterial
+              surfaceTint="#aaddff"
+              surfaceOpacity={0.18}
+              surfaceStrength={0.75}
+              surfaceShimmerStrength={1.0}
+              surfaceFresnelStrength={1.0}
             />
           ) : (
             <shaderMaterial

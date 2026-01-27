@@ -1,6 +1,6 @@
 import { MeshPhysicalNodeMaterial } from 'three/webgpu';
 
-import { extend, ReactThreeFiber } from '@react-three/fiber';
+import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
 
 // Extend so we can use <meshPhysicalNodeMaterial /> in JSX
@@ -8,11 +8,7 @@ extend({ MeshPhysicalNodeMaterial });
 
 declare module '@react-three/fiber' {
   interface ThreeElements {
-    meshPhysicalNodeMaterial: ReactThreeFiber.Object3DNode<
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      any,
-      typeof MeshPhysicalNodeMaterial
-    >;
+    meshPhysicalNodeMaterial: ThreeElement<typeof MeshPhysicalNodeMaterial>;
   }
 }
 

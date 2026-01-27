@@ -13,6 +13,7 @@ import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { ParticleNodeMaterial } from './materials/ParticleNodeMaterial';
 
 type ParticleUniforms = {
   time: { value: number };
@@ -158,31 +159,31 @@ const AmbientParticlesEnabled = () => {
     const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
 
     if (isWebGPU) {
-      const nm = new PointsMaterial({
-        color: new Color('#ffffff'),
-        size: 0.06,
-        transparent: true,
-        opacity: 0.4,
-        blending: AdditiveBlending,
-        depthWrite: false,
-        sizeAttenuation: true,
-      });
+      const nm = (
+        <ParticleNodeMaterial
+          color="#ffffff"
+          pointSize={0.06}
+          opacity={0.4}
+          tankVolume={[volume.x, volume.y, volume.z]}
+          driftVelocity={[0.08, -0.05, 0.02]}
+        />
+      );
 
-      const fm = new PointsMaterial({
-        color: new Color('#eeeeee'),
-        size: 0.04,
-        transparent: true,
-        opacity: 0.2,
-        blending: AdditiveBlending,
-        depthWrite: false,
-        sizeAttenuation: true,
-      });
+      const fm = (
+        <ParticleNodeMaterial
+          color="#eeeeee"
+          pointSize={0.04}
+          opacity={0.2}
+          tankVolume={[volume.x, volume.y, volume.z]}
+          driftVelocity={[0.08, -0.05, 0.02]}
+        />
+      );
 
       return {
         nearGeometry: ng,
         farGeometry: fg,
-        nearMaterial: nm,
-        farMaterial: fm,
+        nearMaterial: nm as any,
+        farMaterial: fm as any,
       };
     }
 
