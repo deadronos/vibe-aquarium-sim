@@ -148,6 +148,8 @@ export default function SimulationScene() {
         // @ts-ignore - WebGPU types might be missing in some setups
         const { WebGPURenderer } = await import('three/webgpu');
         setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
+        // Informational log: WebGPU will be used for rendering
+        console.info('[vibe] Renderer: WebGPU supported — using WebGPURenderer');
       } else {
         const { WebGLRenderer } = await import('three');
         setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
@@ -179,6 +181,22 @@ export default function SimulationScene() {
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
           renderer.toneMappingExposure = 1.0;
           renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+          // If using WebGL renderer, detect whether the context is WebGL2 and log it
+          if (rendererConfig.type === 'webgl') {
+            try {
+              // `getContext` is available on WebGLRenderer
+              // Use `instanceof` guard in case WebGL2 isn't available in the environment
+              const getContext = (renderer as unknown as { getContext?: () => unknown }).getContext;
+              const gl = getContext ? getContext() : null;
+              const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
+              if (isWebGL2) {
+                console.info('[vibe] Renderer: WebGL2 (using WebGLRenderer with WebGL2 context)');
+              }
+            } catch {
+              // Non-fatal: logging should not crash the renderer initialization
+            }
+          }
 
           return renderer;
         }}
