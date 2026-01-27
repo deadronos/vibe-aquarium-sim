@@ -1,0 +1,11 @@
+src\components\AmbientParticles.tsx:    const t = state.clock.elapsedTime;
+src\components\Decoration.tsx:    const time = state.clock.elapsedTime;
+src\components\effects\BubbleTrail.tsx:    const time = state.clock.elapsedTime;
+src\components\effects\ClickRipple.tsx:      startTime.current = state.clock.elapsedTime;
+src\components\effects\ClickRipple.tsx:    const elapsed = state.clock.elapsedTime - startTime.current!;
+src\components\effects\EatingBurst.tsx:      startTime.current = state.clock.elapsedTime;
+src\components\effects\EatingBurst.tsx:    const elapsed = state.clock.elapsedTime - startTime.current!;
+src\components\Food.tsx:        spawnStartTimeRef.current = state.clock.elapsedTime;
+src\components\Food.tsx:      const elapsed = state.clock.elapsedTime - spawnStartTimeRef.current!;
+src\components\Tank.tsx:    materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+src\components\Water.tsx:    const t = state.clock.elapsedTime;

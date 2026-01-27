@@ -9,6 +9,7 @@ import {
 } from '../shaders/waterSurfaceShader';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { WaterSurfaceNodeMaterial, WaterVolumeNodeMaterial } from './materials/WaterNodeMaterial';
 
 const CAUSTICS_INTENSITY_ENABLED = 0.3;
 const VOLUME_SPECULAR_STRENGTH_ENABLED = 0.18;
@@ -18,8 +19,12 @@ export const Water = () => {
   const volumeMaterialRef = useRef<ShaderMaterial>(null);
   const surfaceMaterialRef = useRef<ShaderMaterial>(null);
 
-  const { causticsEnabled, waterSurfaceUpgradeEnabled, waterVolumeUpgradeEnabled } =
-    useVisualQuality();
+  const {
+    causticsEnabled,
+    waterSurfaceUpgradeEnabled,
+    waterVolumeUpgradeEnabled,
+    isWebGPU,
+  } = useVisualQuality();
 
   const volumeUniforms = useMemo(
     () => ({
@@ -64,8 +69,8 @@ export const Water = () => {
     }
   }, [waterVolumeUpgradeEnabled]);
 
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
+  useFrame((state: any) => {
+    const t = state.clock?.elapsedTime || performance.now() / 1000;
     if (volumeMaterialRef.current) {
       volumeMaterialRef.current.uniforms.time.value = t;
     }
@@ -85,16 +90,26 @@ export const Water = () => {
     <>
       <mesh position={[0, 0, 0]} renderOrder={0}>
         <boxGeometry args={[waterWidth, waterHeight, waterDepth]} />
-        <shaderMaterial
-          ref={volumeMaterialRef}
-          vertexShader={waterVertexShader}
-          fragmentShader={waterFragmentShader}
-          onBeforeCompile={(shader) => logShaderOnce('Water/Volume', shader)}
-          uniforms={volumeUniforms}
-          transparent={true}
-          side={DoubleSide}
-          depthWrite={false}
-        />
+        {isWebGPU ? (
+          <WaterVolumeNodeMaterial
+            waterColor="#1a4d6d"
+            opacity={0.3}
+            causticsIntensity={causticsEnabled ? CAUSTICS_INTENSITY_ENABLED : 0}
+            volumeSpecularStrength={waterVolumeUpgradeEnabled ? VOLUME_SPECULAR_STRENGTH_ENABLED : 0}
+            volumeShimmerStrength={waterVolumeUpgradeEnabled ? VOLUME_SHIMMER_STRENGTH_ENABLED : 0}
+          />
+        ) : (
+          <shaderMaterial
+            ref={volumeMaterialRef}
+            vertexShader={waterVertexShader}
+            fragmentShader={waterFragmentShader}
+            onBeforeCompile={(shader: any) => logShaderOnce('Water/Volume', shader)}
+            uniforms={volumeUniforms}
+            transparent={true}
+            side={DoubleSide}
+            depthWrite={false}
+          />
+        )}
       </mesh>
 
       {waterSurfaceUpgradeEnabled ? (
@@ -104,16 +119,26 @@ export const Water = () => {
           renderOrder={1}
         >
           <planeGeometry args={[waterWidth, waterDepth]} />
-          <shaderMaterial
-            ref={surfaceMaterialRef}
-            vertexShader={waterSurfaceVertexShader}
-            fragmentShader={waterSurfaceFragmentShader}
-            onBeforeCompile={(shader) => logShaderOnce('Water/Surface', shader)}
-            uniforms={surfaceUniforms}
-            transparent={true}
-            side={DoubleSide}
-            depthWrite={false}
-          />
+          {isWebGPU ? (
+            <WaterSurfaceNodeMaterial
+              surfaceTint="#aaddff"
+              surfaceOpacity={0.18}
+              surfaceStrength={0.75}
+              surfaceShimmerStrength={1.0}
+              surfaceFresnelStrength={1.0}
+            />
+          ) : (
+            <shaderMaterial
+              ref={surfaceMaterialRef}
+              vertexShader={waterSurfaceVertexShader}
+              fragmentShader={waterSurfaceFragmentShader}
+              onBeforeCompile={(shader: any) => logShaderOnce('Water/Surface', shader)}
+              uniforms={surfaceUniforms}
+              transparent={true}
+              side={DoubleSide}
+              depthWrite={false}
+            />
+          )}
         </mesh>
       ) : null}
     </>

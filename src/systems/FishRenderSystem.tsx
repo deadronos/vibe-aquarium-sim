@@ -39,7 +39,12 @@ function createQuaternionFreeList() {
 const fishEntitiesQuery = world.with('isFish', 'position', 'velocity');
 
 export const FishRenderSystem = () => {
-  const { fishRimLightingEnabled, fishSubsurfaceScatteringEnabled, adaptiveInstanceUpdatesEnabled } = useVisualQuality();
+  const {
+    fishRimLightingEnabled,
+    fishSubsurfaceScatteringEnabled,
+    adaptiveInstanceUpdatesEnabled,
+    isWebGPU,
+  } = useVisualQuality();
 
   // Load GLTF scenes
   const gltfA = useGLTF(MODEL_URLS[0]);
@@ -82,6 +87,21 @@ export const FishRenderSystem = () => {
     const bResolved = b.geo ? b : fallback(1);
     const cResolved = c.geo ? c : fallback(2);
 
+    // Skip material enhancement on WebGPU (incompatible with onBeforeCompile injection)
+    if (isWebGPU) {
+      return {
+        geometryA: aResolved.geo!,
+        materialA: aResolved.mat!,
+        uniformsA: [],
+        geometryB: bResolved.geo!,
+        materialB: bResolved.mat!,
+        uniformsB: [],
+        geometryC: cResolved.geo!,
+        materialC: cResolved.mat!,
+        uniformsC: [],
+      };
+    }
+
     const aEnhanced = enhanceFishMaterialWithRimAndSSS(aResolved.mat!);
     const bEnhanced = enhanceFishMaterialWithRimAndSSS(bResolved.mat!);
     const cEnhanced = enhanceFishMaterialWithRimAndSSS(cResolved.mat!);
@@ -101,7 +121,7 @@ export const FishRenderSystem = () => {
       materialC: cEnhanced.material,
       uniformsC: normalizeUniforms(cEnhanced.uniforms),
     };
-  }, [gltfA.scene, gltfB.scene, gltfC.scene]);
+  }, [gltfA.scene, gltfB.scene, gltfC.scene, isWebGPU]);
 
   useEffect(() => {
     const rimStrength = fishRimLightingEnabled ? DEFAULT_VIBE_FISH_RIM_STRENGTH : 0;

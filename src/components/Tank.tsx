@@ -1,28 +1,33 @@
 import { RigidBody } from '@react-three/rapier';
-import { Box, Text, MeshTransmissionMaterial } from '@react-three/drei';
+import { Box } from '@react-three/drei';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// import { Text, MeshTransmissionMaterial } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import {
-  AdditiveBlending,
   BoxGeometry,
   BufferGeometry,
   Color,
   PlaneGeometry,
   ShaderMaterial,
 } from 'three';
+import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { TANK_DIMENSIONS } from '../config/constants';
-import { useQualityStore } from '../performance/qualityStore';
+
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
+import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
+  const { isWebGPU } = useVisualQuality();
 
-  const transmissionResolution = useQualityStore((s) => s.settings.tankTransmissionResolution);
-  const transmissionSamples = useQualityStore((s) => s.settings.tankTransmissionSamples);
+
 
   const mergedGeometry = useMemo(() => {
     // Helper to create a box geometry with offset
@@ -109,27 +114,30 @@ export const Tank = () => {
 
       {/* Visual Glass (Single Mesh) */}
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
-        <MeshTransmissionMaterial
-          color="#ffffff"
-          samples={transmissionSamples}
-          resolution={transmissionResolution}
-          thickness={0.2}
-          roughness={0.01}
-          chromaticAberration={0.06}
-          anisotropy={0.1}
-          ior={1.5}
-          transmission={1}
-          transparent={true}
-          opacity={0.4}
-          envMapIntensity={0.1}
-          clearcoat={0.8}
-          attenuationDistance={0.01}
-          attenuationColor="#95abf6"
-          backside={true}
-          toneMapped={true}
-        />
+        {isWebGPU ? (
+          <GlassNodeMaterial
+            color="white"
+            roughness={0.05}
+            transmission={0.99}
+            thickness={1.5}
+            opacity={1.0}
+            ior={1.5}
+            chromaticAberration={0.06}
+          />
+        ) : (
+          <meshStandardMaterial
+            color="white"
+            roughness={0.1}
+            metalness={0.1}
+            transparent={true}
+            opacity={0.3}
+            side={2} // DoubleSide from THREE
+          />
+        )}
       </mesh>
 
+      {/* <Text ... > commented out due to missing export */}
+      {/*
       <Text
         position={[0, -height / 2 + 0.2, -depth / 2 + 0.1]}
         fontSize={0.3}
@@ -148,6 +156,7 @@ export const Tank = () => {
       >
         Click tank to feed fish
       </Text>
+      */}
     </group>
   );
 };
@@ -157,6 +166,7 @@ const CAUSTICS_OVERLAY_INSET = 0.003;
 const TankCausticsOverlayEnabled = () => {
   const materialRef = useRef<ShaderMaterial>(null);
   const { width, height, depth } = TANK_DIMENSIONS;
+  const { isWebGPU } = useVisualQuality();
 
   const uniforms = useMemo(
     () => ({
@@ -207,24 +217,33 @@ const TankCausticsOverlayEnabled = () => {
     };
   }, [geometry]);
 
-  useFrame((state) => {
+  useFrame((state: any) => {
     if (!materialRef.current) return;
-    materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+    materialRef.current.uniforms.time.value = state.clock?.elapsedTime || performance.now() / 1000;
   });
 
   return (
     <mesh geometry={geometry}>
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={causticsVertexShader}
-        fragmentShader={causticsFragmentShader}
-        onBeforeCompile={(shader) => logShaderOnce('Tank/Caustics', shader)}
-        uniforms={uniforms}
-        transparent={true}
-        blending={AdditiveBlending}
-        depthWrite={false}
-        depthTest={true}
-      />
+      {isWebGPU ? (
+        <TankCausticsNodeMaterial
+          color="#aaddff"
+          intensity={0.85}
+          scale={1.35}
+          speed={0.45}
+        />
+      ) : (
+        <shaderMaterial
+          ref={materialRef}
+          vertexShader={causticsVertexShader}
+          fragmentShader={causticsFragmentShader}
+          onBeforeCompile={(shader: any) => logShaderOnce('Tank/Caustics', shader)}
+          uniforms={uniforms}
+          transparent={true}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          depthTest={true}
+        />
+      )}
     </mesh>
   );
 };
