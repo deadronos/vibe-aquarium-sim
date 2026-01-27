@@ -1,10 +1,11 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
+import { EnvironmentMap } from './components/EnvironmentMap';
 
 import { ECS, world } from './store';
 import type { Entity } from './store';
@@ -173,6 +174,12 @@ export default function SimulationScene() {
             alpha: true,
           });
 
+          // Polyfill .init() for WebGLRenderer to satisfy R3F v10 expectations
+          if (rendererConfig.type === 'webgl' && typeof renderer.init !== 'function') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (renderer as any).init = async () => { };
+          }
+
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
             await renderer.init();
           }
@@ -228,7 +235,9 @@ export default function SimulationScene() {
           {/* Cool fill from back */}
           <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
           {/* Environment map for realistic PBR reflections */}
-          <Environment preset="studio" background={true} />
+          {/* Environment map for realistic PBR reflections */}
+          {/* Use manual loader to avoid deprecated RGBELoader in drei preset */}
+          <EnvironmentMap />
 
           <Tank />
           <Water />
