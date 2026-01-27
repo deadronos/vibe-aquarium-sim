@@ -173,6 +173,12 @@ export default function SimulationScene() {
             alpha: true,
           });
 
+          // Polyfill .init() for WebGLRenderer to satisfy R3F v10 expectations
+          if (rendererConfig.type === 'webgl' && typeof renderer.init !== 'function') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (renderer as any).init = async () => { };
+          }
+
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
             await renderer.init();
           }

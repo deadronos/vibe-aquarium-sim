@@ -1,4 +1,5 @@
-import { EffectComposer, DepthOfField } from '@react-three/postprocessing';
+import { DepthOfField } from '@react-three/postprocessing';
+import { EffectComposer } from './vfx/EffectComposer';
 import { useMemo } from 'react';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
@@ -39,7 +40,7 @@ const PostProcessingEnabled = () => {
 
 export const PostProcessing = ({ isWebGPU }: { isWebGPU: boolean }) => {
   const { depthOfFieldEnabled } = useVisualQuality();
-  
+
   if (isWebGPU) return null;
 
   return <>{depthOfFieldEnabled ? <PostProcessingEnabled /> : null}</>;
