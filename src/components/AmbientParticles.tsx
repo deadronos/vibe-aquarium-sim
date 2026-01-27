@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, ShaderMaterial } from 'three';
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  PointsMaterial,
+  ShaderMaterial,
+} from 'three';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
@@ -129,6 +136,7 @@ const AmbientParticlesEnabled = () => {
   const farTimeUniformRef = useRef<{ value: number } | null>(null);
 
   const particleMultiplier = useQualityStore((s) => s.settings.effectParticleMultiplier);
+  const { isWebGPU } = useVisualQuality();
 
   // Increased counts for "snow" density
   const nearCount = Math.max(150, Math.floor(400 * particleMultiplier));
@@ -148,6 +156,35 @@ const AmbientParticlesEnabled = () => {
   const { nearGeometry, farGeometry, nearMaterial, farMaterial } = useMemo(() => {
     const ng = createParticlesGeometry(nearCount, 0x1234abcd, volume);
     const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
+
+    if (isWebGPU) {
+      const nm = new PointsMaterial({
+        color: new Color('#ffffff'),
+        size: 0.06,
+        transparent: true,
+        opacity: 0.4,
+        blending: AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true,
+      });
+
+      const fm = new PointsMaterial({
+        color: new Color('#eeeeee'),
+        size: 0.04,
+        transparent: true,
+        opacity: 0.2,
+        blending: AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true,
+      });
+
+      return {
+        nearGeometry: ng,
+        farGeometry: fg,
+        nearMaterial: nm,
+        farMaterial: fm,
+      };
+    }
 
     const commonUniforms = {
       tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
@@ -199,10 +236,13 @@ const AmbientParticlesEnabled = () => {
       nearMaterial: nm,
       farMaterial: fm,
     };
-  }, [farCount, nearCount, volume]);
+  }, [farCount, nearCount, volume, isWebGPU]);
 
   useFrame((state: any) => {
-    const t = state.clock.elapsedTime;
+    // No time update needed for standard PointsMaterial
+    if (isWebGPU) return;
+
+    const t = state.clock?.elapsedTime || performance.now() / 1000;
     if (nearTimeUniformRef.current) nearTimeUniformRef.current.value = t;
     if (farTimeUniformRef.current) farTimeUniformRef.current.value = t;
   });
@@ -217,11 +257,16 @@ const AmbientParticlesEnabled = () => {
   }, [farGeometry, farMaterial, nearGeometry, nearMaterial]);
 
   useEffect(() => {
+    if (isWebGPU) {
+      nearTimeUniformRef.current = null;
+      farTimeUniformRef.current = null;
+      return;
+    }
     nearTimeUniformRef.current =
-      (nearMaterial.uniforms as unknown as { time?: { value: number } }).time ?? null;
+      (nearMaterial as ShaderMaterial).uniforms?.time ?? null;
     farTimeUniformRef.current =
-      (farMaterial.uniforms as unknown as { time?: { value: number } }).time ?? null;
-  }, [farMaterial, nearMaterial]);
+      (farMaterial as ShaderMaterial).uniforms?.time ?? null;
+  }, [farMaterial, nearMaterial, isWebGPU]);
 
   return (
     <group>

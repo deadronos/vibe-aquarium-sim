@@ -158,7 +158,7 @@ export default function SimulationScene() {
   if (!rendererConfig) return null;
 
   return (
-    <VisualQualityProvider>
+    <VisualQualityProvider isWebGPU={rendererConfig.type === 'webgpu'}>
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows
@@ -238,7 +238,7 @@ export default function SimulationScene() {
         </Physics>
 
         <AmbientParticles />
-        <PostProcessing />
+        <PostProcessing isWebGPU={rendererConfig.type === 'webgpu'} />
 
         <OrbitControls target={[0, 0, 0]} />
       </Canvas>

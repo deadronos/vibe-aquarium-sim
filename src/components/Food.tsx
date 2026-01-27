@@ -31,11 +31,12 @@ export const Food = ({ entity }: { entity: Entity }) => {
 
     // Apply spawn scale to mesh
     if (meshRef.current) {
+      const time = state.clock?.elapsedTime || performance.now() / 1000;
       if (spawnStartTimeRef.current === null) {
-        spawnStartTimeRef.current = state.clock.elapsedTime;
+        spawnStartTimeRef.current = time;
       }
 
-      const elapsed = state.clock.elapsedTime - spawnStartTimeRef.current!;
+      const elapsed = time - spawnStartTimeRef.current!;
       const progress = elapsed / SPAWN_DURATION_SECONDS;
 
       if (progress >= 1) {

@@ -20,9 +20,11 @@ import { TANK_DIMENSIONS } from '../config/constants';
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
+  const { isWebGPU } = useVisualQuality();
 
 
 
@@ -111,16 +113,26 @@ export const Tank = () => {
 
       {/* Visual Glass (Single Mesh) */}
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
-        {/* Fallback material as MeshTransmissionMaterial is missing in current drei alpha */}
-        <meshStandardMaterial
-          color="white"
-          roughness={0.1}
-          metalness={0.1}
-          transparent={true}
-          opacity={0.3}
-          side={2} // DoubleSide from THREE
-        />
-        {/* <MeshTransmissionMaterial ... /> commented out due to missing export */}
+        {isWebGPU ? (
+          <GlassNodeMaterial
+            color="white"
+            roughness={0.05}
+            transmission={0.99}
+            thickness={1.5}
+            opacity={1.0}
+            ior={1.5}
+            chromaticAberration={0.06}
+          />
+        ) : (
+          <meshStandardMaterial
+            color="white"
+            roughness={0.1}
+            metalness={0.1}
+            transparent={true}
+            opacity={0.3}
+            side={2} // DoubleSide from THREE
+          />
+        )}
       </mesh>
 
       {/* <Text ... > commented out due to missing export */}
@@ -226,7 +238,7 @@ const TankCausticsOverlayEnabled = () => {
 };
 
 export const TankCausticsOverlay = () => {
-  const { causticsEnabled } = useVisualQuality();
-  if (!causticsEnabled) return null;
+  const { causticsEnabled, isWebGPU } = useVisualQuality();
+  if (!causticsEnabled || isWebGPU) return null;
   return <TankCausticsOverlayEnabled />;
 };

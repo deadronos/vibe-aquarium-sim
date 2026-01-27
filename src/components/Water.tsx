@@ -18,8 +18,12 @@ export const Water = () => {
   const volumeMaterialRef = useRef<ShaderMaterial>(null);
   const surfaceMaterialRef = useRef<ShaderMaterial>(null);
 
-  const { causticsEnabled, waterSurfaceUpgradeEnabled, waterVolumeUpgradeEnabled } =
-    useVisualQuality();
+  const {
+    causticsEnabled,
+    waterSurfaceUpgradeEnabled,
+    waterVolumeUpgradeEnabled,
+    isWebGPU,
+  } = useVisualQuality();
 
   const volumeUniforms = useMemo(
     () => ({
@@ -85,16 +89,26 @@ export const Water = () => {
     <>
       <mesh position={[0, 0, 0]} renderOrder={0}>
         <boxGeometry args={[waterWidth, waterHeight, waterDepth]} />
-        <shaderMaterial
-          ref={volumeMaterialRef}
-          vertexShader={waterVertexShader}
-          fragmentShader={waterFragmentShader}
-          onBeforeCompile={(shader: any) => logShaderOnce('Water/Volume', shader)}
-          uniforms={volumeUniforms}
-          transparent={true}
-          side={DoubleSide}
-          depthWrite={false}
-        />
+        {isWebGPU ? (
+          <meshStandardMaterial
+            color="#1a4d6d"
+            transparent
+            opacity={0.3}
+            side={DoubleSide}
+            depthWrite={false}
+          />
+        ) : (
+          <shaderMaterial
+            ref={volumeMaterialRef}
+            vertexShader={waterVertexShader}
+            fragmentShader={waterFragmentShader}
+            onBeforeCompile={(shader: any) => logShaderOnce('Water/Volume', shader)}
+            uniforms={volumeUniforms}
+            transparent={true}
+            side={DoubleSide}
+            depthWrite={false}
+          />
+        )}
       </mesh>
 
       {waterSurfaceUpgradeEnabled ? (
@@ -104,16 +118,26 @@ export const Water = () => {
           renderOrder={1}
         >
           <planeGeometry args={[waterWidth, waterDepth]} />
-          <shaderMaterial
-            ref={surfaceMaterialRef}
-            vertexShader={waterSurfaceVertexShader}
-            fragmentShader={waterSurfaceFragmentShader}
-            onBeforeCompile={(shader: any) => logShaderOnce('Water/Surface', shader)}
-            uniforms={surfaceUniforms}
-            transparent={true}
-            side={DoubleSide}
-            depthWrite={false}
-          />
+          {isWebGPU ? (
+            <meshStandardMaterial
+              color="#aaddff"
+              transparent
+              opacity={0.18}
+              side={DoubleSide}
+              depthWrite={false}
+            />
+          ) : (
+            <shaderMaterial
+              ref={surfaceMaterialRef}
+              vertexShader={waterSurfaceVertexShader}
+              fragmentShader={waterSurfaceFragmentShader}
+              onBeforeCompile={(shader: any) => logShaderOnce('Water/Surface', shader)}
+              uniforms={surfaceUniforms}
+              transparent={true}
+              side={DoubleSide}
+              depthWrite={false}
+            />
+          )}
         </mesh>
       ) : null}
     </>
