@@ -1,9 +1,10 @@
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
 import * as THREE from 'three';
+import { supportsWebGPU } from './utils/rendererUtils';
 
 import { ECS, world } from './store';
 import type { Entity } from './store';
@@ -137,16 +138,49 @@ const Spawner = () => {
 export default function SimulationScene() {
   const directionalLightRef = useRef<THREE.DirectionalLight | null>(null);
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [rendererConfig, setRendererConfig] = useState<{ ctor: new (...args: any[]) => any, type: 'webgpu' | 'webgl' } | null>(null);
+
+  useEffect(() => {
+    supportsWebGPU().then(async (supported) => {
+      if (supported) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore - WebGPU types might be missing in some setups
+        const { WebGPURenderer } = await import('three/webgpu');
+        setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
+      } else {
+        const { WebGLRenderer } = await import('three');
+        setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+      }
+    });
+  }, []);
+
+  if (!rendererConfig) return null;
 
   return (
-    <VisualQualityProvider>
+    <VisualQualityProvider isWebGPU={rendererConfig.type === 'webgpu'}>
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
-          gl.outputColorSpace = THREE.SRGBColorSpace;
+        renderer={async ({ canvas }) => {
+          const Renderer = rendererConfig.ctor;
+          const renderer = new Renderer({
+            canvas,
+            powerPreference: 'high-performance',
+            antialias: true,
+            alpha: true,
+          });
+
+          if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
+            await renderer.init();
+          }
+
+          // Apply common configurations
+          renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.0;
+          renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+          return renderer;
         }}
       >
         <color attach="background" args={['#000510']} />
@@ -204,7 +238,7 @@ export default function SimulationScene() {
         </Physics>
 
         <AmbientParticles />
-        <PostProcessing />
+        <PostProcessing isWebGPU={rendererConfig.type === 'webgpu'} />
 
         <OrbitControls target={[0, 0, 0]} />
       </Canvas>

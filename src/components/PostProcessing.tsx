@@ -37,7 +37,10 @@ const PostProcessingEnabled = () => {
   );
 };
 
-export const PostProcessing = () => {
+export const PostProcessing = ({ isWebGPU }: { isWebGPU: boolean }) => {
   const { depthOfFieldEnabled } = useVisualQuality();
+  
+  if (isWebGPU) return null;
+
   return <>{depthOfFieldEnabled ? <PostProcessingEnabled /> : null}</>;
 };

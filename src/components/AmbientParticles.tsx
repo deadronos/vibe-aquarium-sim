@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, ShaderMaterial } from 'three';
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  ShaderMaterial,
+} from 'three';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { ParticleNodeMaterial } from './materials/ParticleNodeMaterial';
 
 type ParticleUniforms = {
   time: { value: number };
@@ -129,6 +136,7 @@ const AmbientParticlesEnabled = () => {
   const farTimeUniformRef = useRef<{ value: number } | null>(null);
 
   const particleMultiplier = useQualityStore((s) => s.settings.effectParticleMultiplier);
+  const { isWebGPU } = useVisualQuality();
 
   // Increased counts for "snow" density
   const nearCount = Math.max(150, Math.floor(400 * particleMultiplier));
@@ -149,10 +157,19 @@ const AmbientParticlesEnabled = () => {
     const ng = createParticlesGeometry(nearCount, 0x1234abcd, volume);
     const fg = createParticlesGeometry(farCount, 0xdeadbeef, volume);
 
+    if (isWebGPU) {
+      return {
+        nearGeometry: ng,
+        farGeometry: fg,
+        nearMaterial: null as any, // Will render as JSX child
+        farMaterial: null as any,
+      };
+    }
+
     const commonUniforms = {
-        tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
-        // Drift vector: slight X movement, downward Y movement
-        driftVelocity: { value: [0.08, -0.05, 0.02] as [number, number, number] }, 
+      tankVolume: { value: [volume.x, volume.y, volume.z] as [number, number, number] },
+      // Drift vector: slight X movement, downward Y movement
+      driftVelocity: { value: [0.08, -0.05, 0.02] as [number, number, number] },
     };
 
     const nearUniforms: ParticleUniforms = {
@@ -180,7 +197,7 @@ const AmbientParticlesEnabled = () => {
       depthTest: true,
       blending: AdditiveBlending,
     });
-    nm.onBeforeCompile = (shader) => logShaderOnce('Particles/Near', shader);
+    nm.onBeforeCompile = (shader: any) => logShaderOnce('Particles/Near', shader);
 
     const fm = new ShaderMaterial({
       uniforms: farUniforms,
@@ -189,9 +206,9 @@ const AmbientParticlesEnabled = () => {
       transparent: true,
       depthWrite: false,
       depthTest: true,
-       blending: AdditiveBlending,
+      blending: AdditiveBlending,
     });
-    fm.onBeforeCompile = (shader) => logShaderOnce('Particles/Far', shader);
+    fm.onBeforeCompile = (shader: any) => logShaderOnce('Particles/Far', shader);
 
     return {
       nearGeometry: ng,
@@ -199,10 +216,13 @@ const AmbientParticlesEnabled = () => {
       nearMaterial: nm,
       farMaterial: fm,
     };
-  }, [farCount, nearCount, volume]);
+  }, [farCount, nearCount, volume, isWebGPU]);
 
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
+  useFrame((state: any) => {
+    // No time update needed for standard PointsMaterial
+    if (isWebGPU) return;
+
+    const t = state.clock?.elapsedTime || performance.now() / 1000;
     if (nearTimeUniformRef.current) nearTimeUniformRef.current.value = t;
     if (farTimeUniformRef.current) farTimeUniformRef.current.value = t;
   });
@@ -211,22 +231,47 @@ const AmbientParticlesEnabled = () => {
     return () => {
       nearGeometry.dispose();
       farGeometry.dispose();
-      nearMaterial.dispose();
-      farMaterial.dispose();
+      nearMaterial?.dispose?.();
+      farMaterial?.dispose?.();
     };
   }, [farGeometry, farMaterial, nearGeometry, nearMaterial]);
 
   useEffect(() => {
+    if (isWebGPU) {
+      nearTimeUniformRef.current = null;
+      farTimeUniformRef.current = null;
+      return;
+    }
     nearTimeUniformRef.current =
-      (nearMaterial.uniforms as unknown as { time?: { value: number } }).time ?? null;
+      (nearMaterial as ShaderMaterial).uniforms?.time ?? null;
     farTimeUniformRef.current =
-      (farMaterial.uniforms as unknown as { time?: { value: number } }).time ?? null;
-  }, [farMaterial, nearMaterial]);
+      (farMaterial as ShaderMaterial).uniforms?.time ?? null;
+  }, [farMaterial, nearMaterial, isWebGPU]);
 
   return (
     <group>
-      <points geometry={farGeometry} material={farMaterial} frustumCulled={false} />
-      <points geometry={nearGeometry} material={nearMaterial} frustumCulled={false} />
+      <points geometry={farGeometry} material={isWebGPU ? undefined : farMaterial} frustumCulled={false}>
+        {isWebGPU && (
+          <ParticleNodeMaterial
+            color="#eeeeee"
+            pointSize={0.04}
+            opacity={0.2}
+            tankVolume={[volume.x, volume.y, volume.z]}
+            driftVelocity={[0.08, -0.05, 0.02]}
+          />
+        )}
+      </points>
+      <points geometry={nearGeometry} material={isWebGPU ? undefined : nearMaterial} frustumCulled={false}>
+        {isWebGPU && (
+          <ParticleNodeMaterial
+            color="#ffffff"
+            pointSize={0.06}
+            opacity={0.4}
+            tankVolume={[volume.x, volume.y, volume.z]}
+            driftVelocity={[0.08, -0.05, 0.02]}
+          />
+        )}
+      </points>
     </group>
   );
 };

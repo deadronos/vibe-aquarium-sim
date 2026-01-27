@@ -3,9 +3,15 @@ import type { ReactNode } from 'react';
 import { useGameStore } from '../gameStore';
 import { useQualityStore } from './qualityStore';
 import type { VisualQualityFlags } from './qualityPresets';
-import { VisualQualityContext } from './VisualQualityContext';
+import { VisualQualityContext, type VisualQualityContextValue } from './VisualQualityContext';
 
-export const VisualQualityProvider = ({ children }: { children: ReactNode }) => {
+export const VisualQualityProvider = ({
+  children,
+  isWebGPU = false,
+}: {
+  children: ReactNode;
+  isWebGPU?: boolean;
+}) => {
   const causticsEnabled = useQualityStore((s) => s.settings.causticsEnabled);
   const fishRimLightingEnabled = useQualityStore((s) => s.settings.fishRimLightingEnabled);
   const fishSubsurfaceScatteringEnabled = useQualityStore(
@@ -18,11 +24,14 @@ export const VisualQualityProvider = ({ children }: { children: ReactNode }) => 
 
   const overrides = useGameStore((s) => s.visualQualityOverrides ?? {});
 
-  const adaptiveInstanceUpdatesEnabled = useQualityStore((s) => s.settings.adaptiveInstanceUpdatesEnabled);
+  const adaptiveInstanceUpdatesEnabled = useQualityStore(
+    (s) => s.settings.adaptiveInstanceUpdatesEnabled
+  );
   const adaptiveSchedulerEnabled = useQualityStore((s) => s.settings.adaptiveSchedulerEnabled);
 
-  const value = useMemo<VisualQualityFlags>(
+  const value = useMemo<VisualQualityContextValue>(
     () => ({
+      isWebGPU,
       causticsEnabled: overrides.causticsEnabled ?? causticsEnabled,
       fishRimLightingEnabled: overrides.fishRimLightingEnabled ?? fishRimLightingEnabled,
       fishSubsurfaceScatteringEnabled:
@@ -38,6 +47,7 @@ export const VisualQualityProvider = ({ children }: { children: ReactNode }) => 
       adaptiveSchedulerEnabled: overrides.adaptiveSchedulerEnabled ?? adaptiveSchedulerEnabled,
     }),
     [
+      isWebGPU,
       ambientParticlesEnabled,
       causticsEnabled,
       depthOfFieldEnabled,
