@@ -1,5 +1,5 @@
 import { useLoader } from '@react-three/fiber';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { Environment } from '@react-three/drei';
 import { EquirectangularReflectionMapping } from 'three';
 import { useEffect } from 'react';
