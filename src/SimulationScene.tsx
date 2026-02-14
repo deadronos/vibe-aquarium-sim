@@ -139,8 +139,10 @@ const Spawner = () => {
 export default function SimulationScene() {
   const directionalLightRef = useRef<THREE.DirectionalLight | null>(null);
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [rendererConfig, setRendererConfig] = useState<{ ctor: new (...args: any[]) => any, type: 'webgpu' | 'webgl' } | null>(null);
+  const [rendererConfig, setRendererConfig] = useState<{
+    ctor: new (...args: any[]) => any;
+    type: 'webgpu' | 'webgl';
+  } | null>(null);
 
   useEffect(() => {
     supportsWebGPU().then(async (supported) => {
@@ -176,8 +178,7 @@ export default function SimulationScene() {
 
           // Polyfill .init() for WebGLRenderer to satisfy R3F v10 expectations
           if (rendererConfig.type === 'webgl' && typeof renderer.init !== 'function') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (renderer as any).init = async () => { };
+            (renderer as any).init = async () => {};
           }
 
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {

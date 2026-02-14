@@ -25,6 +25,12 @@ vi.mock('@react-three/postprocessing', () => {
   };
 });
 
+vi.mock('../src/components/vfx/EffectComposer', () => {
+  return {
+    EffectComposer: EffectComposerMock,
+  };
+});
+
 import { PostProcessing } from '../src/components/PostProcessing';
 
 // Mock ResizeObserver which is needed by R3F/Three

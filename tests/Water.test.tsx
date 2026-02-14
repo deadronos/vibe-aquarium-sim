@@ -2,10 +2,6 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
 import React, { act } from 'react';
-import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
-import { useGameStore } from '../src/gameStore';
-import { getQualitySettings } from '../src/performance/qualityPresets';
-import { useQualityStore } from '../src/performance/qualityStore';
 
 const { useFrameSpy, getCapturedFrameCallback, resetCapturedFrameCallback } = vi.hoisted(() => {
   let captured: ((state: unknown) => void) | undefined;
@@ -30,6 +26,10 @@ vi.mock('@react-three/fiber', async () => {
   };
 });
 
+import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
+import { useGameStore } from '../src/gameStore';
+import { getQualitySettings } from '../src/performance/qualityPresets';
+import { useQualityStore } from '../src/performance/qualityStore';
 import { Water } from '../src/components/Water';
 
 // Mock ResizeObserver which is needed by R3F/Three

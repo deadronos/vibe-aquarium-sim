@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import React, { act } from 'react';
+
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
 import { TankCausticsOverlay } from '../src/components/Tank';
@@ -25,6 +26,18 @@ vi.mock('@react-three/fiber', async () => {
   return {
     ...actual,
     useFrame: useFrameSpy,
+  };
+});
+
+vi.mock('@react-three/drei', () => {
+  return {
+    Box: ({ children }: { children?: React.ReactNode }) => children ?? null,
+  };
+});
+
+vi.mock('@react-three/rapier', () => {
+  return {
+    RigidBody: ({ children }: { children?: React.ReactNode }) => children ?? null,
   };
 });
 

@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useGameStore } from '../gameStore';
 import { useQualityStore } from './qualityStore';
-import type { VisualQualityFlags } from './qualityPresets';
 import { VisualQualityContext, type VisualQualityContextValue } from './VisualQualityContext';
 
 export const VisualQualityProvider = ({

@@ -1,16 +1,7 @@
 import { RigidBody } from '@react-three/rapier';
 import { Box } from '@react-three/drei';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-// import { Text, MeshTransmissionMaterial } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import {
-  BoxGeometry,
-  BufferGeometry,
-  Color,
-  PlaneGeometry,
-  ShaderMaterial,
-} from 'three';
+import { BoxGeometry, BufferGeometry, Color, PlaneGeometry, ShaderMaterial } from 'three';
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useEffect, useMemo, useRef } from 'react';
@@ -18,6 +9,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { TANK_DIMENSIONS } from '../config/constants';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
+
+type ShaderWithProgram = {
+  vertexShader: string;
+  fragmentShader: string;
+  uniforms: Record<string, { value: unknown }>;
+};
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
 import { logShaderOnce } from '../utils/shaderDebug';
 import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
@@ -26,8 +23,6 @@ import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
   const { isWebGPU } = useVisualQuality();
-
-
 
   const mergedGeometry = useMemo(() => {
     // Helper to create a box geometry with offset
@@ -217,26 +212,22 @@ const TankCausticsOverlayEnabled = () => {
     };
   }, [geometry]);
 
-  useFrame((state: any) => {
+  useFrame((state) => {
     if (!materialRef.current) return;
-    materialRef.current.uniforms.time.value = state.clock?.elapsedTime || performance.now() / 1000;
+    materialRef.current.uniforms.time.value =
+      (state as { clock?: { elapsedTime: number } }).clock?.elapsedTime ?? performance.now() / 1000;
   });
 
   return (
     <mesh geometry={geometry}>
       {isWebGPU ? (
-        <TankCausticsNodeMaterial
-          color="#aaddff"
-          intensity={0.85}
-          scale={1.35}
-          speed={0.45}
-        />
+        <TankCausticsNodeMaterial color="#aaddff" intensity={0.85} scale={1.35} speed={0.45} />
       ) : (
         <shaderMaterial
           ref={materialRef}
           vertexShader={causticsVertexShader}
           fragmentShader={causticsFragmentShader}
-          onBeforeCompile={(shader: any) => logShaderOnce('Tank/Caustics', shader)}
+          onBeforeCompile={(shader: ShaderWithProgram) => logShaderOnce('Tank/Caustics', shader)}
           uniforms={uniforms}
           transparent={true}
           blending={THREE.AdditiveBlending}

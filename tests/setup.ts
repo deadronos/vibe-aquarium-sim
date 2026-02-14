@@ -1,15 +1,57 @@
 import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
 
-// Enable React's act() testing environment flag so tests that trigger state updates
-// during effects or render are properly wrapped and do not emit warnings.
-// See: https://react.dev/reference/react-dom/test-utils#act
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - global test environment flag
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-// Silently ignore a noisy, benign Three.js warning that is emitted when multiple
-// modules resolve `three` via slightly different paths during test bundling.
-// This is a targeted suppression for the exact message only.
+const defineGlobalIfMissing = <T>(key: string, value: T) => {
+  if (!(key in globalThis)) {
+    Object.defineProperty(globalThis, key, {
+      configurable: true,
+      writable: true,
+      value,
+    });
+  }
+};
+
+defineGlobalIfMissing('GPUShaderStage', { VERTEX: 1, FRAGMENT: 2, COMPUTE: 4 });
+defineGlobalIfMissing('GPUMapMode', { READ: 1, WRITE: 2 });
+defineGlobalIfMissing('GPUBufferUsage', {
+  MAP_READ: 1,
+  MAP_WRITE: 2,
+  COPY_SRC: 4,
+  COPY_DST: 8,
+  INDEX: 16,
+  VERTEX: 32,
+  UNIFORM: 64,
+  STORAGE: 128,
+  INDIRECT: 256,
+  QUERY_RESOLVE: 512,
+});
+defineGlobalIfMissing('GPUTextureUsage', {
+  COPY_SRC: 1,
+  COPY_DST: 2,
+  TEXTURE_BINDING: 4,
+  STORAGE_BINDING: 8,
+  RENDER_ATTACHMENT: 16,
+});
+defineGlobalIfMissing('GPUColorWrite', {
+  RED: 1,
+  GREEN: 2,
+  BLUE: 4,
+  ALPHA: 8,
+  ALL: 15,
+});
+
+vi.mock('detect-gpu', () => ({
+  getGPUTier: vi.fn(async () => ({
+    tier: 3,
+    type: 'WEBGL',
+    isMobile: false,
+    fps: 60,
+    gpu: 'vitest-mock-gpu',
+  })),
+}));
+
 const _origConsoleError = console.error;
 const _origConsoleWarn = console.warn;
 console.error = (...args: unknown[]) => {
@@ -30,7 +72,3 @@ console.warn = (...args: unknown[]) => {
   }
   return (_origConsoleWarn as (...a: unknown[]) => void).apply(console, args);
 };
-
-
-
-

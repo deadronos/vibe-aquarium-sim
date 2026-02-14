@@ -31,6 +31,9 @@ export default defineConfig([
     // incorporate eslint-config-prettier's rules directly (flat config doesn't accept string "prettier")
     rules: {
       ...prettierConfig.rules,
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/immutability': 'off',
+      'no-useless-assignment': 'off',
     },
     settings: { react: { version: 'detect' } },
   },

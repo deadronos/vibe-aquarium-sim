@@ -13,12 +13,8 @@ export function logShaderOnce(label: string, shader: ShaderLike) {
   if (logged.has(label)) return;
   logged.add(label);
 
-  // eslint-disable-next-line no-console
   console.groupCollapsed(`[shader] ${label}`);
-  // eslint-disable-next-line no-console
   console.log('vertex:', shader.vertexShader ?? '(none)');
-  // eslint-disable-next-line no-console
   console.log('fragment:', shader.fragmentShader ?? '(none)');
-  // eslint-disable-next-line no-console
   console.groupEnd();
 }
