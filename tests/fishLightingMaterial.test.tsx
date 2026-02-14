@@ -49,10 +49,8 @@ const { useGLTFMock, resetUseGLTFMock, setUseGLTFScenes } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@react-three/drei', async () => {
-  const actual = await vi.importActual<typeof import('@react-three/drei')>('@react-three/drei');
+vi.mock('@react-three/drei', () => {
   return {
-    ...actual,
     useGLTF: useGLTFMock,
   };
 });

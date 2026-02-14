@@ -13,11 +13,15 @@ import { useQualityStore } from '../src/performance/qualityStore';
 // Capture frame callbacks so tests can invoke them deterministically
 const frameCallbacks: Array<(state: unknown, delta: number) => void> = [];
 
-vi.mock('@react-three/fiber', () => ({
-  useFrame: (cb: (state: unknown, delta: number) => void) => {
-    frameCallbacks.push(cb);
-  },
-}));
+vi.mock('@react-three/fiber', async () => {
+  const actual = await vi.importActual<typeof import('@react-three/fiber')>('@react-three/fiber');
+  return {
+    ...actual,
+    useFrame: (cb: (state: unknown, delta: number) => void) => {
+      frameCallbacks.push(cb);
+    },
+  };
+});
 
 // Mock GLTF loader to provide simple scenes (three box meshes)
 const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
@@ -42,10 +46,8 @@ const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@react-three/drei', async () => {
-  const actual = await vi.importActual<typeof import('@react-three/drei')>('@react-three/drei');
+vi.mock('@react-three/drei', () => {
   return {
-    ...actual,
     useGLTF: useGLTFMock,
   };
 });
@@ -99,11 +101,14 @@ describe('FishRenderSystem adaptive instance updates', () => {
   });
 
   it('uses direct per-entity matrix writes when adaptive PoC is disabled', async () => {
-
     // Create many fish entities (all will be assigned model 0 via Math.random stub)
     const N = 100;
     for (let i = 0; i < N; i++) {
-      world.add({ isFish: true, position: new THREE.Vector3(i, 0, 0), velocity: new THREE.Vector3(1, 0, 0) });
+      world.add({
+        isFish: true,
+        position: new THREE.Vector3(i, 0, 0),
+        velocity: new THREE.Vector3(1, 0, 0),
+      });
     }
 
     const renderer = await ReactThreeTestRenderer.create(
@@ -115,7 +120,7 @@ describe('FishRenderSystem adaptive instance updates', () => {
     expect(frameCallbacks.length).toBeGreaterThan(0);
 
     // Verify test renderer created instanced meshes with real instances
-    expect((renderer.scene.children.length)).toBeGreaterThanOrEqual(1);
+    expect(renderer.scene.children.length).toBeGreaterThanOrEqual(1);
     // @ts-expect-error - test renderer node shape
     expect(Boolean(renderer.scene.children[0].instance?.isInstancedMesh)).toBe(true);
     // @ts-expect-error - test renderer node shape
@@ -146,7 +151,6 @@ describe('FishRenderSystem adaptive instance updates', () => {
   });
 
   it('buffers instance writes and limits setMatrixAt calls when adaptive PoC is enabled', async () => {
-
     // Enable adaptive PoC via overrides + window flag
     act(() => {
       useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true } });
@@ -157,7 +161,11 @@ describe('FishRenderSystem adaptive instance updates', () => {
 
     const N = 100;
     for (let i = 0; i < N; i++) {
-      world.add({ isFish: true, position: new THREE.Vector3(i, 0, 0), velocity: new THREE.Vector3(1, 0, 0) });
+      world.add({
+        isFish: true,
+        position: new THREE.Vector3(i, 0, 0),
+        velocity: new THREE.Vector3(1, 0, 0),
+      });
     }
 
     const renderer = await ReactThreeTestRenderer.create(
