@@ -47,6 +47,7 @@ interface WaterVolumeNodeMaterialProps {
   causticsSpeed?: number;
   causticsIntensity?: number;
   volumeSpecularStrength?: number;
+  volumeShimmerStrength?: number;
 }
 
 export const WaterVolumeNodeMaterial = ({
@@ -56,6 +57,7 @@ export const WaterVolumeNodeMaterial = ({
   causticsSpeed = 0.5,
   causticsIntensity = 0.3,
   volumeSpecularStrength = 0.18,
+  volumeShimmerStrength = 0.12,
 }: WaterVolumeNodeMaterialProps) => {
   const t = time;
 
@@ -82,7 +84,12 @@ export const WaterVolumeNodeMaterial = ({
   const lightDir = safeNormalize(vec3(new THREE.Vector3(0.25, 1.0, 0.15)));
   const halfDir = safeNormalize(lightDir.add(viewDir));
   const rawSpec = pow(max(dot(normalView, halfDir), 0.0), 48.0);
-  const volumeSpec = rawSpec.mul(float(0.25).add(float(0.75).mul(fresnel))).mul(volumeSpecularStrength);
+  const shimmerPhase = sin(positionLocal.x.mul(2.0).add(t.mul(1.2)));
+  const shimmer = shimmerPhase.mul(0.5).add(0.5).mul(float(volumeShimmerStrength));
+  const volumeSpecStrength = float(volumeSpecularStrength).add(shimmer);
+  const volumeSpec = rawSpec
+    .mul(float(0.25).add(float(0.75).mul(fresnel)))
+    .mul(volumeSpecStrength);
 
   // Combine
   const finalRgb = gradientColor
