@@ -7,7 +7,6 @@ import {
   nextHigherQuality,
   nextLowerQuality,
   getQualitySettings,
-  clampShadowMapSize,
 } from './qualityPresets';
 import { useQualityStore } from './qualityStore';
 
@@ -27,26 +26,14 @@ export interface AdaptiveQualityManagerProps {
   spotLightRef?: RefObject<THREE.SpotLight | null>;
 }
 
-const updateShadowMapSize = (light: THREE.Light, size: number) => {
-  const anyLight = light as unknown as {
-    shadow?: {
-      mapSize: { set: (w: number, h: number) => void };
-      map?: { dispose: () => void } | null;
-      needsUpdate: boolean;
-    };
-  };
-
-  if (!anyLight.shadow) return;
-
-  const clamped = clampShadowMapSize(size);
-  anyLight.shadow.mapSize.set(clamped, clamped);
-
-  if (anyLight.shadow.map) {
-    anyLight.shadow.map.dispose();
-    anyLight.shadow.map = null;
-  }
-
-  anyLight.shadow.needsUpdate = true;
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const updateShadowMapSize = (light: THREE.Light) => {
+  // WebGPU explicitly crashes with "Destroyed texture used in a submit" if
+  // we try to dynamically resize shadow maps on the fly while they are bound.
+  // Until WebGPU handles dynamic texture resizing gracefully in Three.js,
+  // we disable dynamic shadow map resizing.
+  return;
 };
 
 export const AdaptiveQualityManager = ({
@@ -94,7 +81,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize(directionalLightRef.current, settings.shadowMapSize);
+        updateShadowMapSize(directionalLightRef.current);
       }
     }
 
@@ -103,7 +90,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize(spotLightRef.current, settings.shadowMapSize);
+        updateShadowMapSize(spotLightRef.current);
       }
     }
 
