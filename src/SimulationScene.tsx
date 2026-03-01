@@ -6,6 +6,7 @@ import { Vector3 } from 'three';
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
 import { EnvironmentMap } from './components/EnvironmentMap';
+import { LivingRoom } from './components/LivingRoom';
 
 import { ECS, world } from './store';
 import type { Entity } from './store';
@@ -178,7 +179,7 @@ export default function SimulationScene() {
 
           // Polyfill .init() for WebGLRenderer to satisfy R3F v10 expectations
           if (rendererConfig.type === 'webgl' && typeof renderer.init !== 'function') {
-            (renderer as any).init = async () => {};
+            (renderer as any).init = async () => { };
           }
 
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
@@ -209,12 +210,13 @@ export default function SimulationScene() {
           return renderer;
         }}
       >
-        <color attach="background" args={['#000510']} />
+        <color attach="background" args={['#0a0a0a']} />
 
         <Physics gravity={[0, -9.81, 0]}>
           <AdaptiveQualityManager directionalLightRef={directionalLightRef} spotLightRef={spotLightRef} />
-          {/* Hemisphere light gives a soft sky/ground ambient */}
-          <hemisphereLight color={0xaaccff} groundColor={0x101020} intensity={0.8} />
+          <LivingRoom />
+          {/* Gentle indoor ambient */}
+          <hemisphereLight color={0xdcdce0} groundColor={0x8a7c6f} intensity={0.5} />
           {/* Directional key light to give stronger highlights */}
           <directionalLight
             ref={directionalLightRef}
