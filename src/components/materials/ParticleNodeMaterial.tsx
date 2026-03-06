@@ -39,7 +39,7 @@ export const ParticleNodeMaterial = ({
   tankVolume = [1, 1, 1],
   driftVelocity = [0.08, -0.05, 0.02],
 }: ParticleNodeMaterialProps) => {
-  const seed = attribute('seed');
+  const seed = float(attribute('seed'));
   const t = time;
 
   // 1. Drift Logic
