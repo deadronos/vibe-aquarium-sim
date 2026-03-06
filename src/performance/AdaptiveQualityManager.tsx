@@ -26,9 +26,7 @@ export interface AdaptiveQualityManagerProps {
   spotLightRef?: RefObject<THREE.SpotLight | null>;
 }
 
-// @ts-ignore
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const updateShadowMapSize = (light: THREE.Light) => {
+const updateShadowMapSize = () => {
   // WebGPU explicitly crashes with "Destroyed texture used in a submit" if
   // we try to dynamically resize shadow maps on the fly while they are bound.
   // Until WebGPU handles dynamic texture resizing gracefully in Three.js,
@@ -81,7 +79,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize(directionalLightRef.current);
+        updateShadowMapSize();
       }
     }
 
@@ -90,7 +88,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize(spotLightRef.current);
+        updateShadowMapSize();
       }
     }
 
