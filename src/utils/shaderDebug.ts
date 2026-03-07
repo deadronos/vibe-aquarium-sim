@@ -5,12 +5,15 @@ type ShaderLike = {
   vertexShader?: string;
 };
 
-const SHOULD_LOG = readBoolFromStorage('vibe.shaderDebug', false);
 const logged = new Set<string>();
 
+function shouldLogShaders() {
+  return readBoolFromStorage('vibe.shaderDebug', false);
+}
+
 export function logShaderOnce(label: string, shader: ShaderLike) {
-  if (!SHOULD_LOG) return;
   if (logged.has(label)) return;
+  if (!shouldLogShaders()) return;
   logged.add(label);
 
   console.groupCollapsed(`[shader] ${label}`);

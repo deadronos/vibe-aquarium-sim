@@ -35,6 +35,16 @@ describe('storageUtils', () => {
       expect(readFromStorage('key', 'fallback')).toBe('fallback');
       expect(console.warn).toHaveBeenCalled();
     });
+
+    it('returns fallback without warning when localStorage is incomplete', () => {
+      vi.stubGlobal('window', {
+        localStorage: {},
+        matchMedia: vi.fn().mockReturnValue({ matches: false }),
+      });
+
+      expect(readFromStorage('key', 'fallback')).toBe('fallback');
+      expect(console.warn).not.toHaveBeenCalled();
+    });
   });
 
   describe('writeToStorage', () => {
@@ -49,6 +59,18 @@ describe('storageUtils', () => {
       });
       writeToStorage('key', 'value');
       expect(console.warn).toHaveBeenCalled();
+    });
+
+    it('no-ops without warning when localStorage is incomplete', () => {
+      vi.stubGlobal('window', {
+        localStorage: {
+          getItem: vi.fn(),
+        },
+        matchMedia: vi.fn().mockReturnValue({ matches: false }),
+      });
+
+      writeToStorage('key', 'value');
+      expect(console.warn).not.toHaveBeenCalled();
     });
   });
 
