@@ -4,11 +4,19 @@ export class FixedStepScheduler {
   private accumulator = 0;
   private readonly fixedStep: number;
   private maxSubSteps: number;
+  private readonly initialMaxSubSteps: number;
   private callbacks: Set<Callback> = new Set();
 
   constructor(fixedStep = 1 / 60, maxSubSteps = 5) {
     this.fixedStep = fixedStep;
     this.maxSubSteps = maxSubSteps;
+    this.initialMaxSubSteps = maxSubSteps;
+  }
+
+  // Idempotently reset scheduler to initial healthy state
+  reset() {
+    this.accumulator = 0;
+    this.maxSubSteps = this.initialMaxSubSteps;
   }
 
   // PoC: allow dynamic tuning of max sub-steps

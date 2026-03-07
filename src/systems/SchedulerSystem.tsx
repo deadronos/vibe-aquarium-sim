@@ -16,6 +16,10 @@ export const SchedulerSystem = () => {
     } catch {
       originalMaxRef.current = null;
     }
+    return () => {
+      // Ensure scheduler drops active throttling / accumulator states across unmounts
+      fixedScheduler.reset();
+    };
   }, []);
 
   useFrame((_, delta) => {
