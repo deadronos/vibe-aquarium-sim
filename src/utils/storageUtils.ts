@@ -1,3 +1,5 @@
+type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
+
 export const readFromStorage = (key: string, fallback: string | null = null): string | null => {
   return safelyAccessStorage(
     key,
@@ -40,13 +42,15 @@ export const writeBoolToStorage = (key: string, value: boolean) => {
 // Helper to encapsulate try/catch and window checks
 function safelyAccessStorage<T>(
   key: string,
-  operation: (storage: Storage) => T | null | undefined,
+  operation: (storage: StorageLike) => T | null | undefined,
   fallback: T,
   actionDescription: string
 ): T {
-  if (typeof window === 'undefined') return fallback;
+  const storage = getStorage();
+  if (!storage) return fallback;
+
   try {
-    const result = operation(window.localStorage);
+    const result = operation(storage);
     // If the operation returns null/undefined (and fallback is not), return fallback.
     // However, for void operations (write), T is undefined, so we return undefined.
     // For read operations, if result is null, we return fallback.
@@ -55,4 +59,15 @@ function safelyAccessStorage<T>(
     console.warn(`Error ${actionDescription} localStorage key "${key}":`, error);
     return fallback;
   }
+}
+
+function getStorage(): StorageLike | null {
+  if (typeof window === 'undefined') return null;
+
+  const storage = window.localStorage;
+  if (!storage) return null;
+  if (typeof storage.getItem !== 'function') return null;
+  if (typeof storage.setItem !== 'function') return null;
+
+  return storage;
 }
