@@ -31,6 +31,7 @@ export type BoidsCache = {
   cellHead: Int32Array;
   cellNext: Int32Array;
   tempSteer: { x: number; y: number; z: number };
+  tempForce: { x: number; y: number; z: number };
   EPS: number;
   // Persistent output buffers
   steering: Float32Array;

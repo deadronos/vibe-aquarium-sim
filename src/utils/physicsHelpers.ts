@@ -51,14 +51,11 @@ export const integrateForcesToVelocity = applyQueuedForcesToRigidBody;
  * Returns true if a non-negligible drag was written.
  */
 export function computeDragForce(velocity: Vector3, out: Vector3) {
-  const force = calculateDragForce(velocity.x, velocity.y, velocity.z, waterPhysics);
+  calculateDragForce(velocity.x, velocity.y, velocity.z, waterPhysics, out);
 
-  if (force.x === 0 && force.y === 0 && force.z === 0) {
-    out.set(0, 0, 0);
+  if (out.x === 0 && out.y === 0 && out.z === 0) {
     return false;
   }
-
-  out.set(force.x, force.y, force.z);
   return true;
 }
 
@@ -67,13 +64,10 @@ export function computeDragForce(velocity: Vector3, out: Vector3) {
  * Returns true if a non-negligible current was written to `out`.
  */
 export function computeWaterCurrent(position: Vector3, time: number, out: Vector3) {
-  const force = calculateWaterCurrent(position.x, position.z, time, currentPhysics);
+  calculateWaterCurrent(position.x, position.z, time, currentPhysics, out);
 
-  if (force.x === 0 && force.y === 0 && force.z === 0) {
-    out.set(0, 0, 0);
+  if (out.x === 0 && out.y === 0 && out.z === 0) {
     return false;
   }
-
-  out.set(force.x, force.y, force.z);
   return true;
 }

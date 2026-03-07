@@ -176,26 +176,31 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     }
 
     // --- Feeding ---
-    const feedForce = calculateFeeding(
+    calculateFeeding(
       px, py, pz, vx, vy, vz,
       foodCount, foodPositions,
-      maxSpeed, maxForceDouble, cache
+      maxSpeed, maxForceDouble, cache,
+      cache.tempForce
     );
-    steerX += feedForce.x;
-    steerY += feedForce.y;
-    steerZ += feedForce.z;
+    steerX += cache.tempForce.x;
+    steerY += cache.tempForce.y;
+    steerZ += cache.tempForce.z;
 
     steering[base] = steerX;
     steering[base + 1] = steerY;
     steering[base + 2] = steerZ;
 
     // --- Physics (Water Current + Drag) ---
-    const currentForce = calculateWaterCurrent(px, pz, time, current);
-    const dragForce = calculateDragForce(vx, vy, vz, water);
+    calculateWaterCurrent(px, pz, time, current, cache.tempForce);
+    const currX = cache.tempForce.x;
+    const currY = cache.tempForce.y;
+    const currZ = cache.tempForce.z;
 
-    externalForces[base] = currentForce.x + dragForce.x;
-    externalForces[base + 1] = currentForce.y + dragForce.y;
-    externalForces[base + 2] = currentForce.z + dragForce.z;
+    calculateDragForce(vx, vy, vz, water, cache.tempForce);
+
+    externalForces[base] = currX + cache.tempForce.x;
+    externalForces[base + 1] = currY + cache.tempForce.y;
+    externalForces[base + 2] = currZ + cache.tempForce.z;
   }
 
   // Return subarrays
