@@ -12,6 +12,7 @@ export function getBoidsCache(fishCount: number): BoidsCache {
       cellHead: new Int32Array(HASH_SIZE),
       cellNext: new Int32Array(2000), // Initial capacity
       tempSteer: { x: 0, y: 0, z: 0 },
+      tempForce: { x: 0, y: 0, z: 0 },
       EPS: 1e-6,
       steering: new Float32Array(2000 * 3),
       externalForces: new Float32Array(2000 * 3),

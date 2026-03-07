@@ -10,7 +10,9 @@ describe('physicsMath', () => {
     };
 
     it('returns zero force for negligible speed', () => {
-      const force = calculateDragForce(0, 0, 0, params);
+      const out = { x: 1, y: 1, z: 1 };
+      const force = calculateDragForce(0, 0, 0, params, out);
+      expect(force).toBe(out);
       expect(force).toEqual({ x: 0, y: 0, z: 0 });
     });
 
@@ -18,7 +20,8 @@ describe('physicsMath', () => {
       const vx = 1;
       const vy = 0;
       const vz = 0;
-      const force = calculateDragForce(vx, vy, vz, params);
+      const out = { x: 0, y: 0, z: 0 };
+      const force = calculateDragForce(vx, vy, vz, params, out);
 
       // Speed squared = 1
       // Drag mag = 0.5 * 1000 * 0.5 * 0.01 * 1 = 2.5
@@ -40,8 +43,9 @@ describe('physicsMath', () => {
     };
 
     it('returns non-zero current', () => {
+      const out = { x: 0, y: 0, z: 0 };
       // Just check that it returns something valid for a known input
-      const force = calculateWaterCurrent(0, 0, 0, params);
+      const force = calculateWaterCurrent(0, 0, 0, params, out);
       // Math.sin(0) = 0, Math.cos(0) = 1
       // cx = 0*0.5 + 1*0.5 = 0.5
       // cz = 1*0.5 - 0*0.5 = 0.5

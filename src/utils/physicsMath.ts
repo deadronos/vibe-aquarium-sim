@@ -22,11 +22,15 @@ export function calculateDragForce(
   vx: number,
   vy: number,
   vz: number,
-  params: DragParams
+  params: DragParams,
+  out: { x: number; y: number; z: number }
 ): { x: number; y: number; z: number } {
   const speedSq = vx * vx + vy * vy + vz * vz;
   if (speedSq < 0.0001) {
-    return { x: 0, y: 0, z: 0 };
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
+    return out;
   }
 
   const dragMagnitude =
@@ -34,11 +38,10 @@ export function calculateDragForce(
   const invSpeed = 1 / Math.sqrt(speedSq);
 
   // Drag opposes velocity
-  return {
-    x: -vx * invSpeed * dragMagnitude,
-    y: -vy * invSpeed * dragMagnitude,
-    z: -vz * invSpeed * dragMagnitude,
-  };
+  out.x = -vx * invSpeed * dragMagnitude;
+  out.y = -vy * invSpeed * dragMagnitude;
+  out.z = -vz * invSpeed * dragMagnitude;
+  return out;
 }
 
 /**
@@ -49,7 +52,8 @@ export function calculateWaterCurrent(
   px: number,
   pz: number,
   time: number,
-  params: CurrentParams
+  params: CurrentParams,
+  out: { x: number; y: number; z: number }
 ): { x: number; y: number; z: number } {
   const { strength, frequency1, frequency2, spatialScale1, spatialScale2 } = params;
 
@@ -65,12 +69,18 @@ export function calculateWaterCurrent(
 
   const currentLenSq = currentX * currentX + currentZ * currentZ;
   if (currentLenSq < 1e-6) {
-    return { x: 0, y: 0, z: 0 };
+    out.x = 0;
+    out.y = 0;
+    out.z = 0;
+    return out;
   }
 
   const invCurrent = 1 / Math.sqrt(currentLenSq);
   currentX *= invCurrent * strength;
   currentZ *= invCurrent * strength;
 
-  return { x: currentX, y: 0, z: currentZ };
+  out.x = currentX;
+  out.y = 0;
+  out.z = currentZ;
+  return out;
 }

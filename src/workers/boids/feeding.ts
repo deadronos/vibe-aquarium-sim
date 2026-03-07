@@ -12,7 +12,8 @@ export function calculateFeeding(
   foodPositions: Float32Buffer,
   maxSpeed: number,
   maxForce: number,
-  cache: BoidsCache
+  cache: BoidsCache,
+  out: { x: number; y: number; z: number }
 ): { x: number; y: number; z: number } {
   let steerX = 0;
   let steerY = 0;
@@ -47,29 +48,32 @@ export function calculateFeeding(
         const seekLenSq = seekX * seekX + seekY * seekY + seekZ * seekZ;
         const EPS = cache.EPS;
         if (seekLenSq > EPS) {
-            // Re-using logic similar to steerTo but tailored for seeking food
-            // Wait, we can reuse steerTo if we want, but the original code had inline seek logic.
-            // Let's use steerTo!
-            // steerTo expects desired velocity direction (dx, dy, dz)
-            // It calculates desired velocity = normalize(d) * maxSpeed
-            // Then steering = desired - velocity
-            // clamped to maxForce
+          // Re-using logic similar to steerTo but tailored for seeking food
+          // Wait, we can reuse steerTo if we want, but the original code had inline seek logic.
+          // Let's use steerTo!
+          // steerTo expects desired velocity direction (dx, dy, dz)
+          // It calculates desired velocity = normalize(d) * maxSpeed
+          // Then steering = desired - velocity
+          // clamped to maxForce
 
-            // The original code:
-            // const invSeek = 1 / Math.sqrt(seekLenSq);
-            // seekX *= invSeek * maxSpeed; ...
-            // seekX -= vx; ...
-            // clamp
+          // The original code:
+          // const invSeek = 1 / Math.sqrt(seekLenSq);
+          // seekX *= invSeek * maxSpeed; ...
+          // seekX -= vx; ...
+          // clamp
 
-            // This is exactly steerTo(seekX, seekY, seekZ, ...)
+          // This is exactly steerTo(seekX, seekY, seekZ, ...)
 
-            steerTo(seekX, seekY, seekZ, vx, vy, vz, maxSpeed, maxForce * 2, cache);
-            steerX = cache.tempSteer.x;
-            steerY = cache.tempSteer.y;
-            steerZ = cache.tempSteer.z;
+          steerTo(seekX, seekY, seekZ, vx, vy, vz, maxSpeed, maxForce * 2, cache);
+          steerX = cache.tempSteer.x;
+          steerY = cache.tempSteer.y;
+          steerZ = cache.tempSteer.z;
         }
       }
     }
   }
-  return { x: steerX, y: steerY, z: steerZ };
+  out.x = steerX;
+  out.y = steerY;
+  out.z = steerZ;
+  return out;
 }
