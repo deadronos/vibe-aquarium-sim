@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { OrbitControls } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
-import { Vector3 } from 'three';
+
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
 import { EnvironmentMap } from './components/EnvironmentMap';
@@ -10,7 +10,7 @@ import { LivingRoom } from './components/LivingRoom';
 
 import { ECS, world } from './store';
 import type { Entity } from './store';
-import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from './config/constants';
+
 
 import { Tank } from './components/Tank';
 import { Water } from './components/Water';
