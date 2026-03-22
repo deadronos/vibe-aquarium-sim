@@ -99,7 +99,13 @@ describe('fish lighting material injection', () => {
 
     const shader = {
       uniforms: {},
-      vertexShader: 'void main() {}',
+      vertexShader: `
+        #include <common>
+        void main() {
+          vec3 transformed = vec3(position);
+          #include <begin_vertex>
+        }
+      `,
       fragmentShader: `
         #include <common>
         void main() {
@@ -112,6 +118,10 @@ describe('fish lighting material injection', () => {
     // @ts-expect-error - minimal shader shape for unit test
     material.onBeforeCompile(shader);
     expect(shader.fragmentShader).toContain(VIBE_FISH_LIGHTING_MARKER);
+    expect(shader.vertexShader).toContain('uniform float vibeTime;');
+    expect(shader.vertexShader).toContain(
+      'float vibeFinMask = 1.0 - smoothstep(-0.4, 0.1, transformed.z);'
+    );
   });
 
   it('clones materials and does not mutate the original', () => {
@@ -173,6 +183,64 @@ describe('fish lighting material injection', () => {
 
           expect(lighting!.uniforms.vibeRimStrength.value).toBe(0);
           expect(lighting!.uniforms.vibeSSSStrength.value).toBe(0);
+        }
+      }
+    } finally {
+      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+        await maybePromise;
+      }
+    }
+  });
+
+  it('updates vibeTime uniforms on each animation frame', async () => {
+    useFrameSpy.mockClear();
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <FishRenderSystem />
+      </VisualQualityProvider>
+    );
+
+    try {
+      const frameCallback = useFrameSpy.mock.calls[0]?.[0] as
+        | ((state: { clock?: { elapsedTime?: number } }) => void)
+        | undefined;
+
+      expect(frameCallback).toBeTypeOf('function');
+
+      for (const child of renderer.scene.children) {
+        // @ts-expect-error - test renderer node shape
+        const mat = child.instance.material as THREE.Material | THREE.Material[];
+        const mats = Array.isArray(mat) ? mat : [mat];
+
+        for (const m of mats) {
+          const data = m.userData as Record<string, unknown>;
+          const lighting = data.vibeFishLighting as
+            | { uniforms: VibeFishLightingUniforms }
+            | undefined;
+
+          expect(lighting).toBeDefined();
+          expect(lighting!.uniforms.vibeTime.value).toBe(0);
+        }
+      }
+
+      act(() => {
+        frameCallback?.({ clock: { elapsedTime: 1.25 } });
+      });
+
+      for (const child of renderer.scene.children) {
+        // @ts-expect-error - test renderer node shape
+        const mat = child.instance.material as THREE.Material | THREE.Material[];
+        const mats = Array.isArray(mat) ? mat : [mat];
+
+        for (const m of mats) {
+          const data = m.userData as Record<string, unknown>;
+          const lighting = data.vibeFishLighting as
+            | { uniforms: VibeFishLightingUniforms }
+            | undefined;
+
+          expect(lighting!.uniforms.vibeTime.value).toBe(1.25);
         }
       }
     } finally {

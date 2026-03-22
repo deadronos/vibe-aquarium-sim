@@ -75,7 +75,7 @@ const injectRimAndSSS = (shader: ShaderLike) => {
     if (shader.vertexShader.includes('#include <begin_vertex>')) {
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
-        `#include <begin_vertex>\n// Procedural fin wobble\nfloat vibeWobble = sin(vibeTime * 10.0 + transformed.z * 15.0) * smoothstep(0.1, -0.4, transformed.z) * 0.04;\ntransformed.x += vibeWobble;\n`
+        `#include <begin_vertex>\n// Procedural fin wobble\nfloat vibeFinMask = 1.0 - smoothstep(-0.4, 0.1, transformed.z);\nfloat vibeWobble = sin(vibeTime * 10.0 + transformed.z * 15.0) * vibeFinMask * 0.04;\ntransformed.x += vibeWobble;\n`
       );
     }
   }
@@ -85,7 +85,9 @@ const enhanceSingle = (source: THREE.Material) => {
   const cloned = source.clone();
   const uniforms = createUniforms();
 
-  const prevOnBeforeCompile = (cloned.onBeforeCompile as unknown) as ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void) | undefined;
+  const prevOnBeforeCompile = cloned.onBeforeCompile as unknown as
+    | ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void)
+    | undefined;
   cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
     // Preserve runtime behavior of any existing onBeforeCompile handlers.
     prevOnBeforeCompile?.(shader, renderer);

@@ -204,9 +204,9 @@ export const FishRenderSystem = () => {
 
   useFrame((state) => {
     const time = state.clock?.elapsedTime || 0;
-    if (uniformsA && uniformsA.vibeTime) uniformsA.vibeTime.value = time;
-    if (uniformsB && uniformsB.vibeTime) uniformsB.vibeTime.value = time;
-    if (uniformsC && uniformsC.vibeTime) uniformsC.vibeTime.value = time;
+    for (const uniform of uniformsA) uniform.vibeTime.value = time;
+    for (const uniform of uniformsB) uniform.vibeTime.value = time;
+    for (const uniform of uniformsC) uniform.vibeTime.value = time;
     const frameStart = performance.now();
     frameId.current++;
     if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
@@ -384,7 +384,14 @@ export const FishRenderSystem = () => {
         // Budget derived from quality store (default fallback 128)
         const TOTAL_BUDGET = useQualityStore.getState().instanceUpdateBudget || 128;
 
-        const flushModel = (mesh: InstancedMesh | null, pool: THREE.Matrix4[], dirty: Uint8Array, nextRef: React.MutableRefObject<number>, count: number, perModelBudget: number) => {
+        const flushModel = (
+          mesh: InstancedMesh | null,
+          pool: THREE.Matrix4[],
+          dirty: Uint8Array,
+          nextRef: React.MutableRefObject<number>,
+          count: number,
+          perModelBudget: number
+        ) => {
           if (!mesh || count <= 0) return 0;
           const meshCount = Math.min(count, MAX_INSTANCES_PER_MODEL);
           let flushed = 0;
@@ -407,12 +414,41 @@ export const FishRenderSystem = () => {
         };
 
         const perModel = Math.ceil(TOTAL_BUDGET / 3);
-        const flushedA = flushModel(meshRefA.current, matrixPoolARef.current, dirtyARef.current, nextFlushARef, meshRefA.current.count, perModel);
-        const flushedB = flushModel(meshRefB.current, matrixPoolBRef.current, dirtyBRef.current, nextFlushBRef, meshRefB.current.count, perModel);
-        const flushedC = flushModel(meshRefC.current, matrixPoolCRef.current, dirtyCRef.current, nextFlushCRef, meshRefC.current.count, perModel);
+        const flushedA = flushModel(
+          meshRefA.current,
+          matrixPoolARef.current,
+          dirtyARef.current,
+          nextFlushARef,
+          meshRefA.current.count,
+          perModel
+        );
+        const flushedB = flushModel(
+          meshRefB.current,
+          matrixPoolBRef.current,
+          dirtyBRef.current,
+          nextFlushBRef,
+          meshRefB.current.count,
+          perModel
+        );
+        const flushedC = flushModel(
+          meshRefC.current,
+          matrixPoolCRef.current,
+          dirtyCRef.current,
+          nextFlushCRef,
+          meshRefC.current.count,
+          perModel
+        );
 
         const dbg = window.__vibe_debug;
-        if (dbg) dbg.fishRender.push({ frame: frameId.current, duration: frameDuration, counts: { countA, countB, countC }, activeEntities: activeEntities.length, ema, flushed: flushedA + flushedB + flushedC });
+        if (dbg)
+          dbg.fishRender.push({
+            frame: frameId.current,
+            duration: frameDuration,
+            counts: { countA, countB, countC },
+            activeEntities: activeEntities.length,
+            ema,
+            flushed: flushedA + flushedB + flushedC,
+          });
       } else {
         // PoC disabled: matrices were written directly in the loop above.
         if (wroteA) meshRefA.current.instanceMatrix.needsUpdate = true;
