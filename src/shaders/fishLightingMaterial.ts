@@ -10,6 +10,7 @@ export interface VibeFishLightingUniforms {
   vibeSSSColor: { value: THREE.Color };
   vibeSSSStrength: { value: number };
   vibeSSSPower: { value: number };
+  vibeTime: { value: number };
 }
 
 export const DEFAULT_VIBE_FISH_RIM_STRENGTH = 0.12;
@@ -33,10 +34,11 @@ const createUniforms = (): VibeFishLightingUniforms => ({
   vibeSSSColor: { value: DEFAULT_SSS_COLOR.clone() },
   vibeSSSStrength: { value: DEFAULT_VIBE_FISH_SSS_STRENGTH },
   vibeSSSPower: { value: DEFAULT_VIBE_FISH_SSS_POWER },
+  vibeTime: { value: 0 },
 });
 
 // Minimal local shader shape used by onBeforeCompile.
-// `@types/three` does not reliably export a `Shader` type across versions, so
+// @types/three does not reliably export a Shader type across versions, so
 // use a compact local interface to avoid depending on that symbol.
 type ShaderLike = {
   fragmentShader: string;
@@ -55,20 +57,37 @@ const injectRimAndSSS = (shader: ShaderLike) => {
 
   shader.fragmentShader = shader.fragmentShader.replace(
     '#include <common>',
-    `#include <common>\n${VIBE_FISH_LIGHTING_MARKER}\nuniform vec3 vibeRimColor;\nuniform float vibeRimStrength;\nuniform float vibeRimPower;\nuniform vec3 vibeSSSColor;\nuniform float vibeSSSStrength;\nuniform float vibeSSSPower;\nconst float VIBE_EPS = 1e-6;\nvec3 vibeSafeNormalize(vec3 v){ return v * inversesqrt(max(dot(v, v), VIBE_EPS)); }\n`
+    `#include <common>\n${VIBE_FISH_LIGHTING_MARKER}\nuniform vec3 vibeRimColor;\nuniform float vibeRimStrength;\nuniform float vibeRimPower;\nuniform vec3 vibeSSSColor;\nuniform float vibeSSSStrength;\nuniform float vibeSSSPower;\nuniform float vibeTime;\nconst float VIBE_EPS = 1e-6;\nvec3 vibeSafeNormalize(vec3 v){ return v * inversesqrt(max(dot(v, v), VIBE_EPS)); }\n`
   );
 
   shader.fragmentShader = shader.fragmentShader.replace(
     '#include <output_fragment>',
     `\n${VIBE_FISH_LIGHTING_MARKER}\nvec3 vibeN = vibeSafeNormalize( normal );\nvec3 vibeV = vibeSafeNormalize( vViewPosition );\nfloat vibeNdotV = saturate( dot( vibeN, vibeV ) );\n\n// Subtle rim (fresnel-ish)\nfloat vibeRim = pow( 1.0 - vibeNdotV, vibeRimPower ) * vibeRimStrength;\noutgoingLight += vibeRimColor * vibeRim;\n\n// Faux wrap/SSS tint (soft edge lift)\nfloat vibeSSS = pow( 1.0 - vibeNdotV, vibeSSSPower ) * vibeSSSStrength;\noutgoingLight += vibeSSSColor * vibeSSS;\n\n#include <output_fragment>`
   );
+
+  // Inject vertex shader wobble for fin animation
+  if (shader.vertexShader && shader.vertexShader.includes('#include <common>')) {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `#include <common>\nuniform float vibeTime;\n`
+    );
+
+    if (shader.vertexShader.includes('#include <begin_vertex>')) {
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>\n// Procedural fin wobble\nfloat vibeFinMask = 1.0 - smoothstep(-0.4, 0.1, transformed.z);\nfloat vibeWobble = sin(vibeTime * 10.0 + transformed.z * 15.0) * vibeFinMask * 0.04;\ntransformed.x += vibeWobble;\n`
+      );
+    }
+  }
 };
 
 const enhanceSingle = (source: THREE.Material) => {
   const cloned = source.clone();
   const uniforms = createUniforms();
 
-  const prevOnBeforeCompile = (cloned.onBeforeCompile as unknown) as ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void) | undefined;
+  const prevOnBeforeCompile = cloned.onBeforeCompile as unknown as
+    | ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void)
+    | undefined;
   cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
     // Preserve runtime behavior of any existing onBeforeCompile handlers.
     prevOnBeforeCompile?.(shader, renderer);
@@ -80,7 +99,7 @@ const enhanceSingle = (source: THREE.Material) => {
   };
 
   // Ensure program cache differentiates the modified shader.
-  cloned.customProgramCacheKey = () => 'vibe_fish_rim_sss_v1';
+  cloned.customProgramCacheKey = () => 'vibe_fish_rim_sss_v2';
 
   (cloned.userData as FishLightingUserData).vibeFishLighting = { uniforms };
 
