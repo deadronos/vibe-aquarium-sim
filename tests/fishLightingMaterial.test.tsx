@@ -204,7 +204,7 @@ describe('fish lighting material injection', () => {
 
     try {
       const frameCallback = useFrameSpy.mock.calls[0]?.[0] as
-        | ((state: { clock?: { elapsedTime?: number } }) => void)
+        | ((state: unknown, delta: number) => void)
         | undefined;
 
       expect(frameCallback).toBeTypeOf('function');
@@ -226,7 +226,7 @@ describe('fish lighting material injection', () => {
       }
 
       act(() => {
-        frameCallback?.({ clock: { elapsedTime: 1.25 } });
+        frameCallback?.({}, 1.25);
       });
 
       for (const child of renderer.scene.children) {

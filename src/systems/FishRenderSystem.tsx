@@ -138,6 +138,7 @@ export const FishRenderSystem = () => {
   }, [fishRimLightingEnabled, fishSubsurfaceScatteringEnabled, uniformsA, uniformsB, uniformsC]);
 
   const frameId = useRef(0);
+  const elapsedTimeRef = useRef(0);
 
   // Per-entity bookkeeping is stored directly on the entity to avoid Map iterator
   // allocations in the useFrame hot path.
@@ -202,8 +203,9 @@ export const FishRenderSystem = () => {
   const nextFlushBRef = useRef<number>(0);
   const nextFlushCRef = useRef<number>(0);
 
-  useFrame((state) => {
-    const time = state.clock?.elapsedTime || 0;
+  useFrame((_, delta) => {
+    elapsedTimeRef.current += delta;
+    const time = elapsedTimeRef.current;
     for (const uniform of uniformsA) uniform.vibeTime.value = time;
     for (const uniform of uniformsB) uniform.vibeTime.value = time;
     for (const uniform of uniformsC) uniform.vibeTime.value = time;
