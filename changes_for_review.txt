@@ -1,3 +1,128 @@
+import * as THREE from 'three';
+import { logShaderOnce } from '../utils/shaderDebug';
+
+export const VIBE_FISH_LIGHTING_MARKER = '// VIBE_RIM_LIGHTING';
+
+export interface VibeFishLightingUniforms {
+  vibeRimColor: { value: THREE.Color };
+  vibeRimStrength: { value: number };
+  vibeRimPower: { value: number };
+  vibeSSSColor: { value: THREE.Color };
+  vibeSSSStrength: { value: number };
+  vibeSSSPower: { value: number };
+  vibeTime: { value: number };
+}
+
+export const DEFAULT_VIBE_FISH_RIM_STRENGTH = 0.12;
+export const DEFAULT_VIBE_FISH_RIM_POWER = 2.2;
+export const DEFAULT_VIBE_FISH_SSS_STRENGTH = 0.06;
+export const DEFAULT_VIBE_FISH_SSS_POWER = 1.4;
+
+const DEFAULT_RIM_COLOR = new THREE.Color('#eaf6ff');
+const DEFAULT_SSS_COLOR = new THREE.Color('#ffb18a');
+
+type FishLightingUserData = {
+  vibeFishLighting?: {
+    uniforms: VibeFishLightingUniforms;
+  };
+};
+
+const createUniforms = (): VibeFishLightingUniforms => ({
+  vibeRimColor: { value: DEFAULT_RIM_COLOR.clone() },
+  vibeRimStrength: { value: DEFAULT_VIBE_FISH_RIM_STRENGTH },
+  vibeRimPower: { value: DEFAULT_VIBE_FISH_RIM_POWER },
+  vibeSSSColor: { value: DEFAULT_SSS_COLOR.clone() },
+  vibeSSSStrength: { value: DEFAULT_VIBE_FISH_SSS_STRENGTH },
+  vibeSSSPower: { value: DEFAULT_VIBE_FISH_SSS_POWER },
+  vibeTime: { value: 0 },
+});
+
+// Minimal local shader shape used by onBeforeCompile.
+// @types/three does not reliably export a Shader type across versions, so
+// use a compact local interface to avoid depending on that symbol.
+type ShaderLike = {
+  fragmentShader: string;
+  vertexShader?: string;
+  uniforms: Record<string, { value: unknown }>;
+};
+
+const injectRimAndSSS = (shader: ShaderLike) => {
+  // Idempotency: onBeforeCompile can run multiple times (program cache, renderer reuse).
+  // If we've already injected our chunk, skip to avoid duplicating uniforms/logic.
+  if (shader.fragmentShader.includes(VIBE_FISH_LIGHTING_MARKER)) return;
+
+  const hasCommon = shader.fragmentShader.includes('#include <common>');
+  const hasOutput = shader.fragmentShader.includes('#include <output_fragment>');
+  if (!hasCommon || !hasOutput) return;
+
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <common>',
+    `#include <common>\n${VIBE_FISH_LIGHTING_MARKER}\nuniform vec3 vibeRimColor;\nuniform float vibeRimStrength;\nuniform float vibeRimPower;\nuniform vec3 vibeSSSColor;\nuniform float vibeSSSStrength;\nuniform float vibeSSSPower;\nuniform float vibeTime;\nconst float VIBE_EPS = 1e-6;\nvec3 vibeSafeNormalize(vec3 v){ return v * inversesqrt(max(dot(v, v), VIBE_EPS)); }\n`
+  );
+
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <output_fragment>',
+    `\n${VIBE_FISH_LIGHTING_MARKER}\nvec3 vibeN = vibeSafeNormalize( normal );\nvec3 vibeV = vibeSafeNormalize( vViewPosition );\nfloat vibeNdotV = saturate( dot( vibeN, vibeV ) );\n\n// Subtle rim (fresnel-ish)\nfloat vibeRim = pow( 1.0 - vibeNdotV, vibeRimPower ) * vibeRimStrength;\noutgoingLight += vibeRimColor * vibeRim;\n\n// Faux wrap/SSS tint (soft edge lift)\nfloat vibeSSS = pow( 1.0 - vibeNdotV, vibeSSSPower ) * vibeSSSStrength;\noutgoingLight += vibeSSSColor * vibeSSS;\n\n#include <output_fragment>`
+  );
+
+  // Inject vertex shader wobble for fin animation
+  if (shader.vertexShader && shader.vertexShader.includes('#include <common>')) {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `#include <common>\nuniform float vibeTime;\n`
+    );
+
+    if (shader.vertexShader.includes('#include <begin_vertex>')) {
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>\n// Procedural fin wobble\nfloat vibeWobble = sin(vibeTime * 10.0 + transformed.z * 15.0) * smoothstep(0.1, -0.4, transformed.z) * 0.04;\ntransformed.x += vibeWobble;\n`
+      );
+    }
+  }
+};
+
+const enhanceSingle = (source: THREE.Material) => {
+  const cloned = source.clone();
+  const uniforms = createUniforms();
+
+  const prevOnBeforeCompile = (cloned.onBeforeCompile as unknown) as ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void) | undefined;
+  cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
+    // Preserve runtime behavior of any existing onBeforeCompile handlers.
+    prevOnBeforeCompile?.(shader, renderer);
+    // Cast via unknown first to satisfy TypeScript when converting between
+    // differently-shaped record types.
+    Object.assign(shader.uniforms, uniforms as unknown as Record<string, { value: unknown }>);
+    injectRimAndSSS(shader);
+    logShaderOnce('Fish/Standard+RimSSS', shader);
+  };
+
+  // Ensure program cache differentiates the modified shader.
+  cloned.customProgramCacheKey = () => 'vibe_fish_rim_sss_v2';
+
+  (cloned.userData as FishLightingUserData).vibeFishLighting = { uniforms };
+
+  return { material: cloned, uniforms };
+};
+
+export function enhanceFishMaterialWithRimAndSSS(material: THREE.Material): {
+  material: THREE.Material;
+  uniforms: VibeFishLightingUniforms;
+};
+export function enhanceFishMaterialWithRimAndSSS(material: THREE.Material[]): {
+  material: THREE.Material[];
+  uniforms: VibeFishLightingUniforms[];
+};
+export function enhanceFishMaterialWithRimAndSSS(material: THREE.Material | THREE.Material[]) {
+  if (Array.isArray(material)) {
+    const enhanced = material.map((m) => enhanceSingle(m));
+    return {
+      material: enhanced.map((e) => e.material),
+      uniforms: enhanced.map((e) => e.uniforms),
+    };
+  }
+
+  return enhanceSingle(material);
+}
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
@@ -461,6 +586,198 @@ export const FishRenderSystem = () => {
         receiveShadow
         frustumCulled={false}
       />
+    </>
+  );
+};
+import { useState, useCallback } from 'react';
+import { Vector3 } from 'three';
+import type { ThreeEvent } from '@react-three/fiber';
+import { world } from '../store';
+import { useGameStore } from '../gameStore';
+import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
+import { ClickRipple } from './effects/ClickRipple';
+
+interface RippleEffect {
+  id: string;
+  position: Vector3;
+}
+
+export const FeedingController = () => {
+  const [ripples, setRipples] = useState<RippleEffect[]>([]);
+  const { isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, setLastFedTime } =
+    useGameStore();
+
+  const removeRipple = useCallback((id: string) => {
+    setRipples((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+  const handleClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      const point = e.point;
+
+      if (isPlacingDecoration) {
+        // Place decoration on tank floor
+        const floorY = -TANK_DIMENSIONS.height / 2 + 0.01;
+
+        // Clamp to tank bounds
+        const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
+        const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+
+        world.add({
+          isDecoration: true,
+          decorationType: selectedDecorationType,
+          position: new Vector3(x, floorY, z),
+        });
+
+        stopPlacingDecoration();
+      } else {
+        // Spawn food
+        const rippleId = `ripple-${Date.now()}-${Math.random()}`;
+        setRipples((prev) => [...prev, { id: rippleId, position: point.clone() }]);
+
+        // Trigger fish excitement for nearby fish
+        const fishEntities = world.with('isFish', 'position');
+        for (const fish of fishEntities) {
+          if (!fish.position) continue;
+          const dist = fish.position.distanceTo(point);
+          if (dist < 2.0) {
+            fish.excitementLevel = 1.0;
+            fish.excitementDecay = 1.0; // 1 second of excitement
+          }
+        }
+
+        // Clamp to simulation bounds so fish can reach it
+        const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
+        const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+
+        // Seed bubble configuration for the food entity (generated in event handler)
+        const bubbleConfig = Array.from({ length: 8 }, () => ({
+          offset: new Vector3(
+            (Math.random() - 0.5) * 0.04,
+            Math.random() * 0.03,
+            (Math.random() - 0.5) * 0.04
+          ),
+          speed: 0.15 + Math.random() * 0.2,
+          phase: Math.random() * Math.PI * 2,
+          size: 0.004 + Math.random() * 0.006,
+          wobble: 0.01 + Math.random() * 0.015,
+        }));
+
+        world.add({
+          isFood: true,
+          position: new Vector3(x, point.y, z),
+          velocity: new Vector3((Math.random() - 0.5) * 0.05, -0.08, (Math.random() - 0.5) * 0.05), // Slow sink ~8cm/s
+          bubbleConfig,
+        });
+
+        setLastFedTime(new Date());
+      }
+    },
+    [isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, setLastFedTime]
+  );
+
+  return (
+    <>
+      <mesh position={[0, 0, 0]} onClick={handleClick}>
+        <boxGeometry
+          args={[TANK_DIMENSIONS.width, TANK_DIMENSIONS.height, TANK_DIMENSIONS.depth]}
+        />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+
+      {/* Render active ripple effects */}
+      {ripples.map((ripple) => (
+        <ClickRipple
+          key={ripple.id}
+          position={ripple.position}
+          onComplete={() => removeRipple(ripple.id)}
+        />
+      ))}
+    </>
+  );
+};
+import { useRef, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { RigidBody, BallCollider } from '@react-three/rapier';
+import type { RapierRigidBody } from '@react-three/rapier';
+import type { Entity } from '../store';
+import { BubbleTrail } from './effects/BubbleTrail';
+import * as THREE from 'three';
+
+const SPAWN_DURATION_SECONDS = 0.3;
+
+export const Food = ({ entity }: { entity: Entity }) => {
+  const rigidBody = useRef<RapierRigidBody>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const spawnStartTimeRef = useRef<number | null>(null);
+
+  // Apply initial velocity once
+  useEffect(() => {
+    if (rigidBody.current && entity.velocity) {
+      rigidBody.current.setLinvel(entity.velocity, true);
+    }
+  }, [entity.velocity]);
+
+  // Sync physics back to ECS
+  useFrame((state: any) => {
+    if (!rigidBody.current || !entity.position) return;
+
+    const pos = rigidBody.current.translation();
+    if (pos) {
+      entity.position.set(pos.x, pos.y, pos.z);
+    }
+
+    // Apply spawn scale to mesh
+    if (meshRef.current) {
+      const time = state.clock?.elapsedTime || performance.now() / 1000;
+      if (spawnStartTimeRef.current === null) {
+        spawnStartTimeRef.current = time;
+      }
+
+      const elapsed = time - spawnStartTimeRef.current!;
+      const progress = elapsed / SPAWN_DURATION_SECONDS;
+
+      if (progress >= 1) {
+        if (meshRef.current.scale.x !== 1) {
+          meshRef.current.scale.setScalar(1);
+        }
+      } else {
+        // Elastic ease out
+        const eased = 1 - Math.pow(1 - progress, 3) * Math.cos(progress * Math.PI * 0.5);
+        meshRef.current.scale.setScalar(eased);
+      }
+    }
+  });
+
+  return (
+    <>
+      <RigidBody
+        ref={rigidBody}
+        position={entity.position}
+        colliders={false}
+        linearDamping={1.5} // Higher damping in water
+        angularDamping={1.0}
+        restitution={0.2}
+        mass={0.005} // 5 grams
+        gravityScale={0.08} // Mostly neutrally buoyant, sinks slowly
+      >
+        <BallCollider args={[0.012]} /> {/* 1.2cm collision radius */}
+        <mesh ref={meshRef} castShadow receiveShadow scale={0}>
+          <sphereGeometry args={[0.015, 16, 16]} /> {/* 1.5cm visual radius */}
+          <meshStandardMaterial
+            color="#ffaa00"
+            roughness={0.3}
+            emissive="#ff6600"
+            emissiveIntensity={0.3}
+          />
+        </mesh>
+      </RigidBody>
+
+      {/* Bubble trail effect - outside RigidBody to avoid double transform */}
+      {entity.position && (
+        <BubbleTrail parentPosition={entity.position!} bubbles={entity.bubbleConfig} />
+      )}
     </>
   );
 };

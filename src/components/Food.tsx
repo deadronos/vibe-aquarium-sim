@@ -57,11 +57,11 @@ export const Food = ({ entity }: { entity: Entity }) => {
         ref={rigidBody}
         position={entity.position}
         colliders={false}
-        linearDamping={3.0} // Higher damping in water
+        linearDamping={1.5} // Higher damping in water
         angularDamping={1.0}
         restitution={0.2}
         mass={0.005} // 5 grams
-        gravityScale={0.15} // Mostly neutrally buoyant, sinks slowly
+        gravityScale={0.08} // Mostly neutrally buoyant, sinks slowly
       >
         <BallCollider args={[0.012]} /> {/* 1.2cm collision radius */}
         <mesh ref={meshRef} castShadow receiveShadow scale={0}>

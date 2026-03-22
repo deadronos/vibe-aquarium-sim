@@ -76,7 +76,7 @@ export const FeedingController = () => {
         world.add({
           isFood: true,
           position: new Vector3(x, point.y, z),
-          velocity: new Vector3(0, -0.08, 0), // Slow sink ~8cm/s
+          velocity: new Vector3((Math.random() - 0.5) * 0.05, -0.08, (Math.random() - 0.5) * 0.05), // Slow sink ~8cm/s
           bubbleConfig,
         });
 
