@@ -17,6 +17,7 @@ const updateExcitement = (dt: number) => {
       } else {
         // Update decay timer
         entity.excitementDecay = newDecay;
+        entity.excitementLevel = Math.max(0, newDecay);
       }
     }
   }

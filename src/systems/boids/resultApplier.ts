@@ -1,5 +1,5 @@
 import { world } from '../../store';
-import { triggerEatingBurst } from '../../utils/effectsBus';
+import { triggerEffect } from '../../utils/effectsBus';
 import type { SimulationOutput } from '../../workers/simulationWorker';
 import { fishSnapshot, foodSnapshot } from './snapshot';
 
@@ -34,7 +34,7 @@ export function applySimulationResult(
       const food = foodSnapshot[index];
       if (!food) continue;
       if (food.position) {
-        triggerEatingBurst(food.position);
+        triggerEffect("EAT", food.position);
       }
       world.remove(food);
     }

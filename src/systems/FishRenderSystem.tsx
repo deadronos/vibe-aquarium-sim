@@ -277,10 +277,10 @@ export const FishRenderSystem = () => {
 
       const prev = quaternionIndex >= 0 ? quaternionPool[quaternionIndex]! : quaternionFallback;
 
-      if (entity.velocity && entity.velocity.lengthSq() > 0.01) {
+      if (entity.velocity && entity.velocity.lengthSq() > 0.005) {
         tempVec.copy(entity.velocity).normalize();
         tempQuat.setFromUnitVectors(FORWARD, tempVec);
-        prev.slerp(tempQuat, 0.1);
+        prev.slerp(tempQuat, 0.15);
         tempObj.quaternion.copy(prev);
       } else {
         tempObj.quaternion.copy(prev);

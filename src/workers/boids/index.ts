@@ -1,6 +1,6 @@
 import type { SimulationInput, SimulationOutput } from './types';
 import { getBoidsCache } from './cache';
-import { populateSpatialHash } from './spatialHash';
+import { populateSpatialHash, populateFoodSpatialHash } from './spatialHash';
 import { steerTo } from './steering';
 import { calculateFeeding } from './feeding';
 import { calculateDragForce, calculateWaterCurrent } from '../../utils/physicsMath';
@@ -11,6 +11,8 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     fishCount,
     positions,
     velocities,
+    modelIndices,
+    species = [],
     foodCount,
     foodPositions,
     time,
@@ -20,8 +22,8 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     current,
   } = input;
 
-  const cache = getBoidsCache(fishCount);
-  const { HASH_MASK, EPS, tempSteer, cellHead, cellNext, steering, externalForces, eatenFoodIndices } = cache;
+  const cache = getBoidsCache(fishCount, foodCount);
+  const { HASH_MASK, EPS, cellHead, cellNext, steering, externalForces, eatenFoodIndices } = cache;
 
   // Zero-fill buffers
   steering.fill(0, 0, fishCount * 3);
@@ -30,18 +32,19 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
   // Clear eaten food indices
   eatenFoodIndices.length = 0;
 
-  const neighborDist = boids.neighborDist;
-  const separationDist = boids.separationDist;
-  const maxSpeed = boids.maxSpeed;
-  const maxForce = boids.maxForce;
-  const maxForceDouble = maxForce * 2;
-  const neighborDistSq = neighborDist * neighborDist;
-  const separationDistSq = separationDist * separationDist;
+  // We use neighborDist for the grid to keep it efficient.
+  // Using the largest neighborDist among species or a sensible default.
+  let maxNeighborDist = 0;
+  for (let s = 0; s < species.length; s++) {
+      maxNeighborDist = Math.max(maxNeighborDist, species[s].neighborDist);
+  }
+  const cellSize = (maxNeighborDist || boids.neighborDist) * 2.5;
 
-  const cellSize = neighborDist * 2.5;
-
-  // Pass 1: Populate spatial hash
+  // Pass 1: Populate spatial hashes
   populateSpatialHash(fishCount, positions, cache, cellSize);
+  if (foodCount > 0) {
+    populateFoodSpatialHash(foodCount, foodPositions, cache, cellSize);
+  }
 
   // Pass 2: Main loop (Flocking + Boundary + Feeding + Physics)
   for (let i = 0; i < fishCount; i++) {
@@ -53,6 +56,13 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
     const vx = velocities[base];
     const vy = velocities[base + 1];
     const vz = velocities[base + 2];
+
+    const modelIdx = modelIndices ? modelIndices[i] : 0;
+    const params = (species && species[modelIdx]) || boids;
+    const { maxSpeed, maxForce, neighborDist, separationDist, weights } = params;
+    const neighborDistSq = neighborDist * neighborDist;
+    const separationDistSq = separationDist * separationDist;
+    const maxForceDouble = maxForce * 2;
 
     // --- Flocking ---
     let sepX = 0;
@@ -126,9 +136,9 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
         sepY /= count;
         sepZ /= count;
         steerTo(sepX, sepY, sepZ, vx, vy, vz, maxSpeed, maxForce, cache);
-        sepX = tempSteer.x;
-        sepY = tempSteer.y;
-        sepZ = tempSteer.z;
+        sepX = cache.tempSteer.x;
+        sepY = cache.tempSteer.y;
+        sepZ = cache.tempSteer.z;
       } else {
         sepX = 0;
         sepY = 0;
@@ -140,24 +150,33 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
       aliY /= count;
       aliZ /= count;
       steerTo(aliX, aliY, aliZ, vx, vy, vz, maxSpeed, maxForce, cache);
-      aliX = tempSteer.x;
-      aliY = tempSteer.y;
-      aliZ = tempSteer.z;
+      aliX = cache.tempSteer.x;
+      aliY = cache.tempSteer.y;
+      aliZ = cache.tempSteer.z;
 
       // Cohesion
       cohX = cohX / count - px;
       cohY = cohY / count - py;
       cohZ = cohZ / count - pz;
       steerTo(cohX, cohY, cohZ, vx, vy, vz, maxSpeed, maxForce, cache);
-      cohX = tempSteer.x;
-      cohY = tempSteer.y;
-      cohZ = tempSteer.z;
+      cohX = cache.tempSteer.x;
+      cohY = cache.tempSteer.y;
+      cohZ = cache.tempSteer.z;
     }
 
     // Apply weights
-    sepX *= 2.0;
-    sepY *= 2.0;
-    sepZ *= 2.0;
+    const { separation = 2.0, alignment = 1.0, cohesion = 1.0 } = weights || {};
+    sepX *= separation;
+    sepY *= separation;
+    sepZ *= separation;
+
+    aliX *= alignment;
+    aliY *= alignment;
+    aliZ *= alignment;
+
+    cohX *= cohesion;
+    cohZ *= cohesion;
+    cohY *= cohesion;
 
     let steerX = sepX + aliX + cohX;
     let steerY = sepY + aliY + cohY;
@@ -170,9 +189,9 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
     if (isAnyBoundViolated(boundDirX, boundDirY, boundDirZ)) {
       steerTo(boundDirX, boundDirY, boundDirZ, vx, vy, vz, maxSpeed, maxForceDouble, cache);
-      steerX += tempSteer.x;
-      steerY += tempSteer.y;
-      steerZ += tempSteer.z;
+      steerX += cache.tempSteer.x;
+      steerY += cache.tempSteer.y;
+      steerZ += cache.tempSteer.z;
     }
 
     // --- Feeding ---
@@ -180,6 +199,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
       px, py, pz, vx, vy, vz,
       foodCount, foodPositions,
       maxSpeed, maxForceDouble, cache,
+      cellSize,
       cache.tempForce
     );
     steerX += cache.tempForce.x;

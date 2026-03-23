@@ -29,3 +29,33 @@ export function populateSpatialHash(
     cellHead[h] = i;
   }
 }
+
+export function populateFoodSpatialHash(
+  foodCount: number,
+  foodPositions: Float32Buffer,
+  cache: BoidsCache,
+  cellSize: number
+): void {
+  const { HASH_MASK, foodCellHead, foodCellNext } = cache;
+
+  // Clear hash table heads
+  foodCellHead.fill(-1);
+
+  // Pass 1: Populate spatial hash
+  for (let i = 0; i < foodCount; i++) {
+    const base = i * 3;
+    const px = foodPositions[base];
+    const py = foodPositions[base + 1];
+    const pz = foodPositions[base + 2];
+
+    const gx = Math.floor(px / cellSize);
+    const gy = Math.floor(py / cellSize);
+    const gz = Math.floor(pz / cellSize);
+
+    // Spatial hashing
+    const h = ((gx * 73856093) ^ (gy * 19349663) ^ (gz * 83492791)) & HASH_MASK;
+
+    foodCellNext[i] = foodCellHead[h];
+    foodCellHead[h] = i;
+  }
+}

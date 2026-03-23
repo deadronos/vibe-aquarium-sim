@@ -1,9 +1,23 @@
 export type Float32Buffer = Float32Array<ArrayBufferLike>;
 
+export interface SpeciesParams {
+  maxSpeed: number;
+  maxForce: number;
+  neighborDist: number;
+  separationDist: number;
+  weights: {
+    separation: number;
+    alignment: number;
+    cohesion: number;
+  };
+}
+
 export type SimulationInput = {
   fishCount: number;
   positions: Float32Buffer;
   velocities: Float32Buffer;
+  modelIndices: Int32Array; // Per-fish model index
+  species: SpeciesParams[]; // Species configurations
   foodCount: number;
   foodPositions: Float32Buffer;
   time: number;
@@ -30,6 +44,8 @@ export type BoidsCache = {
   HASH_MASK: number;
   cellHead: Int32Array;
   cellNext: Int32Array;
+  foodCellHead: Int32Array;
+  foodCellNext: Int32Array;
   tempSteer: { x: number; y: number; z: number };
   tempForce: { x: number; y: number; z: number };
   EPS: number;

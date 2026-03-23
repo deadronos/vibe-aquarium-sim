@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { simulateStep, SimulationInput } from '../src/workers/simulationWorker';
+import { simulateStep } from '../src/workers/boids/index';
+import type { SimulationInput } from '../src/workers/boids/types';
 
 describe('simulationWorker benchmark', () => {
     it('benchmarks worker performance with many boids', () => {
         const fishCount = 5000;
         const positions = new Float32Array(fishCount * 3);
         const velocities = new Float32Array(fishCount * 3);
+        const modelIndices = new Int32Array(fishCount);
 
         for (let i = 0; i < fishCount; i++) {
             const b = i * 3;
@@ -16,12 +18,19 @@ describe('simulationWorker benchmark', () => {
             velocities[b] = (Math.random() - 0.5) * 5;
             velocities[b + 1] = (Math.random() - 0.5) * 5;
             velocities[b + 2] = (Math.random() - 0.5) * 5;
+            modelIndices[i] = i % 3;
         }
 
         const input: SimulationInput = {
             fishCount,
             positions,
             velocities,
+            modelIndices,
+            species: [
+                { maxSpeed: 0.5, maxForce: 0.6, neighborDist: 0.5, separationDist: 0.2, weights: { separation: 2.5, alignment: 1.0, cohesion: 1.2 } },
+                { maxSpeed: 0.35, maxForce: 0.4, neighborDist: 0.7, separationDist: 0.3, weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 } },
+                { maxSpeed: 0.25, maxForce: 0.3, neighborDist: 0.4, separationDist: 0.4, weights: { separation: 3.0, alignment: 0.5, cohesion: 0.5 } }
+            ],
             foodCount: 10,
             foodPositions: new Float32Array(30),
             time: 1.0,
@@ -40,7 +49,7 @@ describe('simulationWorker benchmark', () => {
                 spatialScale1: 0.5,
                 spatialScale2: 0.3,
             },
-        };
+        } as SimulationInput;
 
         const iterations = 50;
 
