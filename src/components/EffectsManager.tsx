@@ -33,7 +33,7 @@ export const EffectsManager = () => {
           size: 0.005 + Math.random() * 0.004,
         }));
 
-        setBursts((prev) => [...prev, { id, position: event.position, particles }]);
+        setBursts((prev) => [...prev, { id, position: event.position.clone(), particles }]);
       }
     },
     [particleMultiplier]

@@ -31,6 +31,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   // Clear eaten food indices
   eatenFoodIndices.length = 0;
+  cache.eatenFoodIndexSet.clear();
 
   // We use neighborDist for the grid to keep it efficient.
   // Using the largest neighborDist among species or a sensible default.

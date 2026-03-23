@@ -64,7 +64,8 @@ export function calculateFeeding(
     if (closestIndex >= 0 && minFoodDistSq < 25.0) { // Limit food seeking to 5m radius
       if (minFoodDistSq < 0.01) {
         // Prevent duplicate eaten food in the same step if multiple fish arrive
-        if (!cache.eatenFoodIndices.includes(closestIndex)) {
+        if (!cache.eatenFoodIndexSet.has(closestIndex)) {
+          cache.eatenFoodIndexSet.add(closestIndex);
           cache.eatenFoodIndices.push(closestIndex);
         }
       } else {

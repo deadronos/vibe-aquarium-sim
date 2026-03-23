@@ -151,4 +151,21 @@ describe('simulationWorker extra tests', () => {
     const second = simulateStep(none);
     expect(second.eatenFoodIndices).toHaveLength(0);
   });
+
+  it('deduplicates the same eaten food index when multiple fish reach it in one step', () => {
+    const input = makeInput({
+      fishCount: 2,
+      positions: new Float32Array([
+        0, 0, 0,
+        0.001, 0, 0,
+      ]),
+      velocities: new Float32Array(6),
+      foodCount: 1,
+      foodPositions: new Float32Array([0.05, 0, 0]),
+    });
+
+    const out = simulateStep(input);
+
+    expect(out.eatenFoodIndices).toEqual([0]);
+  });
 });

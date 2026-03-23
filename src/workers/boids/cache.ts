@@ -13,6 +13,7 @@ export function getBoidsCache(fishCount: number, foodCount: number = 0): BoidsCa
       cellNext: new Int32Array(2000), // Initial capacity
       foodCellHead: new Int32Array(HASH_SIZE),
       foodCellNext: new Int32Array(500),
+      eatenFoodIndexSet: new Set<number>(),
       tempSteer: { x: 0, y: 0, z: 0 },
       tempForce: { x: 0, y: 0, z: 0 },
       EPS: 1e-6,

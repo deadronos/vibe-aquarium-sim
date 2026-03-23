@@ -46,6 +46,7 @@ export type BoidsCache = {
   cellNext: Int32Array;
   foodCellHead: Int32Array;
   foodCellNext: Int32Array;
+  eatenFoodIndexSet: Set<number>;
   tempSteer: { x: number; y: number; z: number };
   tempForce: { x: number; y: number; z: number };
   EPS: number;
