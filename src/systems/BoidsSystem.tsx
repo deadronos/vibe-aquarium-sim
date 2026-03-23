@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BOIDS_CONFIG, SIMULATION_BOUNDS } from '../config/constants';
+import { BOIDS_CONFIG, SIMULATION_BOUNDS, SPECIES_CONFIG } from '../config/constants';
 import { waterPhysics, currentPhysics } from '../config/waterPhysics';
 import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { updateSnapshots } from './boids/snapshot';
@@ -27,6 +27,7 @@ export const BoidsSystem = () => {
         const {
           positions,
           velocities,
+          modelIndices,
           foodPositions,
           fishCount,
           foodCount,
@@ -37,6 +38,8 @@ export const BoidsSystem = () => {
             fishCount,
             positions,
             velocities,
+            modelIndices,
+            species: SPECIES_CONFIG,
             foodCount,
             foodPositions,
             time: elapsedTime,

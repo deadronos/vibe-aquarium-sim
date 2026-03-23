@@ -1,18 +1,32 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { simulateStep, SimulationInput } from '../src/workers/simulationWorker';
+import { describe, it, expect } from 'vitest';
+import { simulateStep } from '../src/workers/boids/index';
+import type { SimulationInput } from '../src/workers/boids/types';
 
 describe('simulationWorker', () => {
-  // Helper to create basic input
   const createInput = (overrides: Partial<SimulationInput> = {}): SimulationInput => {
-    const fishCount = 1;
-    const positions = new Float32Array(fishCount * 3);
-    const velocities = new Float32Array(fishCount * 3);
+    const fishCount = overrides.fishCount ?? 1;
+    const positions = overrides.positions ?? new Float32Array(fishCount * 3);
+    const velocities = overrides.velocities ?? new Float32Array(fishCount * 3);
+    const modelIndices = overrides.modelIndices ?? new Int32Array(fishCount);
+    const foodCount = overrides.foodCount ?? 0;
+    const foodPositions = overrides.foodPositions ?? new Float32Array(foodCount * 3);
+
     return {
       fishCount,
       positions,
       velocities,
-      foodCount: 0,
-      foodPositions: new Float32Array(0),
+      modelIndices,
+      species: [
+        {
+          maxSpeed: 5,
+          maxForce: 0.1,
+          neighborDist: 10,
+          separationDist: 5,
+          weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 },
+        },
+      ],
+      foodCount,
+      foodPositions,
       time: 0,
       boids: {
         neighborDist: 10,
@@ -30,17 +44,8 @@ describe('simulationWorker', () => {
         spatialScale2: 0.3,
       },
       ...overrides,
-    };
+    } as SimulationInput;
   };
-
-  // Clean up cache between tests if needed, though most tests reuse it
-  afterEach(() => {
-    // @ts-expect-error - __boidsCache may be undefined in some environments
-    if (globalThis.__boidsCache) {
-      // We don't necessarily need to delete it, but we could if we want isolation
-      // globalThis.__boidsCache = undefined;
-    }
-  });
 
   it('should produce consistent results across multiple calls (state reset check)', () => {
     const input = createInput({
@@ -92,30 +97,20 @@ describe('simulationWorker', () => {
 
   it('calculates water currents', () => {
     const input = createInput();
-    // Zero velocity to isolate current (drag is 0 at 0 speed)
-    // Actually there's a check `if (speedSq >= 0.0001)` for drag.
-
     const result = simulateStep(input);
-    // Current is calculated based on time and position.
-    // At pos 0,0,0, time 0:
-    // cx = sin(0) + cos(0) = 1
-    // cz = cos(0) - sin(0) = 1
-    // normalized and scaled by strength (0.03)
-
     expect(result.externalForces[0]).not.toBe(0);
     expect(result.externalForces[2]).not.toBe(0);
   });
 
   it('resizes cache when fish count increases', () => {
-    // First call with small count
     simulateStep(createInput({ fishCount: 10 }));
 
-    // Call with large count
-    const largeCount = 3000; // > initial 2000
+    const largeCount = 3000;
     const input = createInput({
       fishCount: largeCount,
       positions: new Float32Array(largeCount * 3),
       velocities: new Float32Array(largeCount * 3),
+      modelIndices: new Int32Array(largeCount),
     });
 
     const result = simulateStep(input);
@@ -125,13 +120,12 @@ describe('simulationWorker', () => {
   it('handles feeding logic (seeking food)', () => {
     const input = createInput({
       foodCount: 1,
-      foodPositions: new Float32Array([4, 0, 0]), // Food at x=4 (Dist < 5)
-      positions: new Float32Array([0, 0, 0]), // Fish at x=0
+      foodPositions: new Float32Array([4, 0, 0]),
+      positions: new Float32Array([0, 0, 0]),
       velocities: new Float32Array([0, 0, 0]),
     });
 
     const result = simulateStep(input);
-    // Should steer towards food (positive x)
     expect(result.steering[0]).toBeGreaterThan(0);
     expect(result.eatenFoodIndices).toHaveLength(0);
   });
@@ -139,12 +133,11 @@ describe('simulationWorker', () => {
   it('handles eating food (close range)', () => {
     const input = createInput({
       foodCount: 1,
-      foodPositions: new Float32Array([0.05, 0, 0]), // Food very close
+      foodPositions: new Float32Array([0.05, 0, 0]),
       positions: new Float32Array([0, 0, 0]),
       velocities: new Float32Array([0, 0, 0]),
     });
 
-    // Distance sq = 0.0025 < 0.01 (eating threshold)
     const result = simulateStep(input);
     expect(result.eatenFoodIndices).toContain(0);
   });
@@ -152,13 +145,11 @@ describe('simulationWorker', () => {
   it('ignores food if too far', () => {
     const input = createInput({
       foodCount: 1,
-      foodPositions: new Float32Array([100, 0, 0]), // Far away
+      foodPositions: new Float32Array([100, 0, 0]),
       positions: new Float32Array([0, 0, 0]),
     });
 
     const result = simulateStep(input);
-    // Should not steer towards it explicitly (steering might be 0 or small noise from bounds if applicable)
-    // Here bounds are 100, fish at 0. Bounds force is 0.
     expect(result.steering[0]).toBe(0);
   });
 });
