@@ -9,6 +9,13 @@ export function applySimulationResult(
   result: SimulationOutput,
   fishCount: number
 ) {
+  // If the snapshot has changed size while the worker was running,
+  // the returned array indices no longer map correctly to entities.
+  // Skip applying results for this frame to avoid array out-of-bounds or misaligned writes.
+  if (fishSnapshot.length !== fishCount) {
+    return;
+  }
+
   const { steering, externalForces, eatenFoodIndices } = result;
 
   for (let i = 0; i < fishCount; i++) {

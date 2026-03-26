@@ -8,7 +8,7 @@ import { useQualityStore } from '../performance/qualityStore';
 interface BurstEffect {
   id: string;
   position: Vector3;
-  particles?: Array<{ velocity: Vector3; size: number }>;
+  particleCount?: number;
 }
 
 export const EffectsManager = () => {
@@ -19,21 +19,11 @@ export const EffectsManager = () => {
     (event: EffectEvent) => {
       if (event.type === 'EAT') {
         const id = `burst-${Date.now()}-${Math.random()}`;
-        // Generate particle velocities for the burst at the time of triggering
         const baseCount = 10;
         const particleCount = Math.max(3, Math.round(baseCount * particleMultiplier));
-        const particles = Array.from({ length: particleCount }, () => ({
-          velocity: new Vector3(
-            (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2
-          )
-            .normalize()
-            .multiplyScalar(0.2 + Math.random() * 0.3),
-          size: 0.005 + Math.random() * 0.004,
-        }));
 
-        setBursts((prev) => [...prev, { id, position: event.position.clone(), particles }]);
+
+        setBursts((prev) => [...prev, { id, position: event.position.clone(), particleCount }]);
       }
     },
     [particleMultiplier]
@@ -55,7 +45,7 @@ export const EffectsManager = () => {
         <EatingBurst
           key={burst.id}
           position={burst.position}
-          particles={burst.particles}
+          particleCount={burst.particleCount}
           onComplete={() => removeBurst(burst.id)}
         />
       ))}

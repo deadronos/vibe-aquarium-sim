@@ -6,6 +6,7 @@ import { world } from '../store';
 import type { Entity } from '../store';
 import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import { clampPositionToTank } from '../utils/boundaryUtils';
+import { SPECIES_CONFIG, BOIDS_CONFIG } from '../config/constants';
 
 const FIXED_DT = 1 / 60;
 const clampOutPosition = { x: 0, y: 0, z: 0 };
@@ -61,23 +62,26 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     // Apply steering force and external forces
     applyQueuedForcesToRigidBody(targetVelocity, ent, FIXED_DT);
 
+    const speciesMaxSpeed = SPECIES_CONFIG[ent.modelIndex ?? 0]?.maxSpeed ?? BOIDS_CONFIG.maxSpeed;
+
     // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
     if (ent.excitementLevel && ent.excitementLevel > 0.1) {
       // Add extra speed in the current direction, capped
       const speedSq = targetVelocity.lengthSq();
       if (speedSq > 0.0001) {
         const speed = Math.sqrt(speedSq);
-        const boostAmount = ent.excitementLevel * 0.15; // Gentler boost
+        const boostAmount = ent.excitementLevel * speciesMaxSpeed * 0.5; // Up to +50% speed
         targetVelocity.multiplyScalar((speed + boostAmount) / speed);
       }
     }
 
     // Clamp final velocity to max speed to prevent escaping
-    const maxSpeed = 0.8; // Slightly above boids maxSpeed of 0.4
-    const maxSpeedSq = maxSpeed * maxSpeed;
+    const isExcited = (ent.excitementLevel || 0) > 0.1;
+    const maxAllowedSpeed = isExcited ? speciesMaxSpeed * 1.5 : speciesMaxSpeed * 1.1; // Allow 10% leeway for steering/drag, 50% for excitement
+    const maxSpeedSq = maxAllowedSpeed * maxAllowedSpeed;
     const finalSpeedSq = targetVelocity.lengthSq();
     if (finalSpeedSq > maxSpeedSq) {
-      targetVelocity.multiplyScalar(maxSpeed / Math.sqrt(finalSpeedSq));
+      targetVelocity.multiplyScalar(maxAllowedSpeed / Math.sqrt(finalSpeedSq));
     }
 
     // Set velocity directly (velocity-based approach)
