@@ -1,21 +1,33 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 interface EatingBurstProps {
   position: THREE.Vector3;
   onComplete: () => void;
-  particles?: Array<{ velocity: THREE.Vector3; size: number }>;
+  particleCount?: number;
 }
 
 const DURATION_SECONDS = 0.35;
 
-export const EatingBurst = ({ position, onComplete, particles = [] }: EatingBurstProps) => {
+export const EatingBurst = ({ position, onComplete, particleCount = 10 }: EatingBurstProps) => {
   const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  const [particles] = useState(() => {
+    return Array.from({ length: particleCount }, () => ({
+      velocity: new THREE.Vector3(
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2
+      )
+        .normalize()
+        .multiplyScalar(0.2 + Math.random() * 0.3),
+      size: 0.005 + Math.random() * 0.004,
+    }));
+  });
   const startTime = useRef<number | null>(null);
-  const particleCount = particles.length || 10; // Use actual particle count
 
   useFrame((state: any) => {
     if (!instancedMeshRef.current || !materialRef.current) return;

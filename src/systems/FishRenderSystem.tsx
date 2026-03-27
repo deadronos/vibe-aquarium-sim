@@ -240,13 +240,11 @@ export const FishRenderSystem = () => {
       activeEntities.push(entity);
 
       // Assign model index to the entity if it doesn't already have one
-      // We store it directly on the entity as `modelIndex` (0, 1, or 2) for simplicity
-      let modelIndex: 0 | 1 | 2 | undefined = entity.modelIndex;
-      if (modelIndex === undefined || (modelIndex !== 0 && modelIndex !== 1 && modelIndex !== 2)) {
-        // Randomize across three models evenly
-        modelIndex = Math.floor(Math.random() * 3) as 0 | 1 | 2;
-        entity.modelIndex = modelIndex;
+      // We store it directly on the entity as `modelIndex` (0, 1, or 2) for simplicity.
+      if (entity.modelIndex !== 0 && entity.modelIndex !== 1 && entity.modelIndex !== 2) {
+        entity.modelIndex = 0;
       }
+      const modelIndex: 0 | 1 | 2 = entity.modelIndex;
 
       // Choose which mesh and count to use
       const idx = modelIndex === 0 ? countA++ : modelIndex === 1 ? countB++ : countC++;

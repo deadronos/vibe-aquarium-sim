@@ -28,6 +28,7 @@ export const Spawner = () => {
                 externalForce: new Vector3(),
                 targetVelocity: new Vector3(),
                 excitementLevel: 0,
+                modelIndex: Math.floor(Math.random() * 3) as 0 | 1 | 2,
                 excitementDecay: 0,
             });
             spawnedEntities.push(entity);
@@ -102,6 +103,7 @@ export const Spawner = () => {
                         externalForce: new Vector3(),
                         targetVelocity: new Vector3(),
                         excitementLevel: 0,
+                modelIndex: Math.floor(Math.random() * 3) as 0 | 1 | 2,
                         excitementDecay: 0,
                     });
                     spawnedEntities.push(entity);
