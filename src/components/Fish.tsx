@@ -55,6 +55,10 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     const targetVelocity = ent.targetVelocity;
     if (!targetVelocity) return;
 
+    if (ent.modelIndex !== 0 && ent.modelIndex !== 1 && ent.modelIndex !== 2) {
+      ent.modelIndex = 0;
+    }
+
     const currentPos = rb.translation();
     const currentVel = rb.linvel();
     targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);

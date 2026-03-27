@@ -226,6 +226,7 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
 
   // Return subarrays
   return {
+    snapshotRevision: input.snapshotRevision,
     steering: steering.subarray(0, fishCount * 3),
     externalForces: externalForces.subarray(0, fishCount * 3),
     eatenFoodIndices,

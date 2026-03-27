@@ -31,10 +31,12 @@ export const BoidsSystem = () => {
           foodPositions,
           fishCount,
           foodCount,
+          snapshotRevision,
         } = updateSnapshots();
 
         if (fishCount > 0) {
           const input: SimulationInput = {
+            snapshotRevision,
             fishCount,
             positions,
             velocities,

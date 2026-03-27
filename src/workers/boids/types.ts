@@ -13,6 +13,7 @@ export interface SpeciesParams {
 }
 
 export type SimulationInput = {
+  snapshotRevision: number;
   fishCount: number;
   positions: Float32Buffer;
   velocities: Float32Buffer;
@@ -34,6 +35,7 @@ export type SimulationInput = {
 };
 
 export type SimulationOutput = {
+  snapshotRevision: number;
   steering: Float32Buffer;
   externalForces: Float32Buffer;
   eatenFoodIndices: number[];

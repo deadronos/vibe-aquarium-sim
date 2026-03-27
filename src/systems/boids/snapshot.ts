@@ -4,6 +4,7 @@ import { ensureCapacity, ensureInt32Capacity, type Float32Buffer, type Int32Buff
 
 export const fishSnapshot: Entity[] = [];
 export const foodSnapshot: Entity[] = [];
+export let snapshotRevision = 0;
 
 // Re-usable buffers for serialization
 let positions: Float32Buffer = new Float32Array(0);
@@ -12,6 +13,7 @@ let modelIndices: Int32Buffer = new Int32Array(0);
 let foodPositions: Float32Buffer = new Float32Array(0);
 
 export function updateSnapshots() {
+  snapshotRevision += 1;
   fishSnapshot.length = 0;
   for (const entity of world.with(
     'isBoid',
@@ -67,5 +69,6 @@ export function updateSnapshots() {
     foodCount,
     foodPositions: foodPositions.subarray(0, foodCount * 3),
     fishCount,
+    snapshotRevision,
   };
 }
