@@ -49,8 +49,9 @@ export const FeedingController = () => {
         const fishEntities = world.with('isFish', 'position');
         for (const fish of fishEntities) {
           if (!fish.position) continue;
-          const dist = fish.position.distanceTo(point);
-          if (dist < 2.0) {
+          // Using distanceToSquared to avoid expensive Math.sqrt in the loop
+          const distSq = fish.position.distanceToSquared(point);
+          if (distSq < 4.0) {
             fish.excitementLevel = 1.0;
             fish.excitementDecay = 1.0; // 1 second of excitement
           }
