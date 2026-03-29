@@ -1,4 +1,4 @@
-import type { SimulationInput, SimulationOutput } from './types';
+import type { SimulationInput, SimulationOutput, SimulationOutputTarget } from './types';
 import { getBoidsCache } from './cache';
 import { populateSpatialHash, populateFoodSpatialHash } from './spatialHash';
 import { steerTo } from './steering';
@@ -6,7 +6,10 @@ import { calculateFeeding } from './feeding';
 import { calculateDragForce, calculateWaterCurrent } from '../../utils/physicsMath';
 import { checkBoundViolation, isAnyBoundViolated } from '../../utils/boundaryMath';
 
-export function simulateStep(input: SimulationInput): SimulationOutput {
+export function simulateStep(
+  input: SimulationInput,
+  outputTarget?: SimulationOutputTarget
+): SimulationOutput {
   const {
     fishCount,
     positions,
@@ -23,11 +26,16 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
   } = input;
 
   const cache = getBoidsCache(fishCount, foodCount);
-  const { HASH_MASK, EPS, cellHead, cellNext, steering, externalForces, eatenFoodIndices } = cache;
+  const { HASH_MASK, EPS, cellHead, cellNext, eatenFoodIndices } = cache;
+  const steering = outputTarget?.steering ?? cache.steering;
+  const externalForces = outputTarget?.externalForces ?? cache.externalForces;
 
   // Zero-fill buffers
   steering.fill(0, 0, fishCount * 3);
   externalForces.fill(0, 0, fishCount * 3);
+  if (outputTarget?.eatenFoodCount) {
+    outputTarget.eatenFoodCount[0] = 0;
+  }
 
   // Clear eaten food indices
   eatenFoodIndices.length = 0;
@@ -225,6 +233,25 @@ export function simulateStep(input: SimulationInput): SimulationOutput {
   }
 
   // Return subarrays
+  if (outputTarget) {
+    const sharedEatenFoodIndices = outputTarget.eatenFoodIndices;
+    const eatenFoodCount = Math.min(eatenFoodIndices.length, sharedEatenFoodIndices.length);
+
+    for (let i = 0; i < eatenFoodCount; i++) {
+      sharedEatenFoodIndices[i] = eatenFoodIndices[i];
+    }
+    if (outputTarget.eatenFoodCount) {
+      outputTarget.eatenFoodCount[0] = eatenFoodCount;
+    }
+
+    return {
+      snapshotRevision: input.snapshotRevision,
+      steering,
+      externalForces,
+      eatenFoodIndices: sharedEatenFoodIndices.subarray(0, eatenFoodCount),
+    };
+  }
+
   return {
     snapshotRevision: input.snapshotRevision,
     steering: steering.subarray(0, fishCount * 3),
