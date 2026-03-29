@@ -2,7 +2,7 @@
 
 ## Current focus
 
-- Branch: `main` (features merged)
+- Branch: `codex/issue-110-sharedarraybuffer-worker`
 - Maintain and polish core systems, including the new worker-offloaded boids + water force pipeline.
 
 ## Recent changes
@@ -17,6 +17,7 @@
 - Added interactive feeding via `FeedingController` and `Food` entities.
 - Fixed food spawning reachability by clamping spawn position to simulation bounds.
 - Offloaded boids, food seeking, and water forces to `multithreading` workers; main thread now applies returned forces.
+- Added a `SharedArrayBuffer` path for the boids worker when cross-origin isolation is available, with automatic fallback to cloned worker messages on non-isolated hosts (2026-03-29).
 - Backfilled tank visual materials and caustics values into `DES015` and created `TASK013` (completed) and `TASK014` (pending) to add verification tests (2026-01-13).
 - Fixed `npm run build` TypeScript errors introduced by debug/perf instrumentation and quality store state.
 - Implemented code-splitting (manualChunks) and lazy-loaded the simulation so Rapier loads only after start; added simulation autostart + loading overlay and removed StrictMode to avoid dev WebGL context loss (2026-01-14, TASK015).

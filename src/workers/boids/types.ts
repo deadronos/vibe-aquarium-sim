@@ -1,4 +1,6 @@
 export type Float32Buffer = Float32Array<ArrayBufferLike>;
+export type Int32Buffer = Int32Array<ArrayBufferLike>;
+export type EatenFoodIndices = number[] | Int32Buffer;
 
 export interface SpeciesParams {
   maxSpeed: number;
@@ -38,7 +40,14 @@ export type SimulationOutput = {
   snapshotRevision: number;
   steering: Float32Buffer;
   externalForces: Float32Buffer;
-  eatenFoodIndices: number[];
+  eatenFoodIndices: EatenFoodIndices;
+};
+
+export type SimulationOutputTarget = {
+  steering: Float32Buffer;
+  externalForces: Float32Buffer;
+  eatenFoodIndices: Int32Buffer;
+  eatenFoodCount?: Int32Buffer;
 };
 
 export type BoidsCache = {

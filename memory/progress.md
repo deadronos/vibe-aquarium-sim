@@ -62,3 +62,8 @@
   - Implemented infinite wrapping via vertex shader (`mod()` based on volume bounds).
   - Tuned for high subtlety (tiny white specks) to avoid visual noise.
   - Validated with `npm run typecheck`.
+
+### 2026-03-29
+
+- **Optimization:** Addressed issue #110 by adding a `SharedArrayBuffer` transport for boids worker inputs/outputs, eliminating per-frame structured cloning on cross-origin isolated hosts while preserving the old worker path as a fallback elsewhere.
+- **Validation:** Added targeted shared-buffer tests and reran `npm run test`, `npm run lint -- --max-warnings=0`, and `npm run typecheck`.

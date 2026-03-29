@@ -1,15 +1,27 @@
 import type { SimulationInput, SimulationOutput } from '../../workers/simulationWorker';
 import { simulateStep } from '../../workers/simulationWorker';
+import {
+  copySimulationInputToShared,
+  createSharedSimulationOutput,
+  ensureSharedSimulationBuffers,
+  serializeSharedSimulationBuffers,
+  supportsSharedSimulationBuffers,
+  type BoidsWorkerResponse,
+  type SharedSimulationBuffers,
+} from '../../workers/boids/sharedBuffers';
 
 export class WorkerOrchestrator {
   private worker: Worker | null = null;
   private disposed = false;
   private useWorker = true;
+  private useSharedBuffers = false;
   private hasJob = false;
   private pendingResult: SimulationOutput | null = null;
   private pendingFishCount = 0;
+  private sharedBuffers: SharedSimulationBuffers | null = null;
 
   constructor() {
+    this.useSharedBuffers = supportsSharedSimulationBuffers();
     this.initWorker();
 
     // Expose toggle via window for testing
@@ -28,11 +40,24 @@ export class WorkerOrchestrator {
           type: 'module',
         });
 
-        this.worker.onmessage = (event) => {
+        this.worker.onmessage = (event: MessageEvent<BoidsWorkerResponse>) => {
           if (this.disposed) return;
           const data = event.data;
           if (data.type === 'success') {
-            this.pendingResult = data.result;
+            if (data.mode === 'shared') {
+              if (!this.sharedBuffers) {
+                console.error('Shared boids worker returned a result before shared buffers were ready.');
+              } else {
+                this.pendingResult = createSharedSimulationOutput(
+                  this.sharedBuffers,
+                  data.snapshotRevision,
+                  this.pendingFishCount,
+                  data.eatenFoodCount
+                );
+              }
+            } else {
+              this.pendingResult = data.result;
+            }
             this.hasJob = false;
           } else if (data.type === 'error') {
             console.error('Worker error:', data.error);
@@ -74,6 +99,47 @@ export class WorkerOrchestrator {
 
     if (this.useWorker && this.worker) {
       this.hasJob = true;
+      if (this.useSharedBuffers) {
+        try {
+          const nextBuffers = ensureSharedSimulationBuffers(
+            this.sharedBuffers,
+            input.fishCount,
+            input.foodCount
+          );
+
+          if (nextBuffers !== this.sharedBuffers) {
+            this.sharedBuffers = nextBuffers;
+            this.worker.postMessage({
+              type: 'shared-buffers',
+              payload: serializeSharedSimulationBuffers(nextBuffers),
+            });
+          }
+
+          if (!this.sharedBuffers) {
+            throw new Error('Shared boids buffers were not initialized.');
+          }
+
+          copySimulationInputToShared(input, this.sharedBuffers);
+          this.worker.postMessage({
+            type: 'shared-job',
+            snapshotRevision: input.snapshotRevision,
+            fishCount: input.fishCount,
+            foodCount: input.foodCount,
+            time: input.time,
+            species: input.species,
+            boids: input.boids,
+            bounds: input.bounds,
+            water: input.water,
+            current: input.current,
+          });
+          return;
+        } catch (error) {
+          console.warn('Shared boids worker setup failed, falling back to cloned messages.', error);
+          this.useSharedBuffers = false;
+          this.sharedBuffers = null;
+        }
+      }
+
       this.worker.postMessage(input);
     } else {
       // Main thread fallback
