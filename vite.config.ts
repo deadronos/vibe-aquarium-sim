@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -10,10 +11,9 @@ export default defineConfig(({ command }) => {
     // For GitHub Pages we need a sub-path base in production, but in dev it breaks HMR websockets.
     base: isBuild ? '/vibe-aquarium-sim/' : '/',
     plugins: [
-      react({
-        babel: {
-          plugins: [['babel-plugin-react-compiler']],
-        },
+      react(),
+      babel({
+        presets: [reactCompilerPreset()],
       }),
     ],
     server: {

@@ -115,8 +115,7 @@ export const EffectComposer = /* @__PURE__ */ memo(
                     gl.autoClear = currentAutoClear
                 }
             },
-            // Fix: Use object syntax for priority
-            { priority: enabled ? renderPriority : 0 }
+            enabled ? renderPriority : 0
         )
 
         const group = useRef<Group>(null!)

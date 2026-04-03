@@ -64,19 +64,14 @@ export default function SimulationScene() {
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows
-        renderer={async ({ canvas }: { canvas: HTMLCanvasElement }) => {
+        gl={async (props) => {
           const Renderer = rendererConfig.ctor;
           const renderer = new Renderer({
-            canvas,
+            ...props,
             powerPreference: 'high-performance',
             antialias: true,
             alpha: true,
           });
-
-          // Polyfill .init() for WebGLRenderer to satisfy R3F v10 expectations
-          if (rendererConfig.type === 'webgl' && typeof renderer.init !== 'function') {
-            (renderer as any).init = async () => { };
-          }
 
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
             await renderer.init();
