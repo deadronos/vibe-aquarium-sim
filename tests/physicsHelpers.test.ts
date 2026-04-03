@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Vector3 } from 'three';
-import { integrateForcesToVelocity, computeDragForce } from '../src/utils/physicsHelpers';
+import { integrateForcesToVelocity } from '../src/utils/physicsHelpers';
 import type { Entity } from '../src/store';
 
 describe('integrateForcesToVelocity', () => {
@@ -46,29 +46,6 @@ describe('integrateForcesToVelocity', () => {
     // external: 1.0 * 0.5 = 0.5
     // total: 0.75
     expect(targetVelocity.x).toBeCloseTo(0.75);
-    expect(entity.externalForce.x).toBeCloseTo(0);
-  });
-
-  it('systems can compute drag and queue it, then integration applies it', () => {
-    const targetVelocity = new Vector3(1, 0, 0);
-    const entity = {
-      velocity: new Vector3(1, 0, 0),
-      externalForce: new Vector3(),
-      steeringForce: new Vector3(),
-    } as unknown as Entity;
-
-    // 1. System computes drag
-    const out = new Vector3();
-    const ok = computeDragForce(entity.velocity, out);
-    expect(ok).toBe(true);
-    entity.externalForce.copy(out);
-
-    // 2. Integration applies it to targetVelocity
-    const initialVelX = targetVelocity.x;
-    integrateForcesToVelocity(targetVelocity, entity, 1 / 60);
-
-    // Drag opposes velocity, so velocity should decrease
-    expect(targetVelocity.x).toBeLessThan(initialVelX);
     expect(entity.externalForce.x).toBeCloseTo(0);
   });
 });

@@ -1,7 +1,5 @@
 import { Vector3 } from 'three';
 import type { Entity } from '../store';
-import { waterPhysics, currentPhysics } from '../config/waterPhysics';
-import { calculateDragForce, calculateWaterCurrent } from './physicsMath';
 
 const tempImpulseA = new Vector3();
 const tempImpulseB = new Vector3();
@@ -45,29 +43,3 @@ export function applyQueuedForcesToRigidBody(
 
 // Backward compatibility or for internal use if needed (aliasing)
 export const integrateForcesToVelocity = applyQueuedForcesToRigidBody;
-
-/**
- * Compute water drag force for a velocity vector and write result to `out`.
- * Returns true if a non-negligible drag was written.
- */
-export function computeDragForce(velocity: Vector3, out: Vector3) {
-  calculateDragForce(velocity.x, velocity.y, velocity.z, waterPhysics, out);
-
-  if (out.x === 0 && out.y === 0 && out.z === 0) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * Compute a simple procedural water current vector for a given position and time.
- * Returns true if a non-negligible current was written to `out`.
- */
-export function computeWaterCurrent(position: Vector3, time: number, out: Vector3) {
-  calculateWaterCurrent(position.x, position.z, time, currentPhysics, out);
-
-  if (out.x === 0 && out.y === 0 && out.z === 0) {
-    return false;
-  }
-  return true;
-}
