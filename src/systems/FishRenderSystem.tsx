@@ -16,6 +16,7 @@ import {
   enhanceFishMaterialWithRimAndSSS,
   type VibeFishLightingUniforms,
 } from '../shaders/fishLightingMaterial';
+import { flushDirtyInstanceMatrices } from './fishRenderFlush';
 
 const MAX_INSTANCES_PER_MODEL = 1000;
 const QUATERNION_POOL_SIZE = MAX_INSTANCES_PER_MODEL * 3;
@@ -384,37 +385,8 @@ export const FishRenderSystem = () => {
         // Budget derived from quality store (default fallback 128)
         const TOTAL_BUDGET = useQualityStore.getState().instanceUpdateBudget || 128;
 
-        const flushModel = (
-          mesh: InstancedMesh | null,
-          pool: THREE.Matrix4[],
-          dirty: Uint8Array,
-          nextRef: React.MutableRefObject<number>,
-          count: number,
-          perModelBudget: number
-        ) => {
-          if (!mesh || count <= 0) return 0;
-          const meshCount = Math.min(count, MAX_INSTANCES_PER_MODEL);
-          let flushed = 0;
-          let scanned = 0;
-          let idx = nextRef.current % meshCount;
-
-          while (flushed < perModelBudget && scanned < meshCount) {
-            if (dirty[idx]) {
-              mesh.setMatrixAt(idx, pool[idx]);
-              dirty[idx] = 0;
-              flushed++;
-            }
-            idx = (idx + 1) % meshCount;
-            scanned++;
-          }
-
-          nextRef.current = idx;
-          if (flushed > 0) mesh.instanceMatrix.needsUpdate = true;
-          return flushed;
-        };
-
         const perModel = Math.ceil(TOTAL_BUDGET / 3);
-        const flushedA = flushModel(
+        const flushedA = flushDirtyInstanceMatrices(
           meshRefA.current,
           matrixPoolARef.current,
           dirtyARef.current,
@@ -422,7 +394,7 @@ export const FishRenderSystem = () => {
           meshRefA.current.count,
           perModel
         );
-        const flushedB = flushModel(
+        const flushedB = flushDirtyInstanceMatrices(
           meshRefB.current,
           matrixPoolBRef.current,
           dirtyBRef.current,
@@ -430,7 +402,7 @@ export const FishRenderSystem = () => {
           meshRefB.current.count,
           perModel
         );
-        const flushedC = flushModel(
+        const flushedC = flushDirtyInstanceMatrices(
           meshRefC.current,
           matrixPoolCRef.current,
           dirtyCRef.current,

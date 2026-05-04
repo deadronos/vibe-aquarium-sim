@@ -1,7 +1,7 @@
 import { world } from '../../store';
 import { triggerEffect } from '../../utils/effectsBus';
 import type { SimulationOutput } from '../../workers/simulationWorker';
-import { fishSnapshot, foodSnapshot, snapshotRevision } from './snapshot';
+import { areSnapshotsCurrent, fishSnapshot, foodSnapshot, snapshotRevision } from './snapshot';
 
 const eatenFoodSet = new Set<number>();
 
@@ -14,10 +14,10 @@ export function applySimulationResult(
     return;
   }
 
-  // If the snapshot has changed size while the worker was running,
-  // the returned array indices no longer map correctly to entities.
-  // Skip applying results for this frame to avoid array out-of-bounds or misaligned writes.
-  if (fishSnapshot.length !== fishCount) {
+  // If ECS changed while the worker was running, the returned array indices no
+  // longer map correctly to entities. Skip applying this frame rather than
+  // steering or removing the wrong entity.
+  if (!areSnapshotsCurrent(fishCount)) {
     return;
   }
 
