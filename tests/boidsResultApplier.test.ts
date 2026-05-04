@@ -92,4 +92,43 @@ describe('applySimulationResult', () => {
     expect(world.has(food)).toBe(true);
     expect(triggerSpy).not.toHaveBeenCalled();
   });
+
+  it('ignores worker results when food entities changed before the snapshot advanced', () => {
+    world.add({
+      isFish: true,
+      isBoid: true,
+      position: new THREE.Vector3(0, 0, 0),
+      velocity: new THREE.Vector3(0, 0, 0),
+      steeringForce: new THREE.Vector3(),
+      externalForce: new THREE.Vector3(),
+      targetVelocity: new THREE.Vector3(),
+    });
+    const originalFood = world.add({
+      isFood: true,
+      position: new THREE.Vector3(1, 0, 0),
+    });
+
+    const { fishCount, snapshotRevision } = updateSnapshots();
+
+    world.remove(originalFood);
+    const newFood = world.add({
+      isFood: true,
+      position: new THREE.Vector3(2, 0, 0),
+    });
+
+    const triggerSpy = vi.spyOn(effectsBus, 'triggerEffect');
+
+    applySimulationResult(
+      {
+        snapshotRevision,
+        steering: new Float32Array([1, 2, 3]),
+        externalForces: new Float32Array([4, 5, 6]),
+        eatenFoodIndices: [0],
+      },
+      fishCount
+    );
+
+    expect(world.has(newFood)).toBe(true);
+    expect(triggerSpy).not.toHaveBeenCalled();
+  });
 });

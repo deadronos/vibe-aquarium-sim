@@ -72,3 +72,37 @@ export function updateSnapshots() {
     snapshotRevision,
   };
 }
+
+export function areSnapshotsCurrent(expectedFishCount: number) {
+  if (fishSnapshot.length !== expectedFishCount) {
+    return false;
+  }
+
+  let fishIndex = 0;
+  for (const entity of world.with(
+    'isBoid',
+    'position',
+    'velocity',
+    'steeringForce',
+    'externalForce'
+  )) {
+    if (fishSnapshot[fishIndex] !== entity) {
+      return false;
+    }
+    fishIndex++;
+  }
+
+  if (fishIndex !== fishSnapshot.length) {
+    return false;
+  }
+
+  let foodIndex = 0;
+  for (const entity of world.with('isFood', 'position')) {
+    if (foodSnapshot[foodIndex] !== entity) {
+      return false;
+    }
+    foodIndex++;
+  }
+
+  return foodIndex === foodSnapshot.length;
+}
