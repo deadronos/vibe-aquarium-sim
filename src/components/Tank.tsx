@@ -52,15 +52,9 @@ export const Tank = () => {
     const left = createWall(wallThickness, height, depth, -width / 2 - wallThickness / 2, 0, 0);
 
     const parts = [back, front, right, left];
-    try {
-      const merged = BufferGeometryUtils.mergeGeometries(parts);
-      return merged ?? new BufferGeometry();
-    } catch (error) {
-      console.error('Failed to merge tank geometries:', error);
-      return new BufferGeometry();
-    } finally {
-      for (const g of parts) g.dispose();
-    }
+    const merged = BufferGeometryUtils.mergeGeometries(parts);
+    for (const g of parts) g.dispose();
+    return merged || new BufferGeometry();
   }, [width, height, depth, wallThickness]);
 
   useEffect(() => {
@@ -195,15 +189,9 @@ const TankCausticsOverlayEnabled = () => {
     left.translate(-width / 2 + CAUSTICS_OVERLAY_INSET, 0, 0);
 
     const parts = [floor, back, front, right, left];
-    try {
-      const merged = BufferGeometryUtils.mergeGeometries(parts);
-      return merged ?? new BufferGeometry();
-    } catch (error) {
-      console.error('Failed to merge caustics geometries:', error);
-      return new BufferGeometry();
-    } finally {
-      for (const g of parts) g.dispose();
-    }
+    const merged = BufferGeometryUtils.mergeGeometries(parts);
+    for (const g of parts) g.dispose();
+    return merged || new BufferGeometry();
   }, [depth, height, width]);
 
   useEffect(() => {
