@@ -14,3 +14,4 @@ pnpm-lock.yaml
 /.vercel
 *.local
 .DS_Store
+traces

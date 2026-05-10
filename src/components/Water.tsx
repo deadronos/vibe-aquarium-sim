@@ -19,12 +19,8 @@ export const Water = () => {
   const volumeMaterialRef = useRef<ShaderMaterial>(null);
   const surfaceMaterialRef = useRef<ShaderMaterial>(null);
 
-  const {
-    causticsEnabled,
-    waterSurfaceUpgradeEnabled,
-    waterVolumeUpgradeEnabled,
-    isWebGPU,
-  } = useVisualQuality();
+  const { causticsEnabled, waterSurfaceUpgradeEnabled, waterVolumeUpgradeEnabled, isWebGPU } =
+    useVisualQuality();
 
   const volumeUniforms = useMemo(
     () => ({
@@ -95,7 +91,9 @@ export const Water = () => {
             waterColor="#1a4d6d"
             opacity={0.3}
             causticsIntensity={causticsEnabled ? CAUSTICS_INTENSITY_ENABLED : 0}
-            volumeSpecularStrength={waterVolumeUpgradeEnabled ? VOLUME_SPECULAR_STRENGTH_ENABLED : 0}
+            volumeSpecularStrength={
+              waterVolumeUpgradeEnabled ? VOLUME_SPECULAR_STRENGTH_ENABLED : 0
+            }
             volumeShimmerStrength={waterVolumeUpgradeEnabled ? VOLUME_SHIMMER_STRENGTH_ENABLED : 0}
           />
         ) : (
@@ -113,11 +111,7 @@ export const Water = () => {
       </mesh>
 
       {waterSurfaceUpgradeEnabled ? (
-        <mesh
-          position={[0, waterSurfaceY, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          renderOrder={1}
-        >
+        <mesh position={[0, waterSurfaceY, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
           <planeGeometry args={[waterWidth, waterDepth]} />
           {isWebGPU ? (
             <WaterSurfaceNodeMaterial

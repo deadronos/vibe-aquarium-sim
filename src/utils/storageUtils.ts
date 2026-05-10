@@ -1,21 +1,11 @@
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
 export const readFromStorage = (key: string, fallback: string | null = null): string | null => {
-  return safelyAccessStorage(
-    key,
-    (storage) => storage.getItem(key),
-    fallback,
-    'reading from'
-  );
+  return safelyAccessStorage(key, (storage) => storage.getItem(key), fallback, 'reading from');
 };
 
 export const writeToStorage = (key: string, value: string) => {
-  safelyAccessStorage(
-    key,
-    (storage) => storage.setItem(key, value),
-    undefined,
-    'writing to'
-  );
+  safelyAccessStorage(key, (storage) => storage.setItem(key, value), undefined, 'writing to');
 };
 
 export const readBoolFromStorage = (key: string, fallback: boolean): boolean => {

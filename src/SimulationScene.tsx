@@ -11,7 +11,6 @@ import { LivingRoom } from './components/LivingRoom';
 import { ECS, world } from './store';
 import type { Entity } from './store';
 
-
 import { Tank } from './components/Tank';
 import { Water } from './components/Water';
 import { Fish } from './components/Fish';
@@ -29,9 +28,7 @@ import { SchedulerSystem } from './systems/SchedulerSystem';
 
 import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
 import { VisualQualityProvider } from './performance/VisualQualityProvider';
-import { Spawner } from "./systems/Spawner";
-
-
+import { Spawner } from './systems/Spawner';
 
 export default function SimulationScene() {
   const directionalLightRef = useRef<THREE.DirectionalLight | null>(null);
@@ -89,7 +86,9 @@ export default function SimulationScene() {
               // Use `instanceof` guard in case WebGL2 isn't available in the environment
               const getContext = (renderer as unknown as { getContext?: () => unknown }).getContext;
               const gl = getContext ? getContext() : null;
-              const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
+              const isWebGL2 =
+                typeof WebGL2RenderingContext !== 'undefined' &&
+                gl instanceof WebGL2RenderingContext;
               if (isWebGL2) {
                 console.info('[vibe] Renderer: WebGL2 (using WebGLRenderer with WebGL2 context)');
               }
@@ -104,7 +103,10 @@ export default function SimulationScene() {
         <color attach="background" args={['#0a0a0a']} />
 
         <Physics gravity={[0, -9.81, 0]}>
-          <AdaptiveQualityManager directionalLightRef={directionalLightRef} spotLightRef={spotLightRef} />
+          <AdaptiveQualityManager
+            directionalLightRef={directionalLightRef}
+            spotLightRef={spotLightRef}
+          />
           <LivingRoom />
           {/* Gentle indoor ambient */}
           <hemisphereLight color={0xdcdce0} groundColor={0x8a7c6f} intensity={0.5} />

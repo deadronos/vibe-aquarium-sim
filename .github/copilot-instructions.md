@@ -12,6 +12,7 @@ Please consult the following for detailed guidelines:
 - **[Project Map](file:///d:/GitHub/vibe-aquarium-sim/docs/agents/project-map.md)**: Core file locations and architectural roles.
 
 ## 🛠️ Essential Environment
+
 - **Package Manager**: npm
 - **Framework**: React 19 + Vite + TypeScript
 - **Memory Bank**: `memory/` folder

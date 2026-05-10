@@ -1,6 +1,11 @@
 import { world } from '../../store';
 import type { Entity } from '../../store';
-import { ensureCapacity, ensureInt32Capacity, type Float32Buffer, type Int32Buffer } from './bufferManager';
+import {
+  ensureCapacity,
+  ensureInt32Capacity,
+  type Float32Buffer,
+  type Int32Buffer,
+} from './bufferManager';
 
 export const fishSnapshot: Entity[] = [];
 export const foodSnapshot: Entity[] = [];

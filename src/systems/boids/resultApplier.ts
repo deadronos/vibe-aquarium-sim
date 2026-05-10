@@ -5,10 +5,7 @@ import { areSnapshotsCurrent, fishSnapshot, foodSnapshot, snapshotRevision } fro
 
 const eatenFoodSet = new Set<number>();
 
-export function applySimulationResult(
-  result: SimulationOutput,
-  fishCount: number
-) {
+export function applySimulationResult(result: SimulationOutput, fishCount: number) {
   // Ignore stale worker results if the ECS snapshot has already advanced.
   if (result.snapshotRevision !== snapshotRevision) {
     return;
@@ -46,7 +43,7 @@ export function applySimulationResult(
       const food = foodSnapshot[index];
       if (!food) continue;
       if (food.position) {
-        triggerEffect("EAT", food.position);
+        triggerEffect('EAT', food.position);
       }
       world.remove(food);
     }

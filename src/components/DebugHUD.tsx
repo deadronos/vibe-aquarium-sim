@@ -3,20 +3,55 @@ import { useQualityStore } from '../performance/qualityStore';
 
 import './DebugHUD.css';
 
-type RenderStatus = { ema: number; updateFreq?: number; activeEntities?: number; frameDuration?: number } | null;
+type RenderStatus = {
+  ema: number;
+  updateFreq?: number;
+  activeEntities?: number;
+  frameDuration?: number;
+} | null;
 type SchedStatus = { ema: number; currentMax?: number; lastDuration?: number } | null;
 type Counts = { simulate: number; render: number; fishUse: number; scheduler: number } | null;
 
 declare global {
-  interface SimEntry { duration: number; time?: number; fishCount?: number }
-  interface RenderEntry { frame?: number; duration: number; counts?: { countA:number; countB:number; countC:number }; activeEntities?: number; updateFreq?: number; ema?: number; flushed?: number }
-  interface SchedEntry { duration: number; subSteps?: number; time?: number; ema?: number }
-  interface SchedulerTuningEntry { time: number; action: 'reduce' | 'restore'; from?: number; to: number }
+  interface SimEntry {
+    duration: number;
+    time?: number;
+    fishCount?: number;
+  }
+  interface RenderEntry {
+    frame?: number;
+    duration: number;
+    counts?: { countA: number; countB: number; countC: number };
+    activeEntities?: number;
+    updateFreq?: number;
+    ema?: number;
+    flushed?: number;
+  }
+  interface SchedEntry {
+    duration: number;
+    subSteps?: number;
+    time?: number;
+    ema?: number;
+  }
+  interface SchedulerTuningEntry {
+    time: number;
+    action: 'reduce' | 'restore';
+    from?: number;
+    to: number;
+  }
 
   interface Window {
     __vibe_renderStatus?: RenderStatus;
     __vibe_schedStatus?: SchedStatus;
-    __vibe_debug?: { simulateStep: SimEntry[]; fishRender: RenderEntry[]; fishUseFrame: Array<{duration:number; modelIndex:number|null}>; scheduler?: SchedEntry[]; schedulerTuning?: SchedulerTuningEntry[]; reset?: () => void; download?: () => boolean };
+    __vibe_debug?: {
+      simulateStep: SimEntry[];
+      fishRender: RenderEntry[];
+      fishUseFrame: Array<{ duration: number; modelIndex: number | null }>;
+      scheduler?: SchedEntry[];
+      schedulerTuning?: SchedulerTuningEntry[];
+      reset?: () => void;
+      download?: () => boolean;
+    };
     __vibe_addFish?: (n: number) => number;
   }
 }
@@ -62,14 +97,22 @@ export const DebugHUD: React.FC = () => {
       // force an update of debug counts immediately
       try {
         const dbg = window.__vibe_debug;
-        setCounts(dbg ? { simulate: dbg.simulateStep.length, render: dbg.fishRender.length, fishUse: dbg.fishUseFrame.length, scheduler: (dbg.scheduler||[]).length } : null);
+        setCounts(
+          dbg
+            ? {
+                simulate: dbg.simulateStep.length,
+                render: dbg.fishRender.length,
+                fishUse: dbg.fishUseFrame.length,
+                scheduler: (dbg.scheduler || []).length,
+              }
+            : null
+        );
       } catch (err) {
         // ignore
         console.debug('DebugHUD immediate count refresh failed', err);
       }
       return added;
     } catch (err) {
-
       console.debug('DebugHUD addFish failed', err);
       return null;
     }
@@ -88,9 +131,22 @@ export const DebugHUD: React.FC = () => {
     <div className="vibe-debug-hud">
       <div className="title">Debug HUD</div>
 
-      <div className="line">Render: {renderStatus ? `EMA ${renderStatus.ema.toFixed(2)}ms • freq ${renderStatus.updateFreq}` : '—'}</div>
-      <div className="line">Scheduler: {schedStatus ? `EMA ${schedStatus.ema.toFixed(2)}ms • max ${schedStatus.currentMax}` : '—'}</div>
-      <div className="line">Counts: {counts ? `fishRender ${counts.render} • simulate ${counts.simulate} • scheduler ${counts.scheduler}` : '—'}</div>
+      <div className="line">
+        Render:{' '}
+        {renderStatus
+          ? `EMA ${renderStatus.ema.toFixed(2)}ms • freq ${renderStatus.updateFreq}`
+          : '—'}
+      </div>
+      <div className="line">
+        Scheduler:{' '}
+        {schedStatus ? `EMA ${schedStatus.ema.toFixed(2)}ms • max ${schedStatus.currentMax}` : '—'}
+      </div>
+      <div className="line">
+        Counts:{' '}
+        {counts
+          ? `fishRender ${counts.render} • simulate ${counts.simulate} • scheduler ${counts.scheduler}`
+          : '—'}
+      </div>
 
       <div className="controls">
         <button onClick={() => addFish(100)}>+100 fish</button>
@@ -105,7 +161,12 @@ export const DebugHUD: React.FC = () => {
             checked={!!useQualityStore.getState().settings.adaptiveInstanceUpdatesEnabled}
             onChange={() => {
               const cur = useQualityStore.getState();
-              useQualityStore.setState({ settings: { ...cur.settings, adaptiveInstanceUpdatesEnabled: !cur.settings.adaptiveInstanceUpdatesEnabled } });
+              useQualityStore.setState({
+                settings: {
+                  ...cur.settings,
+                  adaptiveInstanceUpdatesEnabled: !cur.settings.adaptiveInstanceUpdatesEnabled,
+                },
+              });
             }}
           />
           Adaptive Instance Updates
@@ -117,7 +178,12 @@ export const DebugHUD: React.FC = () => {
             checked={!!useQualityStore.getState().settings.adaptiveSchedulerEnabled}
             onChange={() => {
               const cur = useQualityStore.getState();
-              useQualityStore.setState({ settings: { ...cur.settings, adaptiveSchedulerEnabled: !cur.settings.adaptiveSchedulerEnabled } });
+              useQualityStore.setState({
+                settings: {
+                  ...cur.settings,
+                  adaptiveSchedulerEnabled: !cur.settings.adaptiveSchedulerEnabled,
+                },
+              });
             }}
           />
           Adaptive Scheduler

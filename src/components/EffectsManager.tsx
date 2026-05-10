@@ -22,7 +22,6 @@ export const EffectsManager = () => {
         const baseCount = 10;
         const particleCount = Math.max(3, Math.round(baseCount * particleMultiplier));
 
-
         setBursts((prev) => [...prev, { id, position: event.position.clone(), particleCount }]);
       }
     },

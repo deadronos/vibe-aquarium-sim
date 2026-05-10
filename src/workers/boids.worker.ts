@@ -23,7 +23,9 @@ self.onmessage = (event: MessageEvent<BoidsWorkerMessage>) => {
 
     if (isSharedSimulationJobMessage(message)) {
       if (!sharedBuffers) {
-        throw new Error('Shared boids buffers were not initialized before submitting a shared job.');
+        throw new Error(
+          'Shared boids buffers were not initialized before submitting a shared job.'
+        );
       }
 
       simulateStep(

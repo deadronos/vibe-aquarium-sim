@@ -16,7 +16,7 @@ import {
   positionView,
   mx_noise_vec3,
   sin,
-  vec4
+  vec4,
 } from 'three/tsl';
 import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -87,9 +87,7 @@ export const WaterVolumeNodeMaterial = ({
   const shimmerPhase = sin(positionLocal.x.mul(2.0).add(t.mul(1.2)));
   const shimmer = shimmerPhase.mul(0.5).add(0.5).mul(float(volumeShimmerStrength));
   const volumeSpecStrength = float(volumeSpecularStrength).add(shimmer);
-  const volumeSpec = rawSpec
-    .mul(float(0.25).add(float(0.75).mul(fresnel)))
-    .mul(volumeSpecStrength);
+  const volumeSpec = rawSpec.mul(float(0.25).add(float(0.75).mul(fresnel))).mul(volumeSpecStrength);
 
   // Combine
   const finalRgb = gradientColor
@@ -134,11 +132,11 @@ export const WaterSurfaceNodeMaterial = ({
     .mul(sin(mainUv.y.mul(18.0).sub(t.mul(0.5))))
     .mul(0.15)
     .mul(surfaceShimmerStrength);
-  
+
   // Perturb normal with wave in Y direction only (simplified)
   const perturbDirection = vec3(new THREE.Vector3(0, 1, 0)).mul(wave);
   const n = safeNormalize(normalView.add(perturbDirection));
-  
+
   const v = safeNormalize(positionView.negate());
   const l = safeNormalize(vec3(new THREE.Vector3(0.35, 1.0, 0.2)));
 
@@ -151,12 +149,17 @@ export const WaterSurfaceNodeMaterial = ({
 
   const tintColor = color(new THREE.Color(surfaceTint)).mul(0.12);
   const glintColor = vec3(glint).mul(surfaceStrength);
-  const fresnelColor = vec3(new THREE.Vector3(0.25, 0.55, 0.85)).mul(fresnel).mul(surfaceFresnelStrength).mul(0.12);
-  
+  const fresnelColor = vec3(new THREE.Vector3(0.25, 0.55, 0.85))
+    .mul(fresnel)
+    .mul(surfaceFresnelStrength)
+    .mul(0.12);
+
   const finalColor = tintColor.add(glintColor).add(fresnelColor);
-  
-  const alphaRaw = float(surfaceOpacity).mul(float(0.2).add(float(0.8).mul(fresnel))).add(glint.mul(0.35));
-  
+
+  const alphaRaw = float(surfaceOpacity)
+    .mul(float(0.2).add(float(0.8).mul(fresnel)))
+    .add(glint.mul(0.35));
+
   return (
     <meshBasicNodeMaterial
       colorNode={vec4(finalColor, alphaRaw)}

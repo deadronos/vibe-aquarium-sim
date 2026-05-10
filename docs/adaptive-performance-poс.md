@@ -11,13 +11,11 @@ What it does
 How to enable
 
 - These features are opt-in and controlled by Visual Quality flags:
-
   - `adaptiveInstanceUpdatesEnabled` (default: false)
 
   - `adaptiveSchedulerEnabled` (default: false)
 
 - Ways to enable:
-
   - Use the `useQualityStore` to set `settings` (via `setLevel` or `setState`) to a preset that has the flags enabled.
 
   - Set a per-session override via `useGameStore`'s `visualQualityOverrides` (for quick testing).

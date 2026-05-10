@@ -11,6 +11,10 @@ export function checkBoundViolation(value: number, limit: number): number {
 /**
  * Helper to determine if any boundary was violated.
  */
-export function isAnyBoundViolated(xViolation: number, yViolation: number, zViolation: number): boolean {
+export function isAnyBoundViolated(
+  xViolation: number,
+  yViolation: number,
+  zViolation: number
+): boolean {
   return xViolation !== 0 || yViolation !== 0 || zViolation !== 0;
 }

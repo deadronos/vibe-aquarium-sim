@@ -45,7 +45,11 @@ export const SchedulerSystem = () => {
 
       // Publish lightweight status
       try {
-        window.__vibe_schedStatus = { ema: emaRef.current, currentMax: fixedScheduler.getMaxSubSteps(), lastDuration: dur };
+        window.__vibe_schedStatus = {
+          ema: emaRef.current,
+          currentMax: fixedScheduler.getMaxSubSteps(),
+          lastDuration: dur,
+        };
       } catch {
         /* ignore */
       }
@@ -57,10 +61,16 @@ export const SchedulerSystem = () => {
     try {
       const currentMax = fixedScheduler.getMaxSubSteps();
       const pocEnabledFromFlag = !!adaptiveSchedulerEnabled;
-      const pocEnabledFromWindow = typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
+      const pocEnabledFromWindow =
+        typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
       const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
 
-      if (pocEnabled && emaRef.current > SCHED_EMA_THRESHOLD && currentMax > 1 && cooldownRef.current === 0) {
+      if (
+        pocEnabled &&
+        emaRef.current > SCHED_EMA_THRESHOLD &&
+        currentMax > 1 &&
+        cooldownRef.current === 0
+      ) {
         // reduce
         if (originalMaxRef.current === null) originalMaxRef.current = currentMax;
         fixedScheduler.setMaxSubSteps(1);
@@ -68,7 +78,13 @@ export const SchedulerSystem = () => {
         // record
         try {
           const dbg = window.__vibe_debug;
-          if (dbg) (dbg.schedulerTuning = dbg.schedulerTuning || []).push({ time: Date.now(), action: 'reduce', from: currentMax, to: 1 });
+          if (dbg)
+            (dbg.schedulerTuning = dbg.schedulerTuning || []).push({
+              time: Date.now(),
+              action: 'reduce',
+              from: currentMax,
+              to: 1,
+            });
         } catch {
           /* ignore */
         }
@@ -80,7 +96,12 @@ export const SchedulerSystem = () => {
           fixedScheduler.setMaxSubSteps(originalMaxRef.current);
           try {
             const dbg = window.__vibe_debug;
-            if (dbg) (dbg.schedulerTuning = dbg.schedulerTuning || []).push({ time: Date.now(), action: 'restore', to: originalMaxRef.current });
+            if (dbg)
+              (dbg.schedulerTuning = dbg.schedulerTuning || []).push({
+                time: Date.now(),
+                action: 'restore',
+                to: originalMaxRef.current,
+              });
           } catch {
             /* ignore */
           }
