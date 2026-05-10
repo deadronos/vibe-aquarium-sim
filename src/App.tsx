@@ -44,9 +44,12 @@ function App() {
       };
 
       if (typeof w.requestIdleCallback === 'function') {
-        w.requestIdleCallback(() => {
-          if (!cancelled) setStarted(true);
-        }, { timeout: 500 });
+        w.requestIdleCallback(
+          () => {
+            if (!cancelled) setStarted(true);
+          },
+          { timeout: 500 }
+        );
       } else {
         setTimeout(() => {
           if (!cancelled) setStarted(true);
@@ -96,9 +99,7 @@ function App() {
         <div className="vibe-start-overlay">
           <div className="vibe-start-card">
             <div className="vibe-start-title">Vibe Aquarium</div>
-            <div className="vibe-start-subtitle">
-              Starting simulation…
-            </div>
+            <div className="vibe-start-subtitle">Starting simulation…</div>
             <button className="vibe-start-button" onClick={start} type="button">
               Start Now
             </button>

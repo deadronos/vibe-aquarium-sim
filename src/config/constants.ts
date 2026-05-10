@@ -21,25 +21,28 @@ export const BOIDS_CONFIG = {
 };
 
 export const SPECIES_CONFIG = [
-  { // Model 0: Neon Tetra (Small, Fast, Tight Schooling)
+  {
+    // Model 0: Neon Tetra (Small, Fast, Tight Schooling)
     maxSpeed: 0.5,
     maxForce: 0.6,
     neighborDist: 0.5,
     separationDist: 0.2,
-    weights: { separation: 2.5, alignment: 1.0, cohesion: 1.2 }
+    weights: { separation: 2.5, alignment: 1.0, cohesion: 1.2 },
   },
-  { // Model 1: Goldfish (Medium, Steady)
+  {
+    // Model 1: Goldfish (Medium, Steady)
     maxSpeed: 0.35,
     maxForce: 0.4,
     neighborDist: 0.7,
     separationDist: 0.3,
-    weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 }
+    weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 },
   },
-  { // Model 2: Betta (Slower, Solitary)
+  {
+    // Model 2: Betta (Slower, Solitary)
     maxSpeed: 0.25,
     maxForce: 0.3,
     neighborDist: 0.4,
     separationDist: 0.4,
-    weights: { separation: 3.0, alignment: 0.5, cohesion: 0.5 }
-  }
+    weights: { separation: 3.0, alignment: 0.5, cohesion: 0.5 },
+  },
 ];

@@ -25,7 +25,10 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: [
-        { find: 'three/webgpu', replacement: path.resolve('node_modules/three/build/three.webgpu.js') },
+        {
+          find: 'three/webgpu',
+          replacement: path.resolve('node_modules/three/build/three.webgpu.js'),
+        },
         { find: 'three/addons', replacement: path.resolve('node_modules/three/examples/jsm') },
       ],
     },

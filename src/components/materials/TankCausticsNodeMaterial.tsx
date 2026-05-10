@@ -9,7 +9,7 @@ import {
   mx_noise_vec3,
   smoothstep,
   vec4,
-  abs
+  abs,
 } from 'three/tsl';
 import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -58,7 +58,9 @@ export const TankCausticsNodeMaterial = ({
   const surfaceFade = float(0.6).add(float(0.4).mul(abs(normalWorld.y)));
 
   const finalStrength = causticsSquared.mul(intensity).mul(surfaceFade);
-  const outColorNode = color(new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp)).mul(finalStrength);
+  const outColorNode = color(
+    new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp)
+  ).mul(finalStrength);
 
   return (
     <meshBasicNodeMaterial

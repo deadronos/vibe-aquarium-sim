@@ -91,13 +91,15 @@ describe('simulationWorker extra tests', () => {
       velocities: new Float32Array([0, 0, 0]),
       foodCount: 1,
       foodPositions: new Float32Array([1000, 0, 0]),
-      species: [{
-        maxSpeed: 5,
-        maxForce: tinyMaxForce,
-        neighborDist: 10,
-        separationDist: 5,
-        weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 },
-      }],
+      species: [
+        {
+          maxSpeed: 5,
+          maxForce: tinyMaxForce,
+          neighborDist: 10,
+          separationDist: 5,
+          weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 },
+        },
+      ],
       boids: { neighborDist: 10, separationDist: 5, maxSpeed: 5, maxForce: tinyMaxForce },
     });
 
@@ -155,10 +157,7 @@ describe('simulationWorker extra tests', () => {
   it('deduplicates the same eaten food index when multiple fish reach it in one step', () => {
     const input = makeInput({
       fishCount: 2,
-      positions: new Float32Array([
-        0, 0, 0,
-        0.001, 0, 0,
-      ]),
+      positions: new Float32Array([0, 0, 0, 0.001, 0, 0]),
       velocities: new Float32Array(6),
       foodCount: 1,
       foodPositions: new Float32Array([0.05, 0, 0]),

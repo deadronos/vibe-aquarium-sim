@@ -3,9 +3,14 @@ export function ensurePerfDebug() {
   const w = window;
   if (!w.__vibe_debug) {
     w.__vibe_debug = {
-      simulateStep: [] as Array<{duration:number; time:number; fishCount:number}>,
-      fishRender: [] as Array<{frame:number; duration:number; counts:{countA:number;countB:number;countC:number}; activeEntities:number}>,
-      fishUseFrame: [] as Array<{duration:number; modelIndex:number|null}>,
+      simulateStep: [] as Array<{ duration: number; time: number; fishCount: number }>,
+      fishRender: [] as Array<{
+        frame: number;
+        duration: number;
+        counts: { countA: number; countB: number; countC: number };
+        activeEntities: number;
+      }>,
+      fishUseFrame: [] as Array<{ duration: number; modelIndex: number | null }>,
       reset() {
         this.simulateStep.length = 0;
         this.fishRender.length = 0;

@@ -46,7 +46,9 @@ export class WorkerOrchestrator {
           if (data.type === 'success') {
             if (data.mode === 'shared') {
               if (!this.sharedBuffers) {
-                console.error('Shared boids worker returned a result before shared buffers were ready.');
+                console.error(
+                  'Shared boids worker returned a result before shared buffers were ready.'
+                );
               } else {
                 this.pendingResult = createSharedSimulationOutput(
                   this.sharedBuffers,
@@ -149,11 +151,15 @@ export class WorkerOrchestrator {
         const t1 = performance.now();
         // Record timing to debug collector
         try {
-            const dbg = window.__vibe_debug || null;
+          const dbg = window.__vibe_debug || null;
           if (dbg) {
-            dbg.simulateStep.push({ duration: t1 - t0, time: Date.now(), fishCount: input.fishCount });
+            dbg.simulateStep.push({
+              duration: t1 - t0,
+              time: Date.now(),
+              fishCount: input.fishCount,
+            });
           }
-          } catch {
+        } catch {
           /* ignore */
         }
       } catch (error) {

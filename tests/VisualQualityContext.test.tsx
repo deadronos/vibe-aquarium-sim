@@ -14,7 +14,9 @@ const VisualQualityReader = () => {
       <div data-testid="caustics">{String(flags.causticsEnabled)}</div>
       <div data-testid="fishRim">{String(flags.fishRimLightingEnabled)}</div>
       <div data-testid="dof">{String(flags.depthOfFieldEnabled)}</div>
-      <div data-testid="adaptiveInstance">{String(flags.adaptiveInstanceUpdatesEnabled ?? false)}</div>
+      <div data-testid="adaptiveInstance">
+        {String(flags.adaptiveInstanceUpdatesEnabled ?? false)}
+      </div>
       <div data-testid="adaptiveSched">{String(flags.adaptiveSchedulerEnabled ?? false)}</div>
     </>
   );
@@ -111,7 +113,14 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('fishRim')).toHaveTextContent('false');
     expect(screen.getByTestId('dof')).toHaveTextContent('true');
     // overrides should also affect adaptive flags
-    act(() => { useGameStore.setState({ visualQualityOverrides: { adaptiveInstanceUpdatesEnabled: true, adaptiveSchedulerEnabled: true } }); });
+    act(() => {
+      useGameStore.setState({
+        visualQualityOverrides: {
+          adaptiveInstanceUpdatesEnabled: true,
+          adaptiveSchedulerEnabled: true,
+        },
+      });
+    });
     // cleanup previous render to avoid duplicated nodes
     first.unmount();
     render(

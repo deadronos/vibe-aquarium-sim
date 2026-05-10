@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import {
-  AdditiveBlending,
-  BufferAttribute,
-  BufferGeometry,
-  Color,
-  ShaderMaterial,
-} from 'three';
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, ShaderMaterial } from 'three';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
@@ -242,15 +236,17 @@ const AmbientParticlesEnabled = () => {
       farTimeUniformRef.current = null;
       return;
     }
-    nearTimeUniformRef.current =
-      (nearMaterial as ShaderMaterial).uniforms?.time ?? null;
-    farTimeUniformRef.current =
-      (farMaterial as ShaderMaterial).uniforms?.time ?? null;
+    nearTimeUniformRef.current = (nearMaterial as ShaderMaterial).uniforms?.time ?? null;
+    farTimeUniformRef.current = (farMaterial as ShaderMaterial).uniforms?.time ?? null;
   }, [farMaterial, nearMaterial, isWebGPU]);
 
   return (
     <group>
-      <points geometry={farGeometry} material={isWebGPU ? undefined : farMaterial} frustumCulled={false}>
+      <points
+        geometry={farGeometry}
+        material={isWebGPU ? undefined : farMaterial}
+        frustumCulled={false}
+      >
         {isWebGPU && (
           <ParticleNodeMaterial
             color="#eeeeee"
@@ -261,7 +257,11 @@ const AmbientParticlesEnabled = () => {
           />
         )}
       </points>
-      <points geometry={nearGeometry} material={isWebGPU ? undefined : nearMaterial} frustumCulled={false}>
+      <points
+        geometry={nearGeometry}
+        material={isWebGPU ? undefined : nearMaterial}
+        frustumCulled={false}
+      >
         {isWebGPU && (
           <ParticleNodeMaterial
             color="#ffffff"

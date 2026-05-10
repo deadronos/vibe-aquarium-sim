@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFromStorage, writeToStorage, readBoolFromStorage, writeBoolToStorage } from '../src/utils/storageUtils';
+import {
+  readFromStorage,
+  writeToStorage,
+  readBoolFromStorage,
+  writeBoolToStorage,
+} from '../src/utils/storageUtils';
 
 describe('storageUtils', () => {
   beforeEach(() => {

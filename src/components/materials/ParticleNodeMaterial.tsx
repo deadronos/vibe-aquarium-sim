@@ -53,28 +53,35 @@ export const ParticleNodeMaterial = ({
 
   // Initial position wrapped
   const p = positionLocal.add(variedDrift);
-  
+
   // Wrap around volume
   const halfVol = tankVolNode.mul(0.5);
   const wrappedP = mod(p.add(halfVol), tankVolNode).sub(halfVol);
 
   // 2. Flutter
   const flutterTime = t.mul(0.5).add(seed.mul(50.0));
-  const flutterX = sin(flutterTime).mul(0.05).add(sin(flutterTime.mul(1.7)).mul(0.03));
-  const flutterY = cos(flutterTime.mul(1.3)).mul(0.05).add(sin(flutterTime.mul(0.8)).mul(0.03));
-  const flutterZ = sin(flutterTime.mul(1.1)).mul(0.05).add(cos(flutterTime.mul(1.5)).mul(0.03));
-  
+  const flutterX = sin(flutterTime)
+    .mul(0.05)
+    .add(sin(flutterTime.mul(1.7)).mul(0.03));
+  const flutterY = cos(flutterTime.mul(1.3))
+    .mul(0.05)
+    .add(sin(flutterTime.mul(0.8)).mul(0.03));
+  const flutterZ = sin(flutterTime.mul(1.1))
+    .mul(0.05)
+    .add(cos(flutterTime.mul(1.5)).mul(0.03));
+
   // Construction of vec3 from nodes needs to be careful
-  const flutterVec = vec3(new THREE.Vector3(1, 0, 0)).mul(flutterX)
+  const flutterVec = vec3(new THREE.Vector3(1, 0, 0))
+    .mul(flutterX)
     .add(vec3(new THREE.Vector3(0, 1, 0)).mul(flutterY))
     .add(vec3(new THREE.Vector3(0, 0, 1)).mul(flutterZ));
-    
+
   const finalP = wrappedP.add(flutterVec);
 
   // 3. Fragment Logic (Twinkle and Shape)
   const c = colorByProp(colorProp);
   const twinkle = float(0.6).add(float(0.4).mul(sin(seed.mul(99.0).add(c.r))));
-  
+
   const finalAlpha = float(opacity).mul(twinkle);
 
   return (

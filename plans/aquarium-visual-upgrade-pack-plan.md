@@ -18,7 +18,7 @@ Adds realism and readability via (1) projected procedural caustics, (2) subtle f
    - **Objective:** Render subtle animated caustics onto interior walls/floor using a lightweight overlay material with a shared time uniform (no new textures).
    - **Files/Functions to Modify/Create:**
      - src/components/Tank.tsx (overlay geometry + material)
-     - src/shaders/* (caustics shader chunk/material helper)
+     - src/shaders/\* (caustics shader chunk/material helper)
    - **Tests to Write:**
      - Unit test asserting caustics uniforms exist and time uniform updates (similar to Water shader tests).
    - **Steps:** Write failing uniform/time test → implement overlays and uniform update → verify quality gating (enabled even in Low).
@@ -44,7 +44,7 @@ Adds realism and readability via (1) projected procedural caustics, (2) subtle f
 5. **Phase 5: Atmosphere (Ambient Particles) + DOF Postprocessing**
    - **Objective:** Add near/far ambient particulate layers with parallax; add depth-of-field via postprocessing, strictly quality-gated.
    - **Files/Functions to Modify/Create:**
-     - src/components/* or src/systems/EffectsSystem.tsx (ambient particles)
+     - src/components/\* or src/systems/EffectsSystem.tsx (ambient particles)
      - src/App.tsx or scene root (EffectComposer wiring)
      - package.json (add dependencies if not present)
    - **Tests to Write:**

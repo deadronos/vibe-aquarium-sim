@@ -45,7 +45,7 @@ export function simulateStep(
   // Using the largest neighborDist among species or a sensible default.
   let maxNeighborDist = 0;
   for (let s = 0; s < species.length; s++) {
-      maxNeighborDist = Math.max(maxNeighborDist, species[s].neighborDist);
+    maxNeighborDist = Math.max(maxNeighborDist, species[s].neighborDist);
   }
   const cellSize = (maxNeighborDist || boids.neighborDist) * 2.5;
 
@@ -205,9 +205,17 @@ export function simulateStep(
 
     // --- Feeding ---
     calculateFeeding(
-      px, py, pz, vx, vy, vz,
-      foodCount, foodPositions,
-      maxSpeed, maxForceDouble, cache,
+      px,
+      py,
+      pz,
+      vx,
+      vy,
+      vz,
+      foodCount,
+      foodPositions,
+      maxSpeed,
+      maxForceDouble,
+      cache,
       cellSize,
       cache.tempForce
     );

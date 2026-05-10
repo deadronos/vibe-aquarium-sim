@@ -44,5 +44,6 @@ export const useQualityStore = create<QualityState>((set) => ({
 
   setFpsEma: (fpsEma) => set({ fpsEma }),
 
-  setInstanceUpdateBudget: (budget: number) => set({ instanceUpdateBudget: Math.max(8, Math.min(4096, Math.round(budget))) }),
+  setInstanceUpdateBudget: (budget: number) =>
+    set({ instanceUpdateBudget: Math.max(8, Math.min(4096, Math.round(budget))) }),
 }));
