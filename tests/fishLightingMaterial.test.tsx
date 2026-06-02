@@ -145,6 +145,65 @@ describe('fish lighting material injection', () => {
     expect(typeof (uniforms as VibeFishLightingUniforms).vibeRimStrength.value).toBe('number');
   });
 
+  it('prevents double-injection when onBeforeCompile fires multiple times (WeakSet idempotency)', () => {
+    const base = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const { material: enhanced } = enhanceFishMaterialWithRimAndSSS(base);
+
+    const makeFreshShader = () => ({
+      uniforms: {},
+      vertexShader: `
+        #include <common>
+        void main() {
+          vec3 transformed = vec3(position);
+          #include <begin_vertex>
+        }
+      `,
+      fragmentShader: `
+        #include <common>
+        void main() {
+          vec3 outgoingLight = vec3(0.0);
+          #include <output_fragment>
+        }
+      `,
+    });
+
+    // First compile: injection should happen (material not yet in WeakSet).
+    const shader1 = makeFreshShader();
+    // @ts-expect-error - minimal shader shape for unit test
+    enhanced.onBeforeCompile(shader1);
+    expect(shader1.fragmentShader).toContain(VIBE_FISH_LIGHTING_MARKER);
+
+    // Second compile on the SAME material (e.g., after needsUpdate = true):
+    // WeakSet should prevent double-injection.
+    const shader2 = makeFreshShader();
+    // @ts-expect-error - minimal shader shape for unit test
+    enhanced.onBeforeCompile(shader2);
+    const markerCount = shader2.fragmentShader.split(VIBE_FISH_LIGHTING_MARKER).length - 1;
+    expect(markerCount).toBe(0); // no injection at all on recompile
+  });
+
+  it('returns the existing material when enhance is called on already-injected material', () => {
+    const base = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const first = enhanceFishMaterialWithRimAndSSS(base);
+
+    // Manually simulate that the material has been rendered (injected).
+    const shader = {
+      uniforms: {},
+      vertexShader:
+        '#include <common>\nvoid main() {\nvec3 transformed = vec3(position);\n#include <begin_vertex>\n}',
+      fragmentShader:
+        '#include <common>\nvoid main() {\nvec3 outgoingLight = vec3(0.0);\n#include <output_fragment>\n}',
+    };
+    // @ts-expect-error - minimal shader shape for unit test
+    (first.material as THREE.Material).onBeforeCompile(shader);
+    expect(shader.fragmentShader).toContain(VIBE_FISH_LIGHTING_MARKER);
+
+    // Second call with the SAME already-injected material should return it as-is.
+    const second = enhanceFishMaterialWithRimAndSSS(first.material);
+    expect(second.material).toBe(first.material);
+    expect(second.uniforms).toBe(first.uniforms);
+  });
+
   it('sets rim/sss strengths to 0 when disabled via visualQualityOverrides', async () => {
     useFrameSpy.mockClear();
 
