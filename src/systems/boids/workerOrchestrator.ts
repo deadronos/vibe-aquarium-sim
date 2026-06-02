@@ -9,6 +9,7 @@ import {
   type BoidsWorkerResponse,
   type SharedSimulationBuffers,
 } from '../../workers/boids/sharedBuffers';
+import { disposeBoidsCache } from '../../workers/boids/cache';
 
 export class WorkerOrchestrator {
   private worker: Worker | null = null;
@@ -171,6 +172,7 @@ export class WorkerOrchestrator {
 
   public dispose() {
     this.disposed = true;
+    disposeBoidsCache();
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
