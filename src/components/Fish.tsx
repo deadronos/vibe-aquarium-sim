@@ -39,13 +39,14 @@ export const Fish = ({ entity }: { entity: Entity }) => {
   // useFrame runs after the automatic physics step, making it safe to read/write
   useFrame(() => {
     const ent = entityRef.current;
-    // Lightweight sampling: measure every 10th call per-entity to avoid heavy logging
-    try {
+    // Debug sampling: gate entirely behind window.__vibe_debug to avoid
+    // per-frame overhead (counter, modulo, performance.now) in production.
+    const dbg = window.__vibe_debug;
+    let sampleThis = false;
+    if (dbg) {
       ent.__vibe_dbgCounter = (ent.__vibe_dbgCounter || 0) + 1;
-    } catch {
-      /* ignore */
+      sampleThis = ent.__vibe_dbgCounter % 10 === 0;
     }
-    const sampleThis = (ent.__vibe_dbgCounter ?? 0) % 10 === 0;
     const t0 = sampleThis ? performance.now() : 0;
 
     const rb = rigidBody.current;
@@ -121,9 +122,10 @@ export const Fish = ({ entity }: { entity: Entity }) => {
 
     if (sampleThis) {
       try {
-        const t1 = performance.now();
-        const dbg = window.__vibe_debug;
-        if (dbg) dbg.fishUseFrame.push({ duration: t1 - t0, modelIndex: ent.modelIndex ?? null });
+        dbg.fishUseFrame.push({
+          duration: performance.now() - t0,
+          modelIndex: ent.modelIndex ?? null,
+        });
       } catch {
         /* ignore */
       }
