@@ -5,6 +5,11 @@ import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
 import { world } from '../store';
 import type { Entity } from '../store';
 
+const MAX_INSTANCES_PER_MODEL = 1000;
+const MAX_TOTAL_FISH = MAX_INSTANCES_PER_MODEL * 3; // 3000 — one full cap per model
+
+const fishQuery = world.with('isFish');
+
 export const Spawner = () => {
   useEffect(() => {
     const spawnedEntities: Entity[] = [];
@@ -84,8 +89,27 @@ export const Spawner = () => {
 
     if (typeof window !== 'undefined') {
       window.__vibe_addFish = (n: number) => {
+        const currentFishCount = fishQuery.entities.length;
+        const available = MAX_TOTAL_FISH - currentFishCount;
+
+        if (available <= 0) {
+          console.warn(
+            `[Spawner] Cannot add more fish: total cap reached ` +
+              `(${currentFishCount}/${MAX_TOTAL_FISH}, MAX_INSTANCES_PER_MODEL = ${MAX_INSTANCES_PER_MODEL}).`
+          );
+          return 0;
+        }
+
+        const toAdd = Math.min(n, available);
+        if (toAdd < n) {
+          console.warn(
+            `[Spawner] Clamping add-fish request from ${n} to ${toAdd} ` +
+              `(total cap: ${MAX_TOTAL_FISH}, current: ${currentFishCount}).`
+          );
+        }
+
         let added = 0;
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < toAdd; i++) {
           const entity = world.add({
             isFish: true,
             isBoid: true,

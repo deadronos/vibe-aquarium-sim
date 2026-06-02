@@ -17,8 +17,7 @@ import {
   type VibeFishLightingUniforms,
 } from '../shaders/fishLightingMaterial';
 import { flushDirtyInstanceMatrices } from './fishRenderFlush';
-
-const MAX_INSTANCES_PER_MODEL = 1000;
+import { MAX_INSTANCES_PER_MODEL, warnInstanceCap } from './instanceCapWarning';
 const QUATERNION_POOL_SIZE = MAX_INSTANCES_PER_MODEL * 3;
 const tempObj = new Object3D();
 const tempVec = new Vector3();
@@ -254,6 +253,9 @@ export const FishRenderSystem = () => {
         // Entity is active/seen, but won't be rendered this frame due to per-model cap.
         // Ensure it's NOT marked as rendered this frame so sweep can reclaim its quaternion.
         entity.__vibeFishRenderedFrame = undefined;
+
+        // Emit a throttled warning so developers/users know fish are being dropped
+        warnInstanceCap(modelIndex, fishEntities.length);
         continue;
       }
 
