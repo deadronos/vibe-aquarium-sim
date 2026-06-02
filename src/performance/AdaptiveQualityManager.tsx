@@ -26,12 +26,31 @@ export interface AdaptiveQualityManagerProps {
   spotLightRef?: RefObject<THREE.SpotLight | null>;
 }
 
-const updateShadowMapSize = () => {
-  // WebGPU explicitly crashes with "Destroyed texture used in a submit" if
-  // we try to dynamically resize shadow maps on the fly while they are bound.
-  // Until WebGPU handles dynamic texture resizing gracefully in Three.js,
-  // we disable dynamic shadow map resizing.
-  return;
+/**
+ * Apply a shadow map size to a light, but only when the size actually changed.
+ * This is a one-time resize triggered by quality-level changes (useEffect),
+ * NOT per-frame. Per-frame dynamic resizing would crash WebGPU with
+ * "Destroyed texture used in a submit". This deferred approach is safe for
+ * both WebGL and WebGPU backends.
+ */
+const applyShadowMapSize = (
+  light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
+  targetSize: number
+): void => {
+  if (!light?.shadow) return;
+  const current = light.shadow.mapSize;
+  if (current.width === targetSize && current.height === targetSize) return;
+
+  light.shadow.mapSize.set(targetSize, targetSize);
+
+  // Force texture recreation for the new size.
+  // The old shadow render target must be disposed and cleared so Three.js
+  // allocates a fresh texture on the next shadow pass.
+  if (light.shadow.map) {
+    light.shadow.map.dispose();
+    (light.shadow as { map: THREE.RenderTarget | null }).map = null;
+  }
+  light.shadow.needsUpdate = true;
 };
 
 export const AdaptiveQualityManager = ({
@@ -79,7 +98,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize();
+        applyShadowMapSize(directionalLightRef.current, settings.shadowMapSize);
       }
     }
 
@@ -88,7 +107,7 @@ export const AdaptiveQualityManager = ({
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
       ) {
-        updateShadowMapSize();
+        applyShadowMapSize(spotLightRef.current, settings.shadowMapSize);
       }
     }
 
