@@ -46,3 +46,10 @@ export function getBoidsCache(fishCount: number, foodCount: number = 0): BoidsCa
 
   return cache;
 }
+
+export function disposeBoidsCache(): void {
+  const ctx = globalThis as unknown as BoidsCacheHost;
+  if (ctx.__boidsCache) {
+    ctx.__boidsCache = undefined;
+  }
+}
