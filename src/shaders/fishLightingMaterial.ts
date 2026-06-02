@@ -3,6 +3,14 @@ import { logShaderOnce } from '../utils/shaderDebug';
 
 export const VIBE_FISH_LIGHTING_MARKER = '// VIBE_RIM_LIGHTING';
 
+/**
+ * WeakSet tracking materials whose onBeforeCompile shader injection has
+ * already run.  Prevents double-injection when a material is cloned after
+ * enhancement (the clone inherits onBeforeCompile but gets a fresh shader
+ * object, defeating the string-marker idempotency guard).
+ */
+const injectedMaterials = new WeakSet<THREE.Material>();
+
 export interface VibeFishLightingUniforms {
   vibeRimColor: { value: THREE.Color };
   vibeRimStrength: { value: number };
@@ -49,6 +57,8 @@ type ShaderLike = {
 const injectRimAndSSS = (shader: ShaderLike) => {
   // Idempotency: onBeforeCompile can run multiple times (program cache, renderer reuse).
   // If we've already injected our chunk, skip to avoid duplicating uniforms/logic.
+  // The primary guard is the injectedMaterials WeakSet in the onBeforeCompile handler;
+  // this string-marker check is a belt-and-suspenders safety net for same-material recompilation.
   if (shader.fragmentShader.includes(VIBE_FISH_LIGHTING_MARKER)) return;
 
   const hasCommon = shader.fragmentShader.includes('#include <common>');
@@ -82,15 +92,36 @@ const injectRimAndSSS = (shader: ShaderLike) => {
 };
 
 const enhanceSingle = (source: THREE.Material) => {
+  // If the source material has already gone through shader injection, return
+  // it as-is with its stored uniforms instead of cloning and re-injecting.
+  if (injectedMaterials.has(source)) {
+    const stored = (source.userData as FishLightingUserData).vibeFishLighting?.uniforms;
+    return { material: source, uniforms: stored ?? createUniforms() };
+  }
+
   const cloned = source.clone();
   const uniforms = createUniforms();
 
   const prevOnBeforeCompile = cloned.onBeforeCompile as unknown as
     | ((shader: ShaderLike, renderer?: THREE.WebGLRenderer) => void)
     | undefined;
-  cloned.onBeforeCompile = (shader: ShaderLike, renderer?: THREE.WebGLRenderer) => {
+  // Use a regular function (not arrow) so `this` refers to the material
+  // instance being compiled — essential for the WeakSet idempotency guard.
+  cloned.onBeforeCompile = function (
+    this: THREE.Material,
+    shader: ShaderLike,
+    renderer?: THREE.WebGLRenderer
+  ) {
     // Preserve runtime behavior of any existing onBeforeCompile handlers.
-    prevOnBeforeCompile?.(shader, renderer);
+    prevOnBeforeCompile?.call(this, shader, renderer);
+
+    // Idempotency via WeakSet: if this material instance already had its
+    // shader injected, skip.  This is more robust than the string marker
+    // because it survives material cloning (the clone is a different
+    // object and won't be in the set until its own first injection).
+    if (injectedMaterials.has(this)) return;
+    injectedMaterials.add(this);
+
     // Cast via unknown first to satisfy TypeScript when converting between
     // differently-shaped record types.
     Object.assign(shader.uniforms, uniforms as unknown as Record<string, { value: unknown }>);
