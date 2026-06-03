@@ -120,7 +120,7 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       ent.velocity.set(vel.x, vel.y, vel.z);
     }
 
-    if (sampleThis) {
+    if (sampleThis && dbg) {
       try {
         dbg.fishUseFrame.push({
           duration: performance.now() - t0,
