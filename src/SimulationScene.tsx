@@ -127,6 +127,8 @@ export default function SimulationScene() {
             penumbra={0.6}
             intensity={1.2}
             castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
           />
           {/* Cool fill from back */}
           <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />

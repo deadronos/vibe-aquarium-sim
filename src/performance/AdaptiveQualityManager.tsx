@@ -9,6 +9,7 @@ import {
   getQualitySettings,
 } from './qualityPresets';
 import { useQualityStore } from './qualityStore';
+import { useVisualQuality } from './VisualQualityContext';
 
 const DISREGARD_DELTA_OVER_SECONDS = 0.2; // ignore tab-switch / hitch deltas
 
@@ -32,6 +33,11 @@ export interface AdaptiveQualityManagerProps {
  * NOT per-frame. Per-frame dynamic resizing would crash WebGPU with
  * "Destroyed texture used in a submit". This deferred approach is safe for
  * both WebGL and WebGPU backends.
+ *
+ * IMPORTANT: We do NOT manually dispose the old shadow map. Three.js handles
+ * RenderTarget disposal and recreation internally when `needsUpdate` is true.
+ * Manual disposal causes "Destroyed texture used in a submit" on WebGPU
+ * because the GPU command buffer may still reference the texture.
  */
 const applyShadowMapSize = (
   light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
@@ -42,14 +48,9 @@ const applyShadowMapSize = (
   if (current.width === targetSize && current.height === targetSize) return;
 
   light.shadow.mapSize.set(targetSize, targetSize);
-
-  // Force texture recreation for the new size.
-  // The old shadow render target must be disposed and cleared so Three.js
-  // allocates a fresh texture on the next shadow pass.
-  if (light.shadow.map) {
-    light.shadow.map.dispose();
-    (light.shadow as { map: THREE.RenderTarget | null }).map = null;
-  }
+  // Let Three.js handle the RenderTarget lifecycle — it will dispose the old
+  // shadow map and create a new one with the updated dimensions during the
+  // next shadow render pass.
   light.shadow.needsUpdate = true;
 };
 
@@ -63,6 +64,11 @@ export const AdaptiveQualityManager = ({
   const level = useQualityStore((s) => s.level);
   const applyLevelWithDeviceClamp = useQualityStore((s) => s.applyLevelWithDeviceClamp);
   const setFpsEma = useQualityStore((s) => s.setFpsEma);
+
+  // On WebGPU, shadow map resizing triggers a Three.js internal dispose of the
+  // old depth texture, which causes "Destroyed texture used in a submit".
+  // Shadow map size is fixed at the initial JSX-configured value on WebGPU.
+  const { isWebGPU } = useVisualQuality();
 
   const deviceMaxDprRef = useRef(getDeviceMaxDpr());
 
@@ -93,7 +99,7 @@ export const AdaptiveQualityManager = ({
       lastAppliedDprRef.current = nextDpr;
     }
 
-    if (directionalLightRef?.current) {
+    if (directionalLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
@@ -102,7 +108,7 @@ export const AdaptiveQualityManager = ({
       }
     }
 
-    if (spotLightRef?.current) {
+    if (spotLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
         lastAppliedShadowSizeRef.current !== settings.shadowMapSize
@@ -112,7 +118,7 @@ export const AdaptiveQualityManager = ({
     }
 
     lastAppliedShadowSizeRef.current = settings.shadowMapSize;
-  }, [directionalLightRef, level, setDpr, spotLightRef]);
+  }, [directionalLightRef, isWebGPU, level, setDpr, spotLightRef]);
 
   useFrame((_, delta) => {
     if (!isAdaptiveEnabled) return;
