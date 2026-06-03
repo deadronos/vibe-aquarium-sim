@@ -35,3 +35,10 @@ const MySystem = () => {
 - **Loops**: Prefer simple `for...of` loops over `world.with(...)` for performance.
 - **Miniplex Queries**: Use queries instead of manual array filtering to leverage Miniplex's internal indexing.
 - **R3F Hooks**: Use `@react-three/fiber` hooks (`useFrame`, `useThree`) for render-loop logic.
+
+## 🌐 WebGPU vs WebGL Considerations
+
+- **Shadow maps**: On WebGPU, shadow map resolution must NOT be changed after initial render. Three.js's WebGPU backend disposes the old depth texture during resize, but the GPU command buffer may still reference it, causing `"Destroyed texture used in a submit"` errors. The `AdaptiveQualityManager` skips shadow map resizing when `isWebGPU` is true.
+- **Dual materials**: Components with custom shaders must provide both a GLSL `shaderMaterial` (WebGL) and a TSL node material (WebGPU). Use `useVisualQuality().isWebGPU` to branch. See `src/components/materials/` for examples.
+- **No `onBeforeCompile`**: WebGPU uses WGSL, not GLSL. The `onBeforeCompile` injection pattern (used in `enhanceFishMaterialWithRimAndSSS`) is skipped on WebGPU.
+- **Post-processing**: `@react-three/postprocessing` (`EffectComposer`, `DepthOfField`) is disabled on WebGPU (`PostProcessing` returns `null`).

@@ -36,3 +36,25 @@
 - `src/store.ts` — ECS world and entity definitions
 - `src/systems/BoidsSystem.tsx` — example system using vector reuse and `useFrame`
 - `src/components/Fish.tsx` — component that synchronizes Physics ↔ ECS in `useFrame`
+
+## WebGPU / WebGL Material Branching
+
+- Every component with custom materials must provide both a **GLSL `shaderMaterial`** (WebGL) and a **TSL node material** (WebGPU) variant. Branch on `useVisualQuality().isWebGPU`:
+
+  ```tsx
+  const { isWebGPU } = useVisualQuality();
+  // ...
+  {isWebGPU ? <SomeNodeMaterial ... /> : <shaderMaterial ... />}
+  ```
+
+- TSL node materials import from `three/webgpu` (e.g. `MeshBasicNodeMaterial`, `MeshPhysicalNodeMaterial`) and use `three/tsl` functions (`vec3`, `mix`, `time`, etc.).
+- `onBeforeCompile` injection does **not** work on WebGPU — always skip material enhancement when `isWebGPU` is true.
+- **Shadow map constraint**: On WebGPU, shadow map resolution is fixed at initial render. Never resize via `needsUpdate` — this crashes the WebGPU backend. The `AdaptiveQualityManager` enforces this automatically.
+
+## Adaptive Quality System
+
+- Visual quality is managed through a Zustand store (`useQualityStore`) with four preset levels: `low`, `medium`, `high`, `ultra`.
+- Each preset controls: DPR, shadow map size (WebGL only), caustics, rim lighting, subsurface scattering, water surface/volume upgrades, ambient particles, and depth of field.
+- `AdaptiveQualityManager` runs in `useFrame` and uses an EMA of FPS to degrade or upgrade quality based on performance. Downgrade is faster (2 stable low readings) than upgrade (4 stable high readings) with a cooldown period.
+- `VisualQualityContext` provides flags like `isWebGPU` and feature toggles (`causticsEnabled`, etc.) to all descendant components.
+- Debug: `window.__vibe_debug` gate controls per-frame debug sampling to avoid production overhead.
