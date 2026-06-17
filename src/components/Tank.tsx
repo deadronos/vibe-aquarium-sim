@@ -20,6 +20,71 @@ import { logShaderOnce } from '../utils/shaderDebug';
 import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
 import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 
+const GlowingTextPlane = ({
+  text,
+  position,
+  fontSize = 90,
+  width = 2.5,
+  height = 0.625,
+  color = '#30a0ff',
+  glowIntensity = 25,
+}: {
+  text: string;
+  position: [number, number, number];
+  fontSize?: number;
+  width?: number;
+  height?: number;
+  color?: string;
+  glowIntensity?: number;
+}) => {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Underlayer glow
+      ctx.shadowColor = color;
+      ctx.shadowBlur = glowIntensity;
+      ctx.fillStyle = color;
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      // Bright core overlay
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [text, fontSize, color, glowIntensity]);
+
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+    };
+  }, [texture]);
+
+  return (
+    <mesh position={position}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent={true}
+        toneMapped={false}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+};
+
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
   const { isWebGPU } = useVisualQuality();
@@ -106,46 +171,50 @@ export const Tank = () => {
         {isWebGPU ? (
           <GlassNodeMaterial
             color="#eef7ff"
-            roughness={0.06}
+            roughness={0.01}
             transmission={0.99}
             thickness={1.5}
-            opacity={0.14}
-            ior={1.4}
+            opacity={1.0}
+            ior={1.5}
             chromaticAberration={0.06}
           />
         ) : (
-          <meshStandardMaterial
-            color="white"
-            roughness={0.1}
-            metalness={0.1}
+          <meshPhysicalMaterial
+            color="#eef7ff"
+            roughness={0.01}
+            metalness={0.0}
+            clearcoat={1.0}
+            clearcoatRoughness={0.01}
+            transmission={0.99}
+            thickness={1.5}
+            ior={1.5}
+            opacity={1.0}
             transparent={true}
-            opacity={0.3}
-            side={2} // DoubleSide from THREE
+            depthWrite={true}
+            side={THREE.DoubleSide}
           />
         )}
       </mesh>
 
-      {/* <Text ... > commented out due to missing export */}
-      {/*
-      <Text
-        position={[0, -height / 2 + 0.2, -depth / 2 + 0.1]}
-        fontSize={0.3}
-        color="white"
-        anchorY="bottom"
-      >
-        Vibe Aquarium
-      </Text>
+      <GlowingTextPlane
+        text="Vibe Aquarium"
+        position={[0, -height / 2 + 0.35, -depth / 2 + 0.05]}
+        fontSize={90}
+        width={2.5}
+        height={0.625}
+        color="#30a0ff"
+        glowIntensity={25}
+      />
 
-      <Text
-        position={[0, height / 2 - 0.5, -depth / 2 + 0.1]}
-        fontSize={0.15}
+      <GlowingTextPlane
+        text="Click tank to feed fish"
+        position={[0, height / 2 - 0.5, -depth / 2 + 0.05]}
+        fontSize={45}
+        width={2.0}
+        height={0.5}
         color="#aaddff"
-        anchorY="top"
-        fillOpacity={0.7}
-      >
-        Click tank to feed fish
-      </Text>
-      */}
+        glowIntensity={15}
+      />
     </group>
   );
 };

@@ -1,52 +1,52 @@
 - generic [ref=e2]:
-  - generic [ref=e3]:
-    - button "Open settings" [ref=e4] [cursor=pointer]:
-      - generic [ref=e5]: ⚙
-    - button "Collapse HUD" [expanded] [ref=e6] [cursor=pointer]:
-      - generic [ref=e7]: ‹
-      - generic [ref=e8]: Collapse HUD
-    - generic [ref=e9]:
-      - status [ref=e10]: Click tank to feed fish
-      - group [ref=e11]:
-        - generic "Aquarium Stats" [ref=e12] [cursor=pointer]:
-          - generic [ref=e13]: Aquarium Stats
-        - generic [ref=e14]:
-          - generic [ref=e15]:
-            - generic [ref=e16]: Fish
-            - generic [ref=e17]: "0"
-          - generic [ref=e18]:
-            - generic [ref=e19]: Food
-            - generic [ref=e20]: "0"
-          - generic [ref=e21]:
-            - generic [ref=e22]: Last Fed
-            - generic [ref=e23]: Never
-      - group [ref=e25]:
-        - generic "Performance" [ref=e26] [cursor=pointer]:
-          - generic [ref=e27]: Performance
-        - generic [ref=e28]:
-          - generic [ref=e29]:
-            - generic [ref=e30]: FPS
-            - generic [ref=e31]: "60"
-          - generic [ref=e32]:
-            - generic [ref=e33]: Quality
-            - generic [ref=e34]: medium
-      - group [ref=e36]:
-        - generic "Decorations" [ref=e37] [cursor=pointer]:
-          - generic [ref=e38]: Decorations
-        - generic [ref=e40]:
-          - button "1 🌿 Seaweed" [ref=e41] [cursor=pointer]:
-            - generic [ref=e42]: "1"
-            - generic [ref=e43]: 🌿
-            - text: Seaweed
-          - button "2 🪸 Coral" [ref=e44] [cursor=pointer]:
-            - generic [ref=e45]: "2"
-            - generic [ref=e46]: 🪸
-            - text: Coral
-          - button "3 🪨 Rock" [ref=e47] [cursor=pointer]:
-            - generic [ref=e48]: "3"
-            - generic [ref=e49]: 🪨
-            - text: Rock
-  - generic [ref=e51]:
-    - generic [ref=e52]: Vibe Aquarium
-    - generic [ref=e53]: Starting simulation…
-    - button "Start Now" [ref=e54] [cursor=pointer]
+    - generic [ref=e3]:
+        - button "Open settings" [ref=e4] [cursor=pointer]:
+            - generic [ref=e5]: ⚙
+        - button "Collapse HUD" [expanded] [ref=e6] [cursor=pointer]:
+            - generic [ref=e7]: ‹
+            - generic [ref=e8]: Collapse HUD
+        - generic [ref=e9]:
+            - status [ref=e10]: Click tank to feed fish
+            - group [ref=e11]:
+                - generic "Aquarium Stats" [ref=e12] [cursor=pointer]:
+                    - generic [ref=e13]: Aquarium Stats
+                - generic [ref=e14]:
+                    - generic [ref=e15]:
+                        - generic [ref=e16]: Fish
+                        - generic [ref=e17]: '0'
+                    - generic [ref=e18]:
+                        - generic [ref=e19]: Food
+                        - generic [ref=e20]: '0'
+                    - generic [ref=e21]:
+                        - generic [ref=e22]: Last Fed
+                        - generic [ref=e23]: Never
+            - group [ref=e25]:
+                - generic "Performance" [ref=e26] [cursor=pointer]:
+                    - generic [ref=e27]: Performance
+                - generic [ref=e28]:
+                    - generic [ref=e29]:
+                        - generic [ref=e30]: FPS
+                        - generic [ref=e31]: '60'
+                    - generic [ref=e32]:
+                        - generic [ref=e33]: Quality
+                        - generic [ref=e34]: medium
+            - group [ref=e36]:
+                - generic "Decorations" [ref=e37] [cursor=pointer]:
+                    - generic [ref=e38]: Decorations
+                - generic [ref=e40]:
+                    - button "1 🌿 Seaweed" [ref=e41] [cursor=pointer]:
+                        - generic [ref=e42]: '1'
+                        - generic [ref=e43]: 🌿
+                        - text: Seaweed
+                    - button "2 🪸 Coral" [ref=e44] [cursor=pointer]:
+                        - generic [ref=e45]: '2'
+                        - generic [ref=e46]: 🪸
+                        - text: Coral
+                    - button "3 🪨 Rock" [ref=e47] [cursor=pointer]:
+                        - generic [ref=e48]: '3'
+                        - generic [ref=e49]: 🪨
+                        - text: Rock
+    - generic [ref=e51]:
+        - generic [ref=e52]: Vibe Aquarium
+        - generic [ref=e53]: Starting simulation…
+        - button "Start Now" [ref=e54] [cursor=pointer]

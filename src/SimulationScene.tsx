@@ -100,7 +100,7 @@ export default function SimulationScene() {
           return renderer;
         }}
       >
-        <color attach="background" args={['#0a0a0a']} />
+        <color attach="background" args={['#020206']} />
 
         <Physics gravity={[0, -9.81, 0]}>
           <AdaptiveQualityManager
@@ -109,12 +109,13 @@ export default function SimulationScene() {
           />
           <LivingRoom />
           {/* Gentle indoor ambient */}
-          <hemisphereLight color={0xdcdce0} groundColor={0x8a7c6f} intensity={0.5} />
+          <hemisphereLight color={0x88aaff} groundColor={0x020205} intensity={0.15} />
           {/* Directional key light to give stronger highlights */}
           <directionalLight
             ref={directionalLightRef}
-            position={[1.5, 3, 1]}
+            position={[1.5, 4, 1]}
             intensity={1.2}
+            color="#aaddff"
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
@@ -122,16 +123,17 @@ export default function SimulationScene() {
           {/* Soft spot to add depth & visible speculars */}
           <spotLight
             ref={spotLightRef}
-            position={[2, 4, 2]}
-            angle={0.6}
-            penumbra={0.6}
-            intensity={1.2}
+            position={[0, 5, -1]}
+            angle={0.7}
+            penumbra={0.7}
+            intensity={3.0}
+            color="#0066ff"
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
           />
           {/* Cool fill from back */}
-          <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
+          <pointLight position={[-2, -1, -2]} intensity={0.8} color="#0044ff" />
           {/* Environment map for realistic PBR reflections */}
           {/* Environment map for realistic PBR reflections */}
           {/* Use manual loader to avoid deprecated RGBELoader in drei preset */}
