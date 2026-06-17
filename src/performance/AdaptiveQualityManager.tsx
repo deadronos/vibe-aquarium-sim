@@ -89,7 +89,9 @@ export const AdaptiveQualityManager = ({
 
   useEffect(() => {
     const settings = getQualitySettings(level, deviceMaxDprRef.current);
-    const nextDpr = settings.dpr;
+    // WebGPU currently presents incorrectly above DPR 1 on this scene,
+    // producing tiled/segmented output instead of a single full-frame image.
+    const nextDpr = isWebGPU ? 1 : settings.dpr;
 
     if (
       lastAppliedDprRef.current === null ||

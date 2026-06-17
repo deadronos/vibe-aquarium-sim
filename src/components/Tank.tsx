@@ -105,12 +105,12 @@ export const Tank = () => {
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
         {isWebGPU ? (
           <GlassNodeMaterial
-            color="white"
-            roughness={0.05}
+            color="#eef7ff"
+            roughness={0.06}
             transmission={0.99}
             thickness={1.5}
-            opacity={1.0}
-            ior={1.5}
+            opacity={0.14}
+            ior={1.4}
             chromaticAberration={0.06}
           />
         ) : (

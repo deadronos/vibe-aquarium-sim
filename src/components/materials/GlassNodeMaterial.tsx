@@ -23,27 +23,35 @@ interface GlassNodeMaterialProps {
 }
 
 export const GlassNodeMaterial = ({
-  color: colorProp = '#ffffff',
-  transmission = 1.0,
-  opacity = 1.0,
-  roughness = 0.05,
-  thickness = 1.5,
-  ior = 1.5,
-  chromaticAberration = 0.04, // Default slight chromatic aberration
+  color: colorProp = '#ecf6ff',
+  opacity = 0.14,
+  roughness = 0.06,
+  ior = 1.4,
+  chromaticAberration = 0.06,
 }: GlassNodeMaterialProps) => {
+  const colorValue = new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp);
+  const clampedOpacity = THREE.MathUtils.clamp(opacity, 0.08, 0.2);
+  const clampedRoughness = THREE.MathUtils.clamp(roughness, 0.02, 0.18);
+  const clampedIor = THREE.MathUtils.clamp(ior, 1.05, 1.6);
+  const glow = THREE.MathUtils.clamp(chromaticAberration, 0, 0.08);
+
   return (
     <meshPhysicalNodeMaterial
-      color={new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp)}
-      transmission={transmission}
-      opacity={opacity}
-      roughness={roughness}
+      color={colorValue}
+      opacity={clampedOpacity}
+      roughness={clampedRoughness}
       metalness={0}
-      thickness={thickness}
-      ior={ior}
-      dispersion={chromaticAberration} // 'dispersion' is the new standard property for chromatic aberration in Three.js
+      clearcoat={1}
+      clearcoatRoughness={Math.min(0.18, clampedRoughness + 0.03)}
+      reflectivity={0.9}
+      ior={clampedIor}
+      specularIntensity={1}
+      specularColor={new THREE.Color('#f7fbff')}
+      emissive={new THREE.Color('#9bd1ff')}
+      emissiveIntensity={glow * 0.5}
       transparent={true}
       depthWrite={false}
-      side={THREE.FrontSide}
+      side={THREE.DoubleSide}
     />
   );
 };

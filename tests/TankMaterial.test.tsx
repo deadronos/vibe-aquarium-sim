@@ -55,17 +55,45 @@ describe('Tank material defaults', () => {
     useFrameSpy.mockClear();
   });
 
-  it('renders a glass mesh with expected transmission defaults', async () => {
+  it('renders the default WebGL tank material path', async () => {
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
         <Tank />
       </VisualQualityProvider>
     );
 
-    expect(renderer.scene.children.length).toBeGreaterThan(0);
+    try {
+      expect(renderer.scene.children.length).toBeGreaterThan(0);
+    } finally {
+      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+        await maybePromise;
+      }
+    }
   });
 
-  it('keeps glass material defaults across quality presets', async () => {
+  it('renders the WebGPU tank material path without transmission-specific setup', async () => {
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
+    });
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider isWebGPU>
+        <Tank />
+      </VisualQualityProvider>
+    );
+
+    try {
+      expect(renderer.scene.children.length).toBeGreaterThan(0);
+    } finally {
+      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+        await maybePromise;
+      }
+    }
+  });
+
+  it('keeps tank material rendering stable across quality presets', async () => {
     act(() => {
       useQualityStore.setState({ settings: getQualitySettings('ultra', 2) });
     });
@@ -76,6 +104,13 @@ describe('Tank material defaults', () => {
       </VisualQualityProvider>
     );
 
-    expect(renderer.scene.children.length).toBeGreaterThan(0);
+    try {
+      expect(renderer.scene.children.length).toBeGreaterThan(0);
+    } finally {
+      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+        await maybePromise;
+      }
+    }
   });
 });
