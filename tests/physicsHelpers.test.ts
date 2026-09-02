@@ -48,4 +48,22 @@ describe('integrateForcesToVelocity', () => {
     expect(targetVelocity.x).toBeCloseTo(0.75);
     expect(entity.externalForce.x).toBeCloseTo(0);
   });
+
+  it('consumes steering and external forces exactly once', () => {
+    const targetVelocity = new Vector3(0, 0, 0);
+    const entity = {
+      steeringForce: new Vector3(1, 0, 0),
+      externalForce: new Vector3(2, 0, 0),
+    } as unknown as Entity;
+
+    integrateForcesToVelocity(targetVelocity, entity, 0.5);
+    const velocityAfterFirstStep = targetVelocity.x;
+
+    integrateForcesToVelocity(targetVelocity, entity, 0.5);
+
+    expect(velocityAfterFirstStep).toBeCloseTo(1.5);
+    expect(targetVelocity.x).toBeCloseTo(velocityAfterFirstStep);
+    expect(entity.steeringForce?.lengthSq()).toBe(0);
+    expect(entity.externalForce?.lengthSq()).toBe(0);
+  });
 });

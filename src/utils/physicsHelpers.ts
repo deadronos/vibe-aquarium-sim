@@ -8,7 +8,8 @@ const tempImpulseB = new Vector3();
  * Applies queued forces (steeringForce, externalForce) to a target velocity vector.
  * - `steeringForce` is integrated as acceleration * dt.
  * - `externalForce` is integrated as acceleration * dt.
- * - Clears `externalForce` after application.
+ * - Clears both queued force vectors after application so the same result is
+ *   never integrated twice when render and physics clocks run at different rates.
  *
  * This function was previously named `integrateForcesToVelocity`.
  *
@@ -30,6 +31,7 @@ export function applyQueuedForcesToRigidBody(
     tempImpulseA.copy(entity.steeringForce).multiplyScalar(dt);
     if (mass !== 1.0) tempImpulseA.divideScalar(mass);
     targetVelocity.add(tempImpulseA);
+    entity.steeringForce.set(0, 0, 0);
   }
 
   // Apply external force (drag, water current, etc.)

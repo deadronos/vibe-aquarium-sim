@@ -1,16 +1,12 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, BallCollider } from '@react-three/rapier';
+import { RigidBody, BallCollider, useBeforePhysicsStep } from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { world } from '../store';
 import type { Entity } from '../store';
-import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
-import { clampPositionToTank } from '../utils/boundaryUtils';
-import { SPECIES_CONFIG, BOIDS_CONFIG } from '../config/constants';
+import { applyFishPhysicsStep } from './fishPhysicsStep';
 
 const FIXED_DT = 1 / 60;
-const clampOutPosition = { x: 0, y: 0, z: 0 };
-const clampOutVelocity = { x: 0, y: 0, z: 0 };
 
 export const Fish = ({ entity }: { entity: Entity }) => {
   const rigidBody = useRef<RapierRigidBody>(null);
@@ -35,8 +31,17 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     }
   }, [entity]);
 
-  // Physics interactions and visuals in render loop
-  // useFrame runs after the automatic physics step, making it safe to read/write
+  // Apply controls immediately before Rapier advances its fixed-step world.
+  // This keeps force consumption independent of display-frame frequency.
+  useBeforePhysicsStep(() => {
+    const rb = rigidBody.current;
+    if (!rb) return;
+
+    applyFishPhysicsStep(rb, entityRef.current, FIXED_DT);
+  });
+
+  // Render loop only mirrors post-step physics state into ECS and records
+  // optional diagnostics. Physics remains the source of truth.
   useFrame(() => {
     const ent = entityRef.current;
     // Debug sampling: gate entirely behind window.__vibe_debug to avoid
@@ -52,72 +57,15 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     const rb = rigidBody.current;
     if (!rb) return;
 
-    // Use pre-existing targetVelocity from entity (initialized by Spawner)
-    const targetVelocity = ent.targetVelocity;
-    if (!targetVelocity) return;
-
-    if (ent.modelIndex !== 0 && ent.modelIndex !== 1 && ent.modelIndex !== 2) {
-      ent.modelIndex = 0;
-    }
-
     const currentPos = rb.translation();
     const currentVel = rb.linvel();
-    targetVelocity.set(currentVel.x, currentVel.y, currentVel.z);
-
-    // Apply steering force and external forces
-    applyQueuedForcesToRigidBody(targetVelocity, ent, FIXED_DT);
-
-    const speciesMaxSpeed = SPECIES_CONFIG[ent.modelIndex ?? 0]?.maxSpeed ?? BOIDS_CONFIG.maxSpeed;
-
-    // Speed boost when excited - apply as a gentle acceleration boost, not raw multiplier
-    if (ent.excitementLevel && ent.excitementLevel > 0.1) {
-      // Add extra speed in the current direction, capped
-      const speedSq = targetVelocity.lengthSq();
-      if (speedSq > 0.0001) {
-        const speed = Math.sqrt(speedSq);
-        const boostAmount = ent.excitementLevel * speciesMaxSpeed * 0.5; // Up to +50% speed
-        targetVelocity.multiplyScalar((speed + boostAmount) / speed);
-      }
-    }
-
-    // Clamp final velocity to max speed to prevent escaping
-    const isExcited = (ent.excitementLevel || 0) > 0.1;
-    const maxAllowedSpeed = isExcited ? speciesMaxSpeed * 1.5 : speciesMaxSpeed * 1.1; // Allow 10% leeway for steering/drag, 50% for excitement
-    const maxSpeedSq = maxAllowedSpeed * maxAllowedSpeed;
-    const finalSpeedSq = targetVelocity.lengthSq();
-    if (finalSpeedSq > maxSpeedSq) {
-      targetVelocity.multiplyScalar(maxAllowedSpeed / Math.sqrt(finalSpeedSq));
-    }
-
-    // Set velocity directly (velocity-based approach)
-    rb.setLinvel(targetVelocity, true);
-
-    // --- SAFETY NET: Force Fish Inside Tank ---
-    // If physics glitch causes tunneling, we intercept it before render
-    const clamped = clampPositionToTank(
-      currentPos,
-      targetVelocity,
-      clampOutPosition,
-      clampOutVelocity
-    );
-
-    if (clamped) {
-      // 1. Force Hard Reset of Physics Position
-      rb.setTranslation(clampOutPosition, true);
-      // 2. Reflect Velocity (preserve momentum but reverse direction)
-      rb.setLinvel(clampOutVelocity, true);
-      // 3. Update targetVelocity for next frame continuity
-      targetVelocity.set(clampOutVelocity.x, clampOutVelocity.y, clampOutVelocity.z);
-    }
 
     // Sync Physics -> ECS
     if (ent.position) {
-      const pos = clamped ? clampOutPosition : currentPos;
-      ent.position.set(pos.x, pos.y, pos.z);
+      ent.position.set(currentPos.x, currentPos.y, currentPos.z);
     }
     if (ent.velocity) {
-      const vel = clamped ? clampOutVelocity : targetVelocity;
-      ent.velocity.set(vel.x, vel.y, vel.z);
+      ent.velocity.set(currentVel.x, currentVel.y, currentVel.z);
     }
 
     if (sampleThis && dbg) {
