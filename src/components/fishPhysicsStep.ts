@@ -38,8 +38,7 @@ export function applyFishPhysicsStep(
 
   applyQueuedForcesToRigidBody(targetVelocity, entity, fixedDt);
 
-  const speciesMaxSpeed =
-    SPECIES_CONFIG[entity.modelIndex ?? 0]?.maxSpeed ?? BOIDS_CONFIG.maxSpeed;
+  const speciesMaxSpeed = SPECIES_CONFIG[entity.modelIndex ?? 0]?.maxSpeed ?? BOIDS_CONFIG.maxSpeed;
 
   if (entity.excitementLevel && entity.excitementLevel > 0.1) {
     const speedSq = targetVelocity.lengthSq();

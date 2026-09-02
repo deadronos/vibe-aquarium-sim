@@ -4,20 +4,21 @@
 
 **Goal:** Make the aquarium deterministic across display refresh rates, keep WebGPU from being an unsafe default, and add CI plus real integration/browser coverage for these paths.
 
-**Architecture:** Keep Rapier as the authoritative integrator. Worker results are tagged with a simulation revision and consumed once from a single physics-step synchronization point; render frames only read physics state and update visuals. Renderer selection becomes an explicit, testable policy with a safe WebGL fallback. CI runs the existing checks plus production-preview browser smoke tests.
+**Architecture:** Keep Rapier as the authoritative integrator. Fish controls are consumed once from a fixed physics-step callback; render frames only read physics state and update visuals. Renderer selection becomes an explicit, testable policy with a safe WebGL fallback. CI runs the existing checks plus production-preview browser smoke tests.
 
-**Tech Stack:** React 19, React Three Fiber, @react-three/rapier, Three.js WebGPU/WebGL, Miniplex ECS, Vitest, Playwright CLI, GitHub Actions.
+**Tech Stack:** React 19, React Three Fiber, @react-three/rapier, Three.js WebGPU/WebGL, Miniplex ECS, Vitest, Playwright Test, GitHub Actions.
 
 ---
 
 ### Task 1: Fixed-step force consumption
 
 **Files:**
-- Modify: `src/store.ts` to add force/revision bookkeeping to `Entity`.
+
 - Modify: `src/components/Fish.tsx` to apply queued forces once in `useBeforePhysicsStep` and only synchronize state in `useFrame`.
+- Create: `src/components/fishPhysicsStep.ts` for the fixed-step control update.
 - Modify: `src/utils/physicsHelpers.ts` to make force consumption explicit and clear steering after consumption.
 - Test: `tests/physicsHelpers.test.ts` for one-shot force consumption and frame-rate-independent integration.
-- Test: `tests/components/Fish.test.ts` for physics-state precedence and collision preservation.
+- Test: `tests/fishPhysicsStep.test.ts` and `tests/components/Fish.physics-hook.test.tsx` for physics-state precedence and hook wiring.
 
 - [ ] **Step 1: Write the failing helper tests**
 
@@ -58,10 +59,10 @@
 ### Task 2: Safe renderer policy and WebGPU fallback
 
 **Files:**
+
 - Create: `src/utils/rendererPolicy.ts` with a pure renderer preference parser and fallback decision.
 - Modify: `src/SimulationScene.tsx` to use the policy, catch WebGPU import/init failures, and expose the selected renderer in a stable diagnostic field.
 - Test: `tests/rendererPolicy.test.ts` covering default WebGL, explicit WebGPU opt-in, invalid preferences, and fallback.
-- Test: `tests/SimulationScene.test.tsx` covering renderer policy wiring without requiring a real GPU.
 
 - [ ] **Step 1: Write the failing renderer-policy tests**
 
@@ -94,11 +95,12 @@
 ### Task 3: PR CI and production-preview validation
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml` for pull requests and pushes to `main`.
-- Create: `scripts/smoke-preview.mjs` for production-preview browser validation.
+- Create: `playwright.config.ts` and `tests/e2e/smoke.spec.ts` for production-preview browser validation.
 - Modify: `package.json` to expose the smoke command and avoid forced installs in CI.
-- Modify: `vitest.config.ts` to include relevant source files in coverage reporting.
-- Test: `tests/coverage-config.test.ts` if coverage configuration needs a pure helper.
+- Modify: `vitest.config.ts` to keep Playwright specs out of the Vitest suite.
+- Modify: `.gitignore` to exclude Playwright artifacts.
 
 - [ ] **Step 1: Write the smoke command contract**
 
@@ -145,6 +147,7 @@
 ### Task 4: Handoff
 
 **Files:**
+
 - Modify: `memory/activeContext.md` and `memory/progress.md` with Phase 1 status and any deferred risks.
 
 - [ ] **Step 1: Update memory-bank status**

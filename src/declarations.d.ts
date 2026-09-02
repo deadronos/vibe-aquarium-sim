@@ -19,6 +19,12 @@ declare global {
     lastDuration?: number;
   } | null;
 
+  type VibeRendererStatus = {
+    requested: 'webgl' | 'webgpu';
+    selected: 'webgl' | 'webgpu';
+    fallback: boolean;
+  };
+
   type VibeSimEntry = { duration: number; time: number; fishCount: number };
   type VibeRenderEntry = {
     frame: number;
@@ -58,6 +64,7 @@ declare global {
     __vibe_debug?: VibeDebugCollector;
     __vibe_renderStatus?: VibeRenderStatus;
     __vibe_schedStatus?: VibeSchedStatus;
+    __vibe_rendererStatus?: VibeRendererStatus;
     toggleBoidsWorker?: () => void;
   }
 }
