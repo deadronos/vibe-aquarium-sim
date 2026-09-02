@@ -22,7 +22,9 @@ import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
-  const { isWebGPU } = useVisualQuality();
+  const { isWebGPU, tankTransmissionEnabled, tankTransmissionDispersionEnabled } =
+    useVisualQuality();
+  const useTransmissiveGlass = isWebGPU && tankTransmissionEnabled;
 
   const mergedGeometry = useMemo(() => {
     // Helper to create a box geometry with offset
@@ -103,7 +105,7 @@ export const Tank = () => {
 
       {/* Visual Glass (Single Mesh) */}
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
-        {isWebGPU ? (
+        {useTransmissiveGlass ? (
           <GlassNodeMaterial
             color="white"
             roughness={0.05}
@@ -111,7 +113,7 @@ export const Tank = () => {
             thickness={1.5}
             opacity={1.0}
             ior={1.5}
-            chromaticAberration={0.06}
+            chromaticAberration={tankTransmissionDispersionEnabled ? 0.06 : 0}
           />
         ) : (
           <meshStandardMaterial

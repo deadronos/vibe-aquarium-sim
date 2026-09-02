@@ -2,12 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
-import {
-  getDeviceMaxDpr,
-  nextHigherQuality,
-  nextLowerQuality,
-  getQualitySettings,
-} from './qualityPresets';
+import { getDeviceMaxDpr, nextHigherQuality, nextLowerQuality } from './qualityPresets';
+import { getQualityProfile, type RendererBackend } from './qualityProfile';
 import { useQualityStore } from './qualityStore';
 import { useVisualQuality } from './VisualQualityContext';
 
@@ -54,6 +50,15 @@ const applyShadowMapSize = (
   light.shadow.needsUpdate = true;
 };
 
+export const applyQualityShadowMap = (
+  light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
+  targetSize: number,
+  backend: RendererBackend
+): void => {
+  if (backend === 'webgpu') return;
+  applyShadowMapSize(light, targetSize);
+};
+
 export const AdaptiveQualityManager = ({
   directionalLightRef,
   spotLightRef,
@@ -88,8 +93,9 @@ export const AdaptiveQualityManager = ({
   });
 
   useEffect(() => {
-    const settings = getQualitySettings(level, deviceMaxDprRef.current);
-    const nextDpr = settings.dpr;
+    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const nextDpr = profile.dpr;
 
     if (
       lastAppliedDprRef.current === null ||
@@ -102,22 +108,22 @@ export const AdaptiveQualityManager = ({
     if (directionalLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== settings.shadowMapSize
+        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
       ) {
-        applyShadowMapSize(directionalLightRef.current, settings.shadowMapSize);
+        applyQualityShadowMap(directionalLightRef.current, profile.shadowMapSize, backend);
       }
     }
 
     if (spotLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== settings.shadowMapSize
+        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
       ) {
-        applyShadowMapSize(spotLightRef.current, settings.shadowMapSize);
+        applyQualityShadowMap(spotLightRef.current, profile.shadowMapSize, backend);
       }
     }
 
-    lastAppliedShadowSizeRef.current = settings.shadowMapSize;
+    lastAppliedShadowSizeRef.current = profile.shadowMapSize;
   }, [directionalLightRef, isWebGPU, level, setDpr, spotLightRef]);
 
   useFrame((_, delta) => {
@@ -175,11 +181,12 @@ export const AdaptiveQualityManager = ({
       if (next !== level) {
         // Avoid upgrading beyond what the device DPR makes meaningful.
         const deviceMaxDpr = deviceMaxDprRef.current;
-        const nextSettings = getQualitySettings(next, deviceMaxDpr);
-        const currentSettings = getQualitySettings(level, deviceMaxDpr);
-        const dprDelta = nextSettings.dpr - currentSettings.dpr;
+        const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+        const nextProfile = getQualityProfile(next, backend, deviceMaxDpr);
+        const currentProfile = getQualityProfile(level, backend, deviceMaxDpr);
+        const dprDelta = nextProfile.dpr - currentProfile.dpr;
 
-        if (dprDelta > 0.05 || nextSettings.shadowMapSize !== currentSettings.shadowMapSize) {
+        if (dprDelta > 0.05 || nextProfile.shadowMapSize !== currentProfile.shadowMapSize) {
           applyLevelWithDeviceClamp(next);
           cooldownRef.current = COOLDOWN_SECONDS;
         }
