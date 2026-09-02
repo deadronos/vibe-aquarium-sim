@@ -86,6 +86,8 @@ describe('FishRenderSystem adaptive instance updates', () => {
 
     // ensure clean world
     world.entities.length = 0;
+    delete window.__vibe_debug;
+    delete window.__vibe_renderStatus;
 
     // Make Math.random deterministic so all fish pick modelIndex 0
     vi.spyOn(Math, 'random').mockImplementation(() => 0);
@@ -96,6 +98,8 @@ describe('FishRenderSystem adaptive instance updates', () => {
     vi.unstubAllGlobals();
     frameCallbacks.length = 0;
     world.entities.length = 0;
+    delete window.__vibe_debug;
+    delete window.__vibe_renderStatus;
     // Clear the PoC flag safely
     delete (window as unknown as { __vibe_poc_enabled?: boolean }).__vibe_poc_enabled;
   });
@@ -150,6 +154,35 @@ describe('FishRenderSystem adaptive instance updates', () => {
     }
   });
 
+  it('does not sample timing or publish render status when telemetry is disabled', async () => {
+    world.add({
+      isFish: true,
+      position: new THREE.Vector3(0, 0, 0),
+      velocity: new THREE.Vector3(1, 0, 0),
+    });
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <FishRenderSystem />
+      </VisualQualityProvider>
+    );
+    const nowSpy = vi.spyOn(performance, 'now');
+
+    await act(async () => {
+      await Promise.resolve();
+      nowSpy.mockClear();
+      frameCallbacks.forEach((cb) => cb({}, 1 / 60));
+    });
+
+    expect(nowSpy).not.toHaveBeenCalled();
+    expect(window.__vibe_renderStatus).toBeUndefined();
+
+    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+      await maybePromise;
+    }
+  });
+
   it('buffers instance writes and limits setMatrixAt calls when adaptive PoC is enabled', async () => {
     // Enable adaptive PoC via overrides + window flag
     act(() => {
@@ -176,19 +209,21 @@ describe('FishRenderSystem adaptive instance updates', () => {
 
     expect(frameCallbacks.length).toBeGreaterThan(0);
 
+    // Spy before stepping so the assertion observes the actual adaptive flush.
+    // @ts-expect-error - test renderer node shape
+    const instanceObj = renderer.scene.children[0].instance;
+    const instanceSpy = vi.spyOn(instanceObj, 'setMatrixAt');
+
     await act(async () => {
       // allow effects/useFrame to mount refs by stepping a few frames
       await Promise.resolve();
       for (let i = 0; i < 3; i++) frameCallbacks.forEach((cb) => cb({}, 1 / 60));
     });
 
-    // Spy on the renderer's instance setMatrixAt (some renderers wrap the prototype)
-    // @ts-expect-error - test renderer node shape
-    const instanceObj = renderer.scene.children[0].instance;
-    const instanceSpy = vi.spyOn(instanceObj, 'setMatrixAt');
-
     // With instanceUpdateBudget = 8 enforced min, per-model budget = ceil(8/3) = 3
-    // Only a few matrices will be flushed per frame; ensure it's significantly less than N
+    // Only a few matrices will be flushed per frame; ensure the flush happened
+    // and remained bounded by the configured budget.
+    expect(instanceSpy.mock.calls.length).toBeGreaterThan(0);
     expect(instanceSpy.mock.calls.length).toBeLessThan(N / 10);
 
     const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();

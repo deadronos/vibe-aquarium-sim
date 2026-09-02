@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phase 1 quality hardening complete pending PR #151 review/merge; Phase 2 performance work next.
-- Branch: `codex/phase1-quality` (draft PR #151)
+- Phase: Phase 1 merged; Phase 2 telemetry/per-frame allocation reduction complete pending PR #152 review.
+- Branch: `codex/phase2-telemetry` (PR #152 now targeting `main`)
 
 ## Known issues / technical debt
 
@@ -74,4 +74,11 @@
 - **Review follow-ups:** Preview routing now strips query parameters before static resolution, `.glb` responses advertise `model/gltf-binary`, and smoke coverage explicitly requests WebGPU with a deterministic unavailable-capability fallback.
 - **Validation:** The two Playwright smoke tests pass locally; full unit/lint/typecheck/build validation and remote CI are green on the preceding Phase 1 commit.
 - **Deferred:** Visual parity (#140) and refresh-rate trajectory (#141) remain intentionally open until runtime measurements are available.
-- **Next:** Begin Phase 2 with diagnostics/timing allocation reduction (#144), then adaptive quality (#143), zero-copy transport (#142), and asset transfer reduction (#145).
+- **Next:** Review Phase 2 PR #152, then proceed to adaptive quality (#143), zero-copy transport (#142), and asset transfer reduction (#145).
+
+### 2026-09-03 (Phase 2)
+
+- **Performance:** Closed the #144 implementation gap by gating `performance.now()` and debug status publication in `FishRenderSystem` and `SchedulerSystem`, reusing stable status objects, and preserving adaptive scheduler timing when its policy is enabled.
+- **Debug UX:** `DebugHUD` now explicitly creates the telemetry collector while visible and cleans up telemetry when hidden; low-frequency HUD snapshots preserve React updates despite stable system status references.
+- **Validation:** Added disabled/enabled telemetry tests and Debug HUD lifecycle coverage. Full suite: 112 passed, 1 skipped; lint, typecheck, formatting, build, bundle budgets, and both browser smoke tests pass.
+- **Documentation:** Added `docs/performance/frame-loop-telemetry.md` with the steady-state test contract and repeatable Chrome Performance/Memory profiling procedure.
