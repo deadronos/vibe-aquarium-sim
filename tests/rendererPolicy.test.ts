@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveRendererPreference, selectRenderer } from '../src/utils/rendererPolicy';
+import {
+  isWebGPURendererBackend,
+  resolveRendererPreference,
+  selectRenderer,
+} from '../src/utils/rendererPolicy';
 
 describe('renderer policy', () => {
   it('defaults to WebGL and only opts into WebGPU explicitly', () => {
@@ -13,5 +17,11 @@ describe('renderer policy', () => {
     expect(selectRenderer('webgpu', false)).toBe('webgl');
     expect(selectRenderer('webgpu', true)).toBe('webgpu');
     expect(selectRenderer('webgl', true)).toBe('webgl');
+  });
+
+  it('reports the active backend rather than the renderer wrapper type', () => {
+    expect(isWebGPURendererBackend({ backend: { isWebGPUBackend: true } })).toBe(true);
+    expect(isWebGPURendererBackend({ backend: { isWebGPUBackend: false } })).toBe(false);
+    expect(isWebGPURendererBackend({})).toBe(false);
   });
 });

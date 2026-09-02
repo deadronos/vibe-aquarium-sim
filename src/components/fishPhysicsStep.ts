@@ -32,8 +32,10 @@ export function applyFishPhysicsStep(
     entity.modelIndex = 0;
   }
 
-  const currentPosition = rigidBody.translation();
-  const currentVelocity = rigidBody.linvel();
+  // ECS velocity is synchronized after every physics step and avoids another
+  // Rapier wrapper allocation in the fixed-step path. Use Rapier directly only
+  // for entities that do not yet have a synchronized velocity.
+  const currentVelocity = entity.velocity ?? rigidBody.linvel();
   targetVelocity.set(currentVelocity.x, currentVelocity.y, currentVelocity.z);
 
   applyQueuedForcesToRigidBody(targetVelocity, entity, fixedDt);
@@ -58,10 +60,20 @@ export function applyFishPhysicsStep(
   }
 
   rigidBody.setLinvel(targetVelocity, true);
+}
+
+/**
+ * Mirrors the post-step Rapier state into ECS and applies the tank safety net.
+ * Keeping this in an after-step callback ensures tunneling is corrected before
+ * any render frame can observe an out-of-bounds fish.
+ */
+export function syncFishPhysicsState(rigidBody: FishRigidBodyLike, entity: Entity): void {
+  const currentPosition = rigidBody.translation();
+  const currentVelocity = rigidBody.linvel();
 
   const clamped = clampPositionToTank(
     currentPosition,
-    targetVelocity,
+    currentVelocity,
     clampOutPosition,
     clampOutVelocity
   );
@@ -69,6 +81,11 @@ export function applyFishPhysicsStep(
   if (clamped) {
     rigidBody.setTranslation(clampOutPosition, true);
     rigidBody.setLinvel(clampOutVelocity, true);
-    targetVelocity.set(clampOutVelocity.x, clampOutVelocity.y, clampOutVelocity.z);
   }
+
+  const position = clamped ? clampOutPosition : currentPosition;
+  const velocity = clamped ? clampOutVelocity : currentVelocity;
+  entity.position?.set(position.x, position.y, position.z);
+  entity.velocity?.set(velocity.x, velocity.y, velocity.z);
+  entity.targetVelocity?.set(velocity.x, velocity.y, velocity.z);
 }

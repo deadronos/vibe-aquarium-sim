@@ -1,6 +1,10 @@
 export type RendererPreference = 'webgl' | 'webgpu';
 export type RendererKind = RendererPreference;
 
+type RendererWithBackend = {
+  backend?: { isWebGPUBackend?: boolean };
+};
+
 /**
  * Resolves the renderer requested by the URL. WebGL is the safe default;
  * WebGPU is an explicit opt-in so unsupported or visually-regressed browsers
@@ -20,4 +24,9 @@ export function selectRenderer(
   webgpuAvailable: boolean
 ): RendererKind {
   return preference === 'webgpu' && webgpuAvailable ? 'webgpu' : 'webgl';
+}
+
+/** Returns true only when Three is actively using its WebGPU backend. */
+export function isWebGPURendererBackend(renderer: RendererWithBackend): boolean {
+  return renderer.backend?.isWebGPUBackend === true;
 }

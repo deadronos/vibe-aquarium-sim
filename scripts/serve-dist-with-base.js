@@ -51,6 +51,14 @@ const server = http.createServer((req, res) => {
 
     fs.stat(filePath, (err, stats) => {
       if (err || !stats.isFile()) {
+        // Asset misses must remain 404s so browser smoke tests can detect
+        // broken bundles/models. Only extensionless paths use the SPA fallback.
+        if (path.extname(urlPath)) {
+          res.statusCode = 404;
+          res.end('Not found');
+          return;
+        }
+
         // Fallback to index.html for SPA routes
         sendFileSafe(res, path.join(dist, 'index.html'), 'text/html');
         return;

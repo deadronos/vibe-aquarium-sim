@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
 import {
+  isWebGPURendererBackend,
   resolveRendererPreference,
   selectRenderer,
   type RendererKind,
@@ -58,12 +59,6 @@ export default function SimulationScene() {
           const { WebGPURenderer } = await import('three/webgpu');
           if (cancelled) return;
           setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
-          window.__vibe_rendererStatus = {
-            requested,
-            selected: 'webgpu',
-            fallback: false,
-          };
-          console.info('[vibe] Renderer: WebGPU opt-in selected');
           return;
         } catch (error) {
           console.warn(
@@ -109,26 +104,52 @@ export default function SimulationScene() {
             alpha: true,
           });
 
+          const fallbackToWebGL = async () => {
+            renderer.dispose?.();
+            const { WebGLRenderer } = await import('three');
+            renderer = new WebGLRenderer({
+              ...props,
+              powerPreference: 'high-performance',
+              antialias: true,
+              alpha: true,
+            });
+            activeRendererType = 'webgl';
+            setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+            window.__vibe_rendererStatus = {
+              requested: 'webgpu',
+              selected: 'webgl',
+              fallback: true,
+            };
+          };
+
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
             try {
               await renderer.init();
+              if (!isWebGPURendererBackend(renderer)) {
+                console.warn(
+                  '[vibe] Renderer: WebGPU wrapper selected a non-WebGPU backend; using WebGL'
+                );
+                await fallbackToWebGL();
+              } else {
+                window.__vibe_rendererStatus = {
+                  requested: 'webgpu',
+                  selected: 'webgpu',
+                  fallback: false,
+                };
+                console.info('[vibe] Renderer: WebGPU opt-in selected');
+              }
             } catch (error) {
               console.warn('[vibe] Renderer: WebGPU init failed; using WebGL fallback', error);
-              const { WebGLRenderer } = await import('three');
-              renderer = new WebGLRenderer({
-                ...props,
-                powerPreference: 'high-performance',
-                antialias: true,
-                alpha: true,
-              });
-              activeRendererType = 'webgl';
-              setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
-              window.__vibe_rendererStatus = {
-                requested: 'webgpu',
-                selected: 'webgl',
-                fallback: true,
-              };
+              await fallbackToWebGL();
             }
+          }
+
+          if (rendererConfig.type === 'webgl' && window.__vibe_rendererStatus?.fallback !== true) {
+            window.__vibe_rendererStatus = {
+              requested: 'webgl',
+              selected: 'webgl',
+              fallback: false,
+            };
           }
 
           // Apply common configurations

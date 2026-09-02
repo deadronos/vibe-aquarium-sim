@@ -1,10 +1,15 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, BallCollider, useBeforePhysicsStep } from '@react-three/rapier';
+import {
+  RigidBody,
+  BallCollider,
+  useAfterPhysicsStep,
+  useBeforePhysicsStep,
+} from '@react-three/rapier';
 import type { RapierRigidBody } from '@react-three/rapier';
 import { world } from '../store';
 import type { Entity } from '../store';
-import { applyFishPhysicsStep } from './fishPhysicsStep';
+import { applyFishPhysicsStep, syncFishPhysicsState } from './fishPhysicsStep';
 
 const FIXED_DT = 1 / 60;
 
@@ -40,8 +45,17 @@ export const Fish = ({ entity }: { entity: Entity }) => {
     applyFishPhysicsStep(rb, entityRef.current, FIXED_DT);
   });
 
-  // Render loop only mirrors post-step physics state into ECS and records
-  // optional diagnostics. Physics remains the source of truth.
+  // Mirror post-step physics state and apply the tank safety net before any
+  // render frame can observe a tunneled fish.
+  useAfterPhysicsStep(() => {
+    const rb = rigidBody.current;
+    if (!rb) return;
+
+    syncFishPhysicsState(rb, entityRef.current);
+  });
+
+  // Render loop records optional diagnostics only. Physics remains the source
+  // of truth and no Rapier state is read or written at display-frame rate.
   useFrame(() => {
     const ent = entityRef.current;
     // Debug sampling: gate entirely behind window.__vibe_debug to avoid
@@ -53,20 +67,6 @@ export const Fish = ({ entity }: { entity: Entity }) => {
       sampleThis = ent.__vibe_dbgCounter % 10 === 0;
     }
     const t0 = sampleThis ? performance.now() : 0;
-
-    const rb = rigidBody.current;
-    if (!rb) return;
-
-    const currentPos = rb.translation();
-    const currentVel = rb.linvel();
-
-    // Sync Physics -> ECS
-    if (ent.position) {
-      ent.position.set(currentPos.x, currentPos.y, currentPos.z);
-    }
-    if (ent.velocity) {
-      ent.velocity.set(currentVel.x, currentVel.y, currentVel.z);
-    }
 
     if (sampleThis && dbg) {
       try {

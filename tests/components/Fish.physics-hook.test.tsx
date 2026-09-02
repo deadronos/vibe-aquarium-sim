@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import { Vector3 } from 'three';
 import type { Entity } from '../../src/store';
 
-const { beforeStepSpy, frameSpy, rigidBody } = vi.hoisted(() => {
+const { beforeStepSpy, afterStepSpy, frameSpy, rigidBody } = vi.hoisted(() => {
   const body = {
     handle: 1,
     position: { x: 0, y: 0, z: 0 },
@@ -25,6 +25,7 @@ const { beforeStepSpy, frameSpy, rigidBody } = vi.hoisted(() => {
 
   return {
     beforeStepSpy: vi.fn(),
+    afterStepSpy: vi.fn(),
     frameSpy: vi.fn(),
     rigidBody: body,
   };
@@ -41,6 +42,7 @@ vi.mock('@react-three/rapier', () => {
   return {
     BallCollider: () => null,
     RigidBody,
+    useAfterPhysicsStep: afterStepSpy,
     useBeforePhysicsStep: beforeStepSpy,
   };
 });
@@ -62,6 +64,7 @@ function createFish(): Entity {
 describe('Fish physics hook integration', () => {
   beforeEach(() => {
     beforeStepSpy.mockClear();
+    afterStepSpy.mockClear();
     frameSpy.mockClear();
     rigidBody.position = { x: 0, y: 0, z: 0 };
     rigidBody.velocity = { x: 0, y: 0, z: 0 };
@@ -73,6 +76,7 @@ describe('Fish physics hook integration', () => {
     render(<Fish entity={entity} />);
 
     expect(beforeStepSpy).toHaveBeenCalledTimes(1);
+    expect(afterStepSpy).toHaveBeenCalledTimes(1);
     expect(frameSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -83,6 +87,9 @@ describe('Fish physics hook integration', () => {
     const beforeStep = beforeStepSpy.mock.calls[0]?.[0] as ((world: unknown) => void) | undefined;
     expect(beforeStep).toBeTypeOf('function');
     beforeStep?.({});
+
+    const afterStep = afterStepSpy.mock.calls[0]?.[0] as ((world: unknown) => void) | undefined;
+    afterStep?.({});
 
     expect(rigidBody.velocity.x).toBeGreaterThan(0);
     expect(entity.steeringForce?.lengthSq()).toBe(0);

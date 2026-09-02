@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import { applyFishPhysicsStep } from '../src/components/fishPhysicsStep';
+import { applyFishPhysicsStep, syncFishPhysicsState } from '../src/components/fishPhysicsStep';
 import type { Entity } from '../src/store';
 
 class MockRigidBody {
@@ -49,6 +49,7 @@ describe('applyFishPhysicsStep', () => {
     });
 
     applyFishPhysicsStep(rigidBody, entity, 0.5);
+    syncFishPhysicsState(rigidBody, entity);
     const velocityAfterFirstStep = rigidBody.linvel().x;
 
     applyFishPhysicsStep(rigidBody, entity, 0.5);
@@ -68,5 +69,19 @@ describe('applyFishPhysicsStep', () => {
 
     expect(entity.position?.toArray()).toEqual([0, 0, 0]);
     expect(entity.velocity?.toArray()).toEqual([0, 0, 0]);
+  });
+
+  it('corrects a tunneled fish immediately after the physics step', () => {
+    const rigidBody = new MockRigidBody();
+    rigidBody.setTranslation({ x: 1.95, y: 0, z: 0 });
+    rigidBody.setLinvel({ x: 0.2, y: 0, z: 0 });
+    const entity = createFish();
+
+    syncFishPhysicsState(rigidBody, entity);
+
+    expect(rigidBody.translation().x).toBeCloseTo(1.9);
+    expect(rigidBody.linvel().x).toBeCloseTo(-0.1);
+    expect(entity.position?.x).toBeCloseTo(1.9);
+    expect(entity.velocity?.x).toBeCloseTo(-0.1);
   });
 });
