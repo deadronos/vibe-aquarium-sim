@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
+// Renderer initialization includes dynamic imports and GPU capability probing;
+// allow slower CI runners enough time to report the final backend without
+// treating a healthy but delayed startup as a flaky test.
+test.setTimeout(60_000);
+
 async function expectHealthyAquarium(page: Page, path = './') {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
