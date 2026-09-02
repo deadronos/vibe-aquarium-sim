@@ -98,8 +98,9 @@
 
 - Create: `.github/workflows/ci.yml` for pull requests and pushes to `main`.
 - Create: `playwright.config.ts` and `tests/e2e/smoke.spec.ts` for production-preview browser validation.
+- Create: `scripts/check-bundle-budget.mjs` for JavaScript/model asset budgets.
 - Modify: `package.json` to expose the smoke command and avoid forced installs in CI.
-- Modify: `vitest.config.ts` to keep Playwright specs out of the Vitest suite.
+- Modify: `vitest.config.ts` to keep Playwright specs out of the Vitest suite and report all source files in coverage.
 - Modify: `.gitignore` to exclude Playwright artifacts.
 
 - [ ] **Step 1: Write the smoke command contract**
