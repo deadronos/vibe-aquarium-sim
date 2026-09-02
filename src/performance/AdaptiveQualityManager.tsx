@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { getDeviceMaxDpr, nextHigherQuality, nextLowerQuality } from './qualityPresets';
 import { getQualityProfile, type RendererBackend } from './qualityProfile';
+import { recordQualityTransition } from './qualityTelemetry';
 import { useQualityStore } from './qualityStore';
 import { useVisualQuality } from './VisualQualityContext';
 
@@ -170,6 +171,13 @@ export const AdaptiveQualityManager = ({
       const next = nextLowerQuality(level);
       if (next !== level) {
         applyLevelWithDeviceClamp(next);
+        recordQualityTransition({
+          from: level,
+          to: next,
+          backend: isWebGPU ? 'webgpu' : 'webgl',
+          ema,
+          reason: 'low-fps',
+        });
         cooldownRef.current = COOLDOWN_SECONDS;
       }
       return;
@@ -188,7 +196,22 @@ export const AdaptiveQualityManager = ({
 
         if (dprDelta > 0.05 || nextProfile.shadowMapSize !== currentProfile.shadowMapSize) {
           applyLevelWithDeviceClamp(next);
+          recordQualityTransition({
+            from: level,
+            to: next,
+            backend,
+            ema,
+            reason: 'high-fps',
+          });
           cooldownRef.current = COOLDOWN_SECONDS;
+        } else {
+          recordQualityTransition({
+            from: level,
+            to: next,
+            backend,
+            ema,
+            reason: 'device-clamp',
+          });
         }
       }
       return;

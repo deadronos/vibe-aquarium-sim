@@ -11,10 +11,12 @@ export function ensurePerfDebug() {
         activeEntities: number;
       }>,
       fishUseFrame: [] as Array<{ duration: number; modelIndex: number | null }>,
+      qualityTransitions: [] as VibeQualityTransitionEntry[],
       reset() {
         this.simulateStep.length = 0;
         this.fishRender.length = 0;
         this.fishUseFrame.length = 0;
+        this.qualityTransitions?.splice(0, this.qualityTransitions.length);
       },
       download() {
         try {
@@ -23,6 +25,7 @@ export function ensurePerfDebug() {
             simulateStep: this.simulateStep.slice(),
             fishRender: this.fishRender.slice(),
             fishUseFrame: this.fishUseFrame.slice(),
+            qualityTransitions: this.qualityTransitions?.slice() ?? [],
           };
           const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
           const url = URL.createObjectURL(blob);

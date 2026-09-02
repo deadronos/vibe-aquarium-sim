@@ -50,6 +50,7 @@ declare global {
       fishUseFrame: Array<{ duration: number; modelIndex: number | null }>;
       scheduler?: SchedEntry[];
       schedulerTuning?: SchedulerTuningEntry[];
+      qualityTransitions?: VibeQualityTransitionEntry[];
       reset?: () => void;
       download?: () => boolean;
     };
