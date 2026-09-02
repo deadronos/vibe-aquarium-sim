@@ -13,9 +13,14 @@ const fishQuery = world.with('isFish');
 export const Spawner = () => {
   useEffect(() => {
     const spawnedEntities: Entity[] = [];
+    const stressMode =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('stress')?.toLowerCase() === 'quality';
+    const initialFishCount = stressMode ? 300 : 30;
 
-    // Spawn 30 fish
-    for (let i = 0; i < 30; i++) {
+    // Keep normal startup light; the explicit quality stress query exercises a
+    // bounded larger school without changing the production default.
+    for (let i = 0; i < initialFishCount; i++) {
       const entity = world.add({
         isFish: true,
         isBoid: true,
@@ -88,6 +93,10 @@ export const Spawner = () => {
     spawnDecoration('rock', 5);
 
     if (typeof window !== 'undefined') {
+      if (window.__vibe_qualityStatus) {
+        window.__vibe_qualityStatus.stressMode = stressMode;
+        window.__vibe_qualityStatus.fishCount = fishQuery.entities.length;
+      }
       window.__vibe_addFish = (n: number) => {
         const currentFishCount = fishQuery.entities.length;
         const available = MAX_TOTAL_FISH - currentFishCount;
@@ -132,6 +141,9 @@ export const Spawner = () => {
           });
           spawnedEntities.push(entity);
           added++;
+        }
+        if (window.__vibe_qualityStatus) {
+          window.__vibe_qualityStatus.fishCount = fishQuery.entities.length;
         }
         return added;
       };

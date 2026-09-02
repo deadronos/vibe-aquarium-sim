@@ -69,7 +69,7 @@ describe('Water', () => {
     expect(material.uniforms.opacity.value).toBe(0.3);
     expect(material.uniforms.causticsScale.value).toBe(2.0);
     expect(material.uniforms.causticsSpeed.value).toBe(0.5);
-    expect(material.uniforms.causticsIntensity.value).toBe(0.3);
+    expect(material.uniforms.causticsIntensity.value).toBe(0);
     expect(material.uniforms.time.value).toBe(0);
   });
 

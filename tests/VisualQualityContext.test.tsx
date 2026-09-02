@@ -101,7 +101,7 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('transmission')).toHaveTextContent('false');
     webgl.unmount();
 
-    const webgpu = render(
+    render(
       <VisualQualityProvider isWebGPU>
         <VisualQualityReader />
       </VisualQualityProvider>

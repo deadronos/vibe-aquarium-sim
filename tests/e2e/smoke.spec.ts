@@ -64,3 +64,30 @@ test('falls back cleanly when WebGPU is explicitly requested but unavailable', a
   expect(pageErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
 });
+
+test('applies the low-quality stress profile to a bounded larger school', async ({ page }) => {
+  const { pageErrors, failedResponses } = await expectHealthyAquarium(
+    page,
+    './index.html?quality=low&stress=quality'
+  );
+
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_qualityStatus?.level), {
+      timeout: 20_000,
+    })
+    .toBe('low');
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_qualityStatus?.fishCount ?? 0), {
+      timeout: 20_000,
+    })
+    .toBeGreaterThanOrEqual(300);
+
+  const status = await page.evaluate(() => window.__vibe_qualityStatus);
+  expect(status?.causticsEnabled).toBe(false);
+  expect(status?.fishRimLightingEnabled).toBe(false);
+  expect(status?.fishSubsurfaceScatteringEnabled).toBe(false);
+  expect(status?.spotLightShadowsEnabled).toBe(false);
+  expect(status?.tankTransmissionEnabled).toBe(false);
+  expect(pageErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});

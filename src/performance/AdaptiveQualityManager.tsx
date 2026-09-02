@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { getDeviceMaxDpr, nextHigherQuality, nextLowerQuality } from './qualityPresets';
 import { getQualityProfile, type RendererBackend } from './qualityProfile';
+import { applyQualityShadowMap } from './qualityShadow';
 import { recordQualityTransition } from './qualityTelemetry';
 import { useQualityStore } from './qualityStore';
 import { useVisualQuality } from './VisualQualityContext';
@@ -23,42 +24,6 @@ export interface AdaptiveQualityManagerProps {
   directionalLightRef?: RefObject<THREE.DirectionalLight | null>;
   spotLightRef?: RefObject<THREE.SpotLight | null>;
 }
-
-/**
- * Apply a shadow map size to a light, but only when the size actually changed.
- * This is a one-time resize triggered by quality-level changes (useEffect),
- * NOT per-frame. Per-frame dynamic resizing would crash WebGPU with
- * "Destroyed texture used in a submit". This deferred approach is safe for
- * both WebGL and WebGPU backends.
- *
- * IMPORTANT: We do NOT manually dispose the old shadow map. Three.js handles
- * RenderTarget disposal and recreation internally when `needsUpdate` is true.
- * Manual disposal causes "Destroyed texture used in a submit" on WebGPU
- * because the GPU command buffer may still reference the texture.
- */
-const applyShadowMapSize = (
-  light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
-  targetSize: number
-): void => {
-  if (!light?.shadow) return;
-  const current = light.shadow.mapSize;
-  if (current.width === targetSize && current.height === targetSize) return;
-
-  light.shadow.mapSize.set(targetSize, targetSize);
-  // Let Three.js handle the RenderTarget lifecycle — it will dispose the old
-  // shadow map and create a new one with the updated dimensions during the
-  // next shadow render pass.
-  light.shadow.needsUpdate = true;
-};
-
-export const applyQualityShadowMap = (
-  light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
-  targetSize: number,
-  backend: RendererBackend
-): void => {
-  if (backend === 'webgpu') return;
-  applyShadowMapSize(light, targetSize);
-};
 
 export const AdaptiveQualityManager = ({
   directionalLightRef,
@@ -126,6 +91,33 @@ export const AdaptiveQualityManager = ({
 
     lastAppliedShadowSizeRef.current = profile.shadowMapSize;
   }, [directionalLightRef, isWebGPU, level, setDpr, spotLightRef]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const current = window.__vibe_qualityStatus;
+    window.__vibe_qualityStatus = {
+      backend,
+      level,
+      shadowMapSize: profile.shadowMapSize,
+      causticsEnabled: profile.causticsEnabled,
+      fishRimLightingEnabled: profile.fishRimLightingEnabled,
+      fishSubsurfaceScatteringEnabled: profile.fishSubsurfaceScatteringEnabled,
+      spotLightShadowsEnabled: profile.spotLightShadowsEnabled,
+      tankTransmissionEnabled: profile.tankTransmissionEnabled,
+      tankTransmissionDispersionEnabled: profile.tankTransmissionDispersionEnabled,
+      stressMode: current?.stressMode,
+      fishCount: current?.fishCount,
+    };
+  }, [isWebGPU, level]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') delete window.__vibe_qualityStatus;
+    };
+  }, []);
 
   useFrame((_, delta) => {
     if (!isAdaptiveEnabled) return;

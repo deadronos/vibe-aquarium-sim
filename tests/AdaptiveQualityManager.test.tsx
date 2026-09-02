@@ -1,10 +1,8 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  applyQualityShadowMap,
-  AdaptiveQualityManager,
-} from '../src/performance/AdaptiveQualityManager';
+import { AdaptiveQualityManager } from '../src/performance/AdaptiveQualityManager';
+import { applyQualityShadowMap } from '../src/performance/qualityShadow';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { getQualitySettings } from '../src/performance/qualityPresets';
 import { useQualityStore } from '../src/performance/qualityStore';
@@ -44,6 +42,7 @@ describe('adaptive quality shadow transitions', () => {
   afterEach(() => {
     act(() => useQualityStore.setState(initialState, true));
     delete window.__vibe_debug;
+    delete window.__vibe_qualityStatus;
   });
 
   it('does not resize or dispose a WebGPU shadow map', () => {

@@ -18,7 +18,7 @@
 - Modify: `src/performance/qualityPresets.ts` only where shared types need to be exported.
 - Test: `tests/qualityProfile.test.ts`.
 
-- [ ] **Step 1: Write failing profile tests**
+- [x] **Step 1: Write failing profile tests**
 
   Assert that `getQualityProfile('low', 'webgl')` and
   `getQualityProfile('low', 'webgpu')` disable caustics, fish rim/SSS, spot
@@ -26,7 +26,7 @@
   retain optional costs, and that WebGPU shadow sizes use the documented
   backend-specific values while WebGL retains the existing preset sizes.
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-quality-profile.localstorage' npm run test -- tests/qualityProfile.test.ts
@@ -34,14 +34,14 @@
 
   Expected: module/export failures because no profile resolver exists yet.
 
-- [ ] **Step 3: Implement the resolver**
+- [x] **Step 3: Implement the resolver**
 
   Define `RendererBackend`, `QualityProfile`, and `getQualityProfile(level,
-  backend)`. Start from `getQualitySettings`, copy the immutable base values,
+backend)`. Start from `getQualitySettings`, copy the immutable base values,
   and apply explicit cost flags plus backend shadow-size overrides without
   mutating `QUALITY_PRESETS`.
 
-- [ ] **Step 4: Run the focused test and commit**
+- [x] **Step 4: Run the focused test and commit**
 
   Re-run the command until green, then commit the resolver and tests:
 
@@ -63,26 +63,26 @@
 - Test: `tests/VisualQualityContext.test.tsx` and
   `tests/qualityQuery.test.ts`.
 
-- [ ] **Step 1: Write failing context/query tests**
+- [x] **Step 1: Write failing context/query tests**
 
   Assert that the provider exposes the WebGL and WebGPU profile flags and that
   invalid/missing quality query values leave the store level unchanged while a
   valid value selects the requested level.
 
-- [ ] **Step 2: Implement profile context and query override**
+- [x] **Step 2: Implement profile context and query override**
 
   Add `qualityProfile` to the context value. In `App`, apply a valid query
   level once on mount through `useQualityStore.getState().setLevel`; leave the
   current default untouched when no valid query is present.
 
-- [ ] **Step 3: Derive initial shadow configuration**
+- [x] **Step 3: Derive initial shadow configuration**
 
   In `SimulationScene`, resolve the current level and backend before rendering
   lights. Render a small context-aware lighting component with
   `shadow-mapSize-width/height={profile.shadowMapSize}`. Keep directional
   shadows enabled and let the profile control spot-light shadows.
 
-- [ ] **Step 4: Run focused tests and build**
+- [x] **Step 4: Run focused tests and build**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-quality-context.localstorage' npm run test -- tests/VisualQualityContext.test.tsx tests/qualityQuery.test.ts
@@ -104,27 +104,27 @@
 - Test: `tests/TankMaterial.test.tsx`, `tests/FishRenderSystem.adaptive.test.tsx`,
   and `tests/AdaptiveQualityManager.test.tsx`.
 
-- [ ] **Step 1: Add failing low-cost and WebGPU safety tests**
+- [x] **Step 1: Add failing low-cost and WebGPU safety tests**
 
   Assert low profiles expose all optional-cost flags as false, the low WebGPU
   tank does not mount transmission, and changing a WebGPU quality level never
   calls shadow-map resize or manual disposal. Assert the fish renderer does not
   invoke the lighting enhancement when both flags are disabled.
 
-- [ ] **Step 2: Implement material and fish gates**
+- [x] **Step 2: Implement material and fish gates**
 
   Keep the tank mesh mounted while switching its material properties/path from
   the resolved profile. Pass zero dispersion when disabled. Include lighting
   flags in the fish asset memo dependencies and return the source materials
   unchanged when both optional effects are off.
 
-- [ ] **Step 3: Apply safe profile shadow behavior**
+- [x] **Step 3: Apply safe profile shadow behavior**
 
   Use `getQualityProfile(level, isWebGPU ? 'webgpu' : 'webgl')` in the manager.
   Apply transition shadow resizing only for WebGL; WebGPU remains at its
   initial JSX size and never manually disposes the old map.
 
-- [ ] **Step 4: Run focused tests and commit**
+- [x] **Step 4: Run focused tests and commit**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-quality-costs.localstorage' npm run test -- tests/TankMaterial.test.tsx tests/FishRenderSystem.adaptive.test.tsx tests/AdaptiveQualityManager.test.tsx
@@ -141,19 +141,19 @@
 - Test: `tests/AdaptiveQualityManager.test.tsx` with a captured `useFrame`
   callback and synthetic 30/60 FPS sequences.
 
-- [ ] **Step 1: Write the failing transition tests**
+- [x] **Step 1: Write the failing transition tests**
 
   Drive enough 30 FPS samples to cross the existing hysteresis from high to
   low, then enough 60 FPS samples to move back toward medium/high. Assert
   transition reasons and that telemetry stays absent when no collector exists.
 
-- [ ] **Step 2: Implement bounded opt-in telemetry**
+- [x] **Step 2: Implement bounded opt-in telemetry**
 
   Add a reusable `recordQualityTransition` helper that appends at most 32
   entries to `window.__vibe_debug.qualityTransitions` and does nothing when the
   collector is absent. Call it for low-FPS, high-FPS, and device-clamp outcomes.
 
-- [ ] **Step 3: Run the deterministic stress test**
+- [x] **Step 3: Run the deterministic stress test**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-quality-stress.localstorage' npm run test -- tests/AdaptiveQualityManager.test.tsx
@@ -174,13 +174,13 @@
   transition telemetry, and stress/recovery procedure.
 - Modify: `memory/activeContext.md`, `memory/progress.md`, and this plan.
 
-- [ ] **Step 1: Write the failing smoke assertion**
+- [x] **Step 1: Write the failing smoke assertion**
 
   Navigate to `./index.html?quality=low&stress=quality`, wait for the canvas and
   bounded larger school, and assert the exposed quality status reports low,
   disabled optional costs, and no failed responses.
 
-- [ ] **Step 2: Implement the stress startup/status surface**
+- [x] **Step 2: Implement the stress startup/status surface**
 
   Spawn 300 fish only for the explicit stress query and expose a low-frequency
   `window.__vibe_qualityStatus` snapshot containing backend, level, shadow size,

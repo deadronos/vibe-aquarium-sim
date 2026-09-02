@@ -2,8 +2,8 @@
 
 ## Current focus
 
-- Branch: `codex/phase2-telemetry`
-- Phase 2 issue #144 is implemented on top of merged Phase 1 PR #151; the telemetry gate and steady-state profile contract are ready for review.
+- Branch: `codex/phase2-adaptive-quality`
+- Phase 3 issue #143 is implemented on top of merged Phase 2 PR #152; backend-aware low-tier profiles, safe adaptive transitions, and opt-in transition telemetry are ready for review.
 
 ## Recent changes
 
@@ -24,8 +24,8 @@
 
 ## Next steps
 
-1. Review Phase 2 #144 PR #152 now that Phase 1 PR #151 is merged.
-2. Continue with adaptive quality (#143), zero-copy worker transport (#142), and asset transfer reduction (#145).
+1. Review and merge the adaptive quality PR for #143.
+2. Continue with zero-copy worker transport (#142) and asset transfer reduction (#145).
 3. Revisit visual parity (#140) and refresh-rate evidence (#141) after the performance work has measurements.
 
 ## Active decisions / considerations
