@@ -151,7 +151,7 @@
 
 - Modify: `memory/activeContext.md` and `memory/progress.md` with Phase 1 status and any deferred risks.
 
-- [ ] **Step 1: Update memory-bank status**
+- [x] **Step 1: Update memory-bank status**
 
   Record the branch, completed issue numbers, validation results, and any intentionally deferred visual-parity work.
 

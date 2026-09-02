@@ -21,12 +21,15 @@ function sendFileSafe(res, filePath, contentType) {
 
 const server = http.createServer((req, res) => {
   try {
-    if (!req.url.startsWith(base)) {
+    const requestUrl = new URL(req.url ?? '/', 'http://localhost');
+    if (!requestUrl.pathname.startsWith(base)) {
       res.statusCode = 404;
       res.end('Not found');
       return;
     }
-    const urlPath = req.url.slice(base.length) || '/';
+    // Resolve only the pathname. Query parameters are application state (for
+    // example, renderer selection), not part of a static asset's filename.
+    const urlPath = requestUrl.pathname.slice(base.length) || '/';
     let filePath = path.join(dist, urlPath);
     if (filePath.endsWith('/')) filePath = path.join(filePath, 'index.html');
 
@@ -47,6 +50,7 @@ const server = http.createServer((req, res) => {
       '.jpg': 'image/jpeg',
       '.svg': 'image/svg+xml',
       '.wasm': 'application/wasm',
+      '.glb': 'model/gltf-binary',
     }[ext];
 
     fs.stat(filePath, (err, stats) => {

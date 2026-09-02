@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test('boots the aquarium shell and selects the stable WebGL renderer', async ({ page }) => {
+async function expectHealthyAquarium(page: Page, path = './') {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
 
@@ -9,15 +9,52 @@ test('boots the aquarium shell and selects the stable WebGL renderer', async ({ 
     if (response.status() === 404) failedResponses.push(response.url());
   });
 
-  await page.goto('./', { waitUntil: 'networkidle' });
+  await page.goto(path, { waitUntil: 'networkidle' });
   await expect(page.getByText('Fish', { exact: true })).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
+
+  return { pageErrors, failedResponses };
+}
+
+test('boots the aquarium shell and selects the stable WebGL renderer', async ({ page }) => {
+  const { pageErrors, failedResponses } = await expectHealthyAquarium(page);
 
   await expect
     .poll(() => page.evaluate(() => window.__vibe_rendererStatus?.selected), {
       timeout: 20_000,
     })
     .toBe('webgl');
+
+  expect(pageErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await fetch('Copilot3D-fish.glb')).headers.get('content-type'))
+    )
+    .toBe('model/gltf-binary');
+});
+
+test('falls back cleanly when WebGPU is explicitly requested but unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined });
+  });
+
+  const { pageErrors, failedResponses } = await expectHealthyAquarium(
+    page,
+    './index.html?renderer=webgpu'
+  );
+
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_rendererStatus?.selected), {
+      timeout: 20_000,
+    })
+    .toBe('webgl');
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_rendererStatus?.fallback), {
+      timeout: 20_000,
+    })
+    .toBe(true);
 
   expect(pageErrors).toEqual([]);
   expect(failedResponses).toEqual([]);

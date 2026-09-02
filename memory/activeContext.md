@@ -2,8 +2,8 @@
 
 ## Current focus
 
-- Branch: `codex/issue-110-sharedarraybuffer-worker`
-- Maintain and polish core systems, including the new worker-offloaded boids + water force pipeline.
+- Branch: `codex/phase1-quality`
+- Phase 1 quality hardening is implemented on draft PR #151; review follow-ups are being closed before the Phase 2 performance work begins.
 
 ## Recent changes
 
@@ -24,10 +24,10 @@
 
 ## Next steps
 
-1. Add automated integration tests for feeding behavior and ECS↔Physics scenarios.
-2. Performance tuning and profiling with larger fish counts (50–100).
-3. Add a small runtime UI (Zustand) for tuning water/physics parameters and toggles.
-4. Optional: implement a grid-based velocity field if needed for more complex flow patterns.
+1. Land the Phase 1 review follow-ups: query-safe preview routing, GLB MIME coverage, and explicit WebGPU fallback smoke coverage.
+2. Start Phase 2 with issue #144: remove unconditional frame-loop diagnostics timing and per-frame status allocations while retaining opt-in debug telemetry.
+3. Continue with adaptive quality (#143), zero-copy worker transport (#142), and asset transfer reduction (#145).
+4. Revisit visual parity (#140) and refresh-rate evidence (#141) after the performance work has measurements.
 
 ## Active decisions / considerations
 

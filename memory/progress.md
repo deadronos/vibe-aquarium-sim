@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Maintenance & polish (core features implemented: water visuals + resistance, currents, fixed-step scheduler, feeding, physics queue utilities)
-- Branch: `main` (features merged)
+- Phase: Phase 1 quality hardening complete pending PR #151 review/merge; Phase 2 performance work next.
+- Branch: `codex/phase1-quality` (draft PR #151)
 
 ## Known issues / technical debt
 
@@ -67,3 +67,11 @@
 
 - **Optimization:** Addressed issue #110 by adding a `SharedArrayBuffer` transport for boids worker inputs/outputs, eliminating per-frame structured cloning on cross-origin isolated hosts while preserving the old worker path as a fallback elsewhere.
 - **Validation:** Added targeted shared-buffer tests and reran `npm run test`, `npm run lint -- --max-warnings=0`, and `npm run typecheck`.
+
+### 2026-09-03
+
+- **Phase 1:** Completed physics/renderer correctness, CI/coverage/bundle budgets, production-preview smoke coverage, and favicon/SPA fallback hardening on `codex/phase1-quality` (PR #151).
+- **Review follow-ups:** Preview routing now strips query parameters before static resolution, `.glb` responses advertise `model/gltf-binary`, and smoke coverage explicitly requests WebGPU with a deterministic unavailable-capability fallback.
+- **Validation:** The two Playwright smoke tests pass locally; full unit/lint/typecheck/build validation and remote CI are green on the preceding Phase 1 commit.
+- **Deferred:** Visual parity (#140) and refresh-rate trajectory (#141) remain intentionally open until runtime measurements are available.
+- **Next:** Begin Phase 2 with diagnostics/timing allocation reduction (#144), then adaptive quality (#143), zero-copy transport (#142), and asset transfer reduction (#145).
