@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { OrbitControls } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
+import type { MutableRefObject } from 'react';
 
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
@@ -34,7 +35,47 @@ import { SchedulerSystem } from './systems/SchedulerSystem';
 
 import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
 import { VisualQualityProvider } from './performance/VisualQualityProvider';
+import { useVisualQuality } from './performance/VisualQualityContext';
+import { getQualityProfile } from './performance/qualityProfile';
+import { useQualityStore } from './performance/qualityStore';
 import { Spawner } from './systems/Spawner';
+
+function SceneLights({
+  directionalLightRef,
+  spotLightRef,
+  initialShadowMapSize,
+}: {
+  directionalLightRef: MutableRefObject<THREE.DirectionalLight | null>;
+  spotLightRef: MutableRefObject<THREE.SpotLight | null>;
+  initialShadowMapSize: number;
+}) {
+  const { spotLightShadowsEnabled } = useVisualQuality();
+
+  return (
+    <>
+      {/* Directional key light to give stronger highlights */}
+      <directionalLight
+        ref={directionalLightRef}
+        position={[1.5, 3, 1]}
+        intensity={1.2}
+        castShadow
+        shadow-mapSize-width={initialShadowMapSize}
+        shadow-mapSize-height={initialShadowMapSize}
+      />
+      {/* Soft spot to add depth & visible speculars */}
+      <spotLight
+        ref={spotLightRef}
+        position={[2, 4, 2]}
+        angle={0.6}
+        penumbra={0.6}
+        intensity={1.2}
+        castShadow={spotLightShadowsEnabled}
+        shadow-mapSize-width={initialShadowMapSize}
+        shadow-mapSize-height={initialShadowMapSize}
+      />
+    </>
+  );
+}
 
 export default function SimulationScene() {
   const directionalLightRef = useRef<THREE.DirectionalLight | null>(null);
@@ -42,6 +83,7 @@ export default function SimulationScene() {
   const [rendererConfig, setRendererConfig] = useState<{
     ctor: new (...args: any[]) => any;
     type: RendererKind;
+    initialShadowMapSize: number;
   } | null>(null);
 
   useEffect(() => {
@@ -58,7 +100,12 @@ export default function SimulationScene() {
           // @ts-ignore - WebGPU types might be missing in some setups
           const { WebGPURenderer } = await import('three/webgpu');
           if (cancelled) return;
-          setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
+          setRendererConfig({
+            ctor: WebGPURenderer,
+            type: 'webgpu',
+            initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgpu')
+              .shadowMapSize,
+          });
           return;
         } catch (error) {
           console.warn(
@@ -70,7 +117,12 @@ export default function SimulationScene() {
 
       const { WebGLRenderer } = await import('three');
       if (cancelled) return;
-      setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+      setRendererConfig({
+        ctor: WebGLRenderer,
+        type: 'webgl',
+        initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
+          .shadowMapSize,
+      });
       window.__vibe_rendererStatus = {
         requested,
         selected: 'webgl',
@@ -114,7 +166,12 @@ export default function SimulationScene() {
               alpha: true,
             });
             activeRendererType = 'webgl';
-            setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+            setRendererConfig({
+              ctor: WebGLRenderer,
+              type: 'webgl',
+              initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
+                .shadowMapSize,
+            });
             window.__vibe_rendererStatus = {
               requested: 'webgpu',
               selected: 'webgl',
@@ -188,25 +245,10 @@ export default function SimulationScene() {
           <LivingRoom />
           {/* Gentle indoor ambient */}
           <hemisphereLight color={0xdcdce0} groundColor={0x8a7c6f} intensity={0.5} />
-          {/* Directional key light to give stronger highlights */}
-          <directionalLight
-            ref={directionalLightRef}
-            position={[1.5, 3, 1]}
-            intensity={1.2}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
-          />
-          {/* Soft spot to add depth & visible speculars */}
-          <spotLight
-            ref={spotLightRef}
-            position={[2, 4, 2]}
-            angle={0.6}
-            penumbra={0.6}
-            intensity={1.2}
-            castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
+          <SceneLights
+            directionalLightRef={directionalLightRef}
+            spotLightRef={spotLightRef}
+            initialShadowMapSize={rendererConfig.initialShadowMapSize}
           />
           {/* Cool fill from back */}
           <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />

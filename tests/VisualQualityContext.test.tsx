@@ -18,6 +18,9 @@ const VisualQualityReader = () => {
         {String(flags.adaptiveInstanceUpdatesEnabled ?? false)}
       </div>
       <div data-testid="adaptiveSched">{String(flags.adaptiveSchedulerEnabled ?? false)}</div>
+      <div data-testid="profileBackend">{flags.qualityProfile.backend}</div>
+      <div data-testid="profileShadow">{flags.qualityProfile.shadowMapSize}</div>
+      <div data-testid="transmission">{String(flags.qualityProfile.tankTransmissionEnabled)}</div>
     </>
   );
 };
@@ -75,12 +78,37 @@ describe('useVisualQuality', () => {
       </VisualQualityProvider>
     );
 
-    expect(screen.getByTestId('caustics')).toHaveTextContent('true');
-    expect(screen.getByTestId('fishRim')).toHaveTextContent('true');
+    expect(screen.getByTestId('caustics')).toHaveTextContent('false');
+    expect(screen.getByTestId('fishRim')).toHaveTextContent('false');
     expect(screen.getByTestId('dof')).toHaveTextContent('false');
     // defaults for PoC adaptive flags
     expect(screen.getByTestId('adaptiveInstance')).toHaveTextContent('false');
     expect(screen.getByTestId('adaptiveSched')).toHaveTextContent('false');
+  });
+
+  it('exposes backend-aware profile values', () => {
+    act(() => {
+      useQualityStore.setState({ level: 'low', settings: getQualitySettings('low', 2) });
+    });
+
+    const webgl = render(
+      <VisualQualityProvider isWebGPU={false}>
+        <VisualQualityReader />
+      </VisualQualityProvider>
+    );
+    expect(screen.getByTestId('profileBackend')).toHaveTextContent('webgl');
+    expect(screen.getByTestId('profileShadow')).toHaveTextContent('512');
+    expect(screen.getByTestId('transmission')).toHaveTextContent('false');
+    webgl.unmount();
+
+    const webgpu = render(
+      <VisualQualityProvider isWebGPU>
+        <VisualQualityReader />
+      </VisualQualityProvider>
+    );
+    expect(screen.getByTestId('profileBackend')).toHaveTextContent('webgpu');
+    expect(screen.getByTestId('profileShadow')).toHaveTextContent('256');
+    expect(screen.getByTestId('transmission')).toHaveTextContent('false');
   });
 
   it('prefers per-flag overrides over store values', () => {
