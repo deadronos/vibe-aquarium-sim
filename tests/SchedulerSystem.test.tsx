@@ -28,12 +28,16 @@ describe('SchedulerSystem adaptive behaviors', () => {
     useGameStore.setState({ visualQualityOverrides: {} });
     fixedScheduler.setMaxSubSteps(5);
     delete window.__vibe_poc_enabled;
+    delete window.__vibe_debug;
+    delete window.__vibe_schedStatus;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     frameCallbacks.length = 0;
+    delete window.__vibe_debug;
+    delete window.__vibe_schedStatus;
   });
 
   const renderSystem = () =>
@@ -45,17 +49,54 @@ describe('SchedulerSystem adaptive behaviors', () => {
 
   it('keeps the baseline path when adaptive scheduling is disabled', () => {
     const setMaxSubStepsSpy = vi.spyOn(fixedScheduler, 'setMaxSubSteps');
+    const nowSpy = vi.spyOn(performance, 'now');
 
     const { unmount } = renderSystem();
 
     expect(frameCallbacks).toHaveLength(1);
 
+    nowSpy.mockClear();
     act(() => {
       frameCallbacks.forEach((cb) => cb({}, 1 / 60));
     });
 
     expect(setMaxSubStepsSpy).not.toHaveBeenCalled();
+    expect(nowSpy).not.toHaveBeenCalled();
     expect(fixedScheduler.getMaxSubSteps()).toBe(5);
+    expect(window.__vibe_schedStatus).toBeUndefined();
+
+    unmount();
+  });
+
+  it('publishes a stable status object when telemetry is explicitly enabled', () => {
+    window.__vibe_debug = {
+      simulateStep: [],
+      fishRender: [],
+      fishUseFrame: [],
+      scheduler: [],
+    };
+    const nowSpy = vi.spyOn(performance, 'now');
+
+    const { unmount } = renderSystem();
+
+    nowSpy.mockReset().mockReturnValueOnce(10).mockReturnValueOnce(12);
+    act(() => {
+      frameCallbacks.forEach((cb) => cb({}, 1 / 60));
+    });
+
+    const firstStatus = window.__vibe_schedStatus;
+    expect(nowSpy).toHaveBeenCalledTimes(2);
+    expect(firstStatus?.lastDuration).toBe(2);
+    expect(window.__vibe_debug?.scheduler).toHaveLength(1);
+
+    nowSpy.mockReset().mockReturnValueOnce(20).mockReturnValueOnce(23);
+    act(() => {
+      frameCallbacks.forEach((cb) => cb({}, 1 / 60));
+    });
+
+    expect(window.__vibe_schedStatus).toBe(firstStatus);
+    expect(window.__vibe_schedStatus?.lastDuration).toBe(3);
+    expect(window.__vibe_debug?.scheduler).toHaveLength(2);
 
     unmount();
   });

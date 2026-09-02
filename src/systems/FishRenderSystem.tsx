@@ -191,6 +191,12 @@ export const FishRenderSystem = () => {
   // Adaptive instance update controls (PoC)
   const instanceUpdateEmaRef = useRef<number>(0);
   const updateFrequencyRef = useRef<number>(1); // 1 = every frame, 2 = every other frame, etc.
+  const renderStatusRef = useRef({
+    updateFreq: 1,
+    ema: 0,
+    activeEntities: 0,
+    frameDuration: 0,
+  });
 
   // Chunked update data structures (mutable via refs)
   const matrixPoolARef = useRef(createMatrixPool());
@@ -209,7 +215,6 @@ export const FishRenderSystem = () => {
     for (const uniform of uniformsA) uniform.vibeTime.value = time;
     for (const uniform of uniformsB) uniform.vibeTime.value = time;
     for (const uniform of uniformsC) uniform.vibeTime.value = time;
-    const frameStart = performance.now();
     frameId.current++;
     if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
 
@@ -217,6 +222,11 @@ export const FishRenderSystem = () => {
     const pocEnabledFromWindow =
       typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
     const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
+    const dbg = typeof window !== 'undefined' ? window.__vibe_debug : undefined;
+    // The render loop does not need timing for its normal or adaptive flush
+    // paths. Sample the clock only while an explicit debug collector exists.
+    const timingEnabled = Boolean(dbg);
+    const frameStart = timingEnabled ? performance.now() : 0;
 
     const quaternionFreeList = quaternionFreeListRef.current!;
 
@@ -371,15 +381,16 @@ export const FishRenderSystem = () => {
 
     // Adaptive instanceMatrix update frequency
     try {
-      const frameEnd = performance.now();
-      const frameDuration = frameEnd - frameStart;
+      let frameDuration = 0;
+      if (timingEnabled) {
+        frameDuration = performance.now() - frameStart;
 
-      // EMA for frame duration
-      const alpha = 0.06;
-      instanceUpdateEmaRef.current = instanceUpdateEmaRef.current
-        ? instanceUpdateEmaRef.current + (frameDuration - instanceUpdateEmaRef.current) * alpha
-        : frameDuration;
-
+        // EMA for frame duration
+        const alpha = 0.06;
+        instanceUpdateEmaRef.current = instanceUpdateEmaRef.current
+          ? instanceUpdateEmaRef.current + (frameDuration - instanceUpdateEmaRef.current) * alpha
+          : frameDuration;
+      }
       const ema = instanceUpdateEmaRef.current;
 
       if (pocEnabled) {
@@ -413,7 +424,6 @@ export const FishRenderSystem = () => {
           perModel
         );
 
-        const dbg = window.__vibe_debug;
         if (dbg)
           dbg.fishRender.push({
             frame: frameId.current,
@@ -430,16 +440,17 @@ export const FishRenderSystem = () => {
         if (wroteC) meshRefC.current.instanceMatrix.needsUpdate = true;
       }
 
-      // Lightweight per-frame status for external sampling
-      try {
-        window.__vibe_renderStatus = {
-          updateFreq: updateFrequencyRef.current,
-          ema: instanceUpdateEmaRef.current || 0,
-          activeEntities: activeEntities.length,
-          frameDuration,
-        };
-      } catch {
-        /* ignore */
+      if (dbg) {
+        // Mutate one object instead of allocating a status record every frame.
+        const status = renderStatusRef.current;
+        status.updateFreq = updateFrequencyRef.current;
+        status.ema = instanceUpdateEmaRef.current || 0;
+        status.activeEntities = activeEntities.length;
+        status.frameDuration = frameDuration;
+        window.__vibe_renderStatus = status;
+      } else if (typeof window !== 'undefined' && window.__vibe_renderStatus) {
+        // A HUD can be hidden while the simulation remains mounted.
+        delete window.__vibe_renderStatus;
       }
     } catch {
       /* ignore */

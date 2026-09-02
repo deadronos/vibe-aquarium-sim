@@ -86,6 +86,8 @@ describe('FishRenderSystem adaptive instance updates', () => {
 
     // ensure clean world
     world.entities.length = 0;
+    delete window.__vibe_debug;
+    delete window.__vibe_renderStatus;
 
     // Make Math.random deterministic so all fish pick modelIndex 0
     vi.spyOn(Math, 'random').mockImplementation(() => 0);
@@ -96,6 +98,8 @@ describe('FishRenderSystem adaptive instance updates', () => {
     vi.unstubAllGlobals();
     frameCallbacks.length = 0;
     world.entities.length = 0;
+    delete window.__vibe_debug;
+    delete window.__vibe_renderStatus;
     // Clear the PoC flag safely
     delete (window as unknown as { __vibe_poc_enabled?: boolean }).__vibe_poc_enabled;
   });
@@ -143,6 +147,35 @@ describe('FishRenderSystem adaptive instance updates', () => {
     expect(inst.count).toBeGreaterThanOrEqual(1);
     // If matrices were written directly, setMatrixAt should have been called for most instances
     expect(instanceSpy.mock.calls.length).toBeGreaterThanOrEqual(Math.max(1, Math.floor(N * 0.9)));
+
+    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+      await maybePromise;
+    }
+  });
+
+  it('does not sample timing or publish render status when telemetry is disabled', async () => {
+    world.add({
+      isFish: true,
+      position: new THREE.Vector3(0, 0, 0),
+      velocity: new THREE.Vector3(1, 0, 0),
+    });
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <FishRenderSystem />
+      </VisualQualityProvider>
+    );
+    const nowSpy = vi.spyOn(performance, 'now');
+
+    await act(async () => {
+      await Promise.resolve();
+      nowSpy.mockClear();
+      frameCallbacks.forEach((cb) => cb({}, 1 / 60));
+    });
+
+    expect(nowSpy).not.toHaveBeenCalled();
+    expect(window.__vibe_renderStatus).toBeUndefined();
 
     const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
     if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {

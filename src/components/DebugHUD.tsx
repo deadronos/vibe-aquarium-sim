@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQualityStore } from '../performance/qualityStore';
+import { ensurePerfDebug } from '../utils/perfDebug';
 
 import './DebugHUD.css';
 
@@ -62,6 +63,21 @@ export const DebugHUD: React.FC = () => {
   const [counts, setCounts] = useState<Counts>(null);
 
   useEffect(() => {
+    const hadCollector = Boolean(window.__vibe_debug);
+    ensurePerfDebug();
+
+    return () => {
+      // The HUD is the user-facing opt-in. Preserve collectors supplied by a
+      // development harness, but remove the one created for this panel.
+      if (!hadCollector) {
+        delete window.__vibe_debug;
+        delete window.__vibe_renderStatus;
+        delete window.__vibe_schedStatus;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     const id = setInterval(() => {
       try {
@@ -77,8 +93,11 @@ export const DebugHUD: React.FC = () => {
             }
           : null;
         if (!mounted) return;
-        setRenderStatus(rs);
-        setSchedStatus(ss);
+        // Systems mutate stable status objects in place to avoid frame-loop
+        // allocations; snapshot them here at the HUD's low refresh cadence so
+        // React still receives a new value and re-renders the displayed data.
+        setRenderStatus(rs ? { ...rs } : null);
+        setSchedStatus(ss ? { ...ss } : null);
         setCounts(c);
       } catch (err) {
         // swallow - non-critical
