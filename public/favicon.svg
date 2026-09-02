@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Vibe Aquarium">
+  <rect width="64" height="64" rx="16" fill="#0b2940"/>
+  <path d="M12 33c8-13 28-16 39-5l7-6v22l-7-6c-11 11-31 8-39-5Z" fill="#64d8ff"/>
+  <circle cx="42" cy="28" r="2.5" fill="#0b2940"/>
+  <path d="M17 33h-6M22 24l-5-5M22 42l-5 5" stroke="#b7f0ff" stroke-width="3" stroke-linecap="round"/>
+</svg>

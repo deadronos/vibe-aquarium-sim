@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import * as THREE from 'three';
 import { supportsWebGPU } from './utils/rendererUtils';
+import {
+  isWebGPURendererBackend,
+  resolveRendererPreference,
+  selectRenderer,
+  type RendererKind,
+} from './utils/rendererPolicy';
 import { EnvironmentMap } from './components/EnvironmentMap';
 import { LivingRoom } from './components/LivingRoom';
 
@@ -35,23 +41,50 @@ export default function SimulationScene() {
   const spotLightRef = useRef<THREE.SpotLight | null>(null);
   const [rendererConfig, setRendererConfig] = useState<{
     ctor: new (...args: any[]) => any;
-    type: 'webgpu' | 'webgl';
+    type: RendererKind;
   } | null>(null);
 
   useEffect(() => {
-    supportsWebGPU().then(async (supported) => {
-      if (supported) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - WebGPU types might be missing in some setups
-        const { WebGPURenderer } = await import('three/webgpu');
-        setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
-        // Informational log: WebGPU will be used for rendering
-        console.info('[vibe] Renderer: WebGPU supported — using WebGPURenderer');
-      } else {
-        const { WebGLRenderer } = await import('three');
-        setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+    let cancelled = false;
+    const requested = resolveRendererPreference(window.location.search);
+
+    const initializeRenderer = async () => {
+      const webgpuAvailable = requested === 'webgpu' ? await supportsWebGPU() : false;
+      const selected = selectRenderer(requested, webgpuAvailable);
+
+      if (selected === 'webgpu') {
+        try {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore - WebGPU types might be missing in some setups
+          const { WebGPURenderer } = await import('three/webgpu');
+          if (cancelled) return;
+          setRendererConfig({ ctor: WebGPURenderer, type: 'webgpu' });
+          return;
+        } catch (error) {
+          console.warn(
+            '[vibe] Renderer: WebGPU initialization unavailable; falling back to WebGL',
+            error
+          );
+        }
       }
-    });
+
+      const { WebGLRenderer } = await import('three');
+      if (cancelled) return;
+      setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+      window.__vibe_rendererStatus = {
+        requested,
+        selected: 'webgl',
+        fallback: requested === 'webgpu',
+      };
+      if (requested === 'webgpu') {
+        console.info('[vibe] Renderer: WebGPU unavailable; using WebGL fallback');
+      }
+    };
+
+    void initializeRenderer();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (!rendererConfig) return null;
@@ -63,15 +96,60 @@ export default function SimulationScene() {
         shadows
         gl={async (props) => {
           const Renderer = rendererConfig.ctor;
-          const renderer = new Renderer({
+          let activeRendererType = rendererConfig.type;
+          let renderer = new Renderer({
             ...props,
             powerPreference: 'high-performance',
             antialias: true,
             alpha: true,
           });
 
+          const fallbackToWebGL = async () => {
+            renderer.dispose?.();
+            const { WebGLRenderer } = await import('three');
+            renderer = new WebGLRenderer({
+              ...props,
+              powerPreference: 'high-performance',
+              antialias: true,
+              alpha: true,
+            });
+            activeRendererType = 'webgl';
+            setRendererConfig({ ctor: WebGLRenderer, type: 'webgl' });
+            window.__vibe_rendererStatus = {
+              requested: 'webgpu',
+              selected: 'webgl',
+              fallback: true,
+            };
+          };
+
           if (rendererConfig.type === 'webgpu' && typeof renderer.init === 'function') {
-            await renderer.init();
+            try {
+              await renderer.init();
+              if (!isWebGPURendererBackend(renderer)) {
+                console.warn(
+                  '[vibe] Renderer: WebGPU wrapper selected a non-WebGPU backend; using WebGL'
+                );
+                await fallbackToWebGL();
+              } else {
+                window.__vibe_rendererStatus = {
+                  requested: 'webgpu',
+                  selected: 'webgpu',
+                  fallback: false,
+                };
+                console.info('[vibe] Renderer: WebGPU opt-in selected');
+              }
+            } catch (error) {
+              console.warn('[vibe] Renderer: WebGPU init failed; using WebGL fallback', error);
+              await fallbackToWebGL();
+            }
+          }
+
+          if (rendererConfig.type === 'webgl' && window.__vibe_rendererStatus?.fallback !== true) {
+            window.__vibe_rendererStatus = {
+              requested: 'webgl',
+              selected: 'webgl',
+              fallback: false,
+            };
           }
 
           // Apply common configurations
@@ -80,7 +158,7 @@ export default function SimulationScene() {
           renderer.outputColorSpace = THREE.SRGBColorSpace;
 
           // If using WebGL renderer, detect whether the context is WebGL2 and log it
-          if (rendererConfig.type === 'webgl') {
+          if (activeRendererType === 'webgl') {
             try {
               // `getContext` is available on WebGLRenderer
               // Use `instanceof` guard in case WebGL2 isn't available in the environment
