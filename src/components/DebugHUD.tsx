@@ -64,12 +64,12 @@ export const DebugHUD: React.FC = () => {
 
   useEffect(() => {
     const hadCollector = Boolean(window.__vibe_debug);
-    ensurePerfDebug();
+    const collector = ensurePerfDebug();
 
     return () => {
       // The HUD is the user-facing opt-in. Preserve collectors supplied by a
       // development harness, but remove the one created for this panel.
-      if (!hadCollector) {
+      if (!hadCollector && window.__vibe_debug === collector) {
         delete window.__vibe_debug;
         delete window.__vibe_renderStatus;
         delete window.__vibe_schedStatus;

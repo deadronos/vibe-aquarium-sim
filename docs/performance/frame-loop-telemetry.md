@@ -33,8 +33,8 @@ This is a behavioral allocation guard, not a substitute for a heap profile.
 ## Manual browser profile
 
 1. Run `npm run build && npm run test:smoke` to verify the production bundle.
-2. Start the preview with `npm run dev` (or serve `dist/` at the configured
-   base path) and open Chrome DevTools Performance.
+2. Start the production preview with `npm run preview` (or serve `dist/` at
+   the configured base path) and open Chrome DevTools Performance.
 3. Record 10 seconds with the Debug HUD hidden at 30, 60, and 120 Hz display
    emulation. Check that the Main track does not contain recurring
    `performance.now`-driven telemetry work and that heap growth stays flat after
