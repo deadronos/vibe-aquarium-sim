@@ -65,7 +65,7 @@ test('falls back cleanly when WebGPU is explicitly requested but unavailable', a
   expect(failedResponses).toEqual([]);
 });
 
-test('critical fish model loads before deferred variants', async ({ page }) => {
+test('critical fish model loads before deferred variants settle', async ({ page }) => {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
   const fishRequestUrls: string[] = [];
@@ -101,7 +101,7 @@ test('critical fish model loads before deferred variants', async ({ page }) => {
       .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
         timeout: 20_000,
       })
-      .toEqual(['ready', 'ready']);
+      .toEqual(['ready', expect.stringMatching(/^(ready|error)$/)]);
   } catch (error) {
     const diagnostics = await page.evaluate(
       ({ responses, requestFailures }) => ({

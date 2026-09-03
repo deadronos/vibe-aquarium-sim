@@ -14,6 +14,7 @@ import { FishModelErrorBoundary, FishModelMesh } from './FishModelMesh';
 import type { VibeFishLightingUniforms } from '../shaders/fishLightingMaterial';
 
 const QUATERNION_POOL_SIZE = MAX_INSTANCES_PER_MODEL * 3;
+const OPTIONAL_FISH_MODEL_TIMEOUT_MS = 15_000;
 const tempObj = new Object3D();
 const tempVec = new Vector3();
 const tempQuat = new Quaternion();
@@ -46,6 +47,45 @@ type DeferredFishModelProps = {
 const DeferredFishModel = ({ modelIndex, ...props }: DeferredFishModelProps) => {
   const gltf = useGLTF(MODEL_URLS[modelIndex]);
   return <FishModelMesh modelIndex={modelIndex} gltf={gltf} {...props} />;
+};
+
+type DeferredFishModelSlotProps = DeferredFishModelProps & { onError: () => void };
+
+/**
+ * Optional variants must never hold the Suspense tree in a permanent loading
+ * state. The slot itself stays outside the boundary so its timeout effect can
+ * run while the loader is suspended; the primary model remains authoritative.
+ */
+const DeferredFishModelSlot = ({ onError, onReady, ...props }: DeferredFishModelSlotProps) => {
+  const [timedOut, setTimedOut] = useState(false);
+  const settledRef = useRef(false);
+  const handleReady = useCallback(() => {
+    settledRef.current = true;
+    onReady();
+  }, [onReady]);
+  const handleError = useCallback(() => {
+    settledRef.current = true;
+    onError();
+  }, [onError]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (settledRef.current) return;
+      settledRef.current = true;
+      onError();
+      setTimedOut(true);
+    }, OPTIONAL_FISH_MODEL_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [onError]);
+
+  if (timedOut) return null;
+  return (
+    <Suspense fallback={null}>
+      <FishModelErrorBoundary modelIndex={props.modelIndex} onError={handleError}>
+        <DeferredFishModel {...props} onReady={handleReady} />
+      </FishModelErrorBoundary>
+    </Suspense>
+  );
 };
 
 export const FishRenderSystem = () => {
@@ -347,34 +387,28 @@ export const FishRenderSystem = () => {
         onReady={markPrimaryReady}
       />
       {primaryReady && (
-        <Suspense fallback={null}>
-          <FishModelErrorBoundary modelIndex={1} onError={markVariantOneError}>
-            <DeferredFishModel
-              modelIndex={1}
-              meshRef={meshRefB}
-              uniformsRef={uniformsBRef}
-              fishRimLightingEnabled={fishRimLightingEnabled}
-              fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
-              isWebGPU={isWebGPU}
-              onReady={markVariantOneReady}
-            />
-          </FishModelErrorBoundary>
-        </Suspense>
+        <DeferredFishModelSlot
+          modelIndex={1}
+          meshRef={meshRefB}
+          uniformsRef={uniformsBRef}
+          fishRimLightingEnabled={fishRimLightingEnabled}
+          fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
+          isWebGPU={isWebGPU}
+          onReady={markVariantOneReady}
+          onError={markVariantOneError}
+        />
       )}
       {variantOneSettled && (
-        <Suspense fallback={null}>
-          <FishModelErrorBoundary modelIndex={2} onError={markVariantTwoError}>
-            <DeferredFishModel
-              modelIndex={2}
-              meshRef={meshRefC}
-              uniformsRef={uniformsCRef}
-              fishRimLightingEnabled={fishRimLightingEnabled}
-              fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
-              isWebGPU={isWebGPU}
-              onReady={markVariantTwoReady}
-            />
-          </FishModelErrorBoundary>
-        </Suspense>
+        <DeferredFishModelSlot
+          modelIndex={2}
+          meshRef={meshRefC}
+          uniformsRef={uniformsCRef}
+          fishRimLightingEnabled={fishRimLightingEnabled}
+          fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
+          isWebGPU={isWebGPU}
+          onReady={markVariantTwoReady}
+          onError={markVariantTwoError}
+        />
       )}
     </>
   );
