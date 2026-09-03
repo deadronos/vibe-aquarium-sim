@@ -43,6 +43,7 @@ test.describe('mobile aquarium composition', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(settingsButton).toBeFocused();
+    await expect(page.locator('#vibe-app-shell')).not.toHaveJSProperty('inert', true);
 
     await rail.getByRole('button', { name: 'Feed fish' }).click();
     await expect(lastFed).toHaveText('Just now');
