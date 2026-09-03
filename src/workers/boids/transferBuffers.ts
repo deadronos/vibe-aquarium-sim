@@ -109,7 +109,12 @@ export function ensureTransferableSimulationBuffers(
   fishCount: number,
   foodCount: number
 ) {
-  if (buffers && buffers.fishCapacity >= fishCount && buffers.foodCapacity >= foodCount) {
+  if (
+    buffers &&
+    buffers.state !== 'invalid' &&
+    buffers.fishCapacity >= fishCount &&
+    buffers.foodCapacity >= foodCount
+  ) {
     return buffers;
   }
 

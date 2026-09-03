@@ -154,6 +154,9 @@ export class WorkerOrchestrator {
       if (slot) invalidateTransferSlot(slot);
       this.activeTransferSlotIndex = null;
       this.setTransportMode('copy', reason);
+    } else if (this.transportStatus.mode === 'shared') {
+      this.sharedBuffers = null;
+      this.setTransportMode(supportsTransferableSimulationBuffers() ? 'transfer' : 'copy', reason);
     }
     this.hasJob = false;
     this.recordError(reason);
@@ -346,8 +349,16 @@ export class WorkerOrchestrator {
       return true;
     } catch (error) {
       this.hasJob = false;
-      this.recordError(error instanceof Error ? error.message : String(error));
-      return false;
+      const reason = error instanceof Error ? error.message : String(error);
+      this.worker.terminate();
+      this.worker = null;
+      this.useWorker = false;
+      this.setTransportMode(
+        'main-thread',
+        'cloned worker post failed; falling back to main thread'
+      );
+      this.recordError(reason);
+      return this.submitMainThreadJob(input);
     }
   }
 

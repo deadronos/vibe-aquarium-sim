@@ -8,6 +8,7 @@ type PostedMessage = { message: unknown; transferables?: ArrayBuffer[] };
 class MockWorker {
   static instances: MockWorker[] = [];
   static throwOnTransfer = false;
+  static throwOnClone = false;
   onmessage: ((event: MessageEvent<BoidsWorkerResponse>) => void) | null = null;
   onerror: ((event: ErrorEvent) => void) | null = null;
   readonly posted: PostedMessage[] = [];
@@ -22,6 +23,9 @@ class MockWorker {
   postMessage(message: unknown, transferables?: ArrayBuffer[]) {
     if (transferables && MockWorker.throwOnTransfer) {
       throw new Error('transfer list rejected');
+    }
+    if (!transferables && MockWorker.throwOnClone) {
+      throw new Error('worker is unavailable');
     }
     this.posted.push({ message, transferables });
   }
@@ -77,6 +81,7 @@ describe('WorkerOrchestrator transport lifecycle', () => {
   beforeEach(() => {
     MockWorker.instances = [];
     MockWorker.throwOnTransfer = false;
+    MockWorker.throwOnClone = false;
     vi.stubGlobal('Worker', MockWorker);
     setIsolation(false);
     delete window.__vibe_transportStatus;
@@ -106,6 +111,21 @@ describe('WorkerOrchestrator transport lifecycle', () => {
     expect(worker.posted).toHaveLength(2);
     expect((worker.posted[0].message as { type: string }).type).toBe('shared-buffers');
     expect((worker.posted[1].message as { type: string }).type).toBe('shared-job');
+
+    orchestrator.dispose();
+  });
+
+  it('falls from shared transport to transfer after a shared worker error', () => {
+    setIsolation(true);
+    const orchestrator = new WorkerOrchestrator();
+    const worker = MockWorker.instances[0];
+
+    expect(orchestrator.submitJob(createInput())).toBe(true);
+    worker.onerror?.(new ErrorEvent('error', { message: 'shared worker crashed' }));
+
+    expect(orchestrator.getTransportStatus().mode).toBe('transfer');
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 2 }))).toBe(true);
+    expect(worker.posted.at(-1)?.transferables).toHaveLength(8);
 
     orchestrator.dispose();
   });
@@ -174,6 +194,19 @@ describe('WorkerOrchestrator transport lifecycle', () => {
     orchestrator.dispose();
   });
 
+  it('falls back to a main-thread result when a cloned worker post fails', () => {
+    MockWorker.throwOnTransfer = true;
+    MockWorker.throwOnClone = true;
+    const orchestrator = new WorkerOrchestrator();
+
+    expect(orchestrator.submitJob(createInput())).toBe(true);
+    expect(orchestrator.getTransportStatus().mode).toBe('main-thread');
+    expect(orchestrator.isBusy()).toBe(false);
+    expect(orchestrator.getPendingResult()).not.toBeNull();
+
+    orchestrator.dispose();
+  });
+
   it('invalidates a detached slot after a worker error and uses copy on the next job', () => {
     const orchestrator = new WorkerOrchestrator();
     const worker = MockWorker.instances[0];
@@ -187,6 +220,38 @@ describe('WorkerOrchestrator transport lifecycle', () => {
 
     expect(orchestrator.submitJob(createInput({ snapshotRevision: 2 }))).toBe(true);
     expect(worker.posted.at(-1)?.transferables).toBeUndefined();
+
+    orchestrator.dispose();
+  });
+
+  it('replaces an invalid detached slot when transport is toggled back on', () => {
+    MockWorker.throwOnTransfer = true;
+    const orchestrator = new WorkerOrchestrator();
+    const worker = MockWorker.instances[0];
+
+    expect(orchestrator.submitJob(createInput())).toBe(true);
+    expect(orchestrator.getTransportStatus().mode).toBe('copy');
+    worker.onmessage?.({
+      data: {
+        type: 'success',
+        mode: 'copy',
+        result: {
+          snapshotRevision: 1,
+          steering: new Float32Array(0),
+          externalForces: new Float32Array(0),
+          eatenFoodIndices: [],
+        },
+      },
+    } as MessageEvent<BoidsWorkerResponse>);
+    orchestrator.clearPendingResult();
+
+    window.toggleBoidsWorker?.();
+    window.toggleBoidsWorker?.();
+    MockWorker.throwOnTransfer = false;
+
+    expect(orchestrator.getTransportStatus().mode).toBe('transfer');
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 2 }))).toBe(true);
+    expect(worker.posted.at(-1)?.transferables).toHaveLength(8);
 
     orchestrator.dispose();
   });
