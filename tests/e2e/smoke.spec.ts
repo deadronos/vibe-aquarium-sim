@@ -99,7 +99,9 @@ test('critical fish model loads before deferred variants settle', async ({ page 
   try {
     await expect
       .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
-        timeout: 20_000,
+        // Variants load sequentially and each has its own 15s fail-closed
+        // timeout, so allow both stages to settle on slower CI runners.
+        timeout: 45_000,
       })
       .toEqual(['ready', expect.stringMatching(/^(ready|error)$/)]);
   } catch (error) {
