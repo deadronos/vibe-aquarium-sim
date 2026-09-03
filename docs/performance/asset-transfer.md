@@ -17,15 +17,15 @@
 
 | File                         |     Raw bytes |    Gzip bytes |
 | ---------------------------- | ------------: | ------------: |
-| SimulationScene-DdS4biVP.js  |        91,051 |        28,434 |
+| SimulationScene-DXlhYjSk.js  |        92,350 |        28,934 |
 | boids.worker-BzFvhpQq.js     |         9,187 |         3,042 |
-| index-fmEQQrgb.js            |        19,906 |         6,388 |
+| index-CLg1cIGV.js            |        19,906 |         6,389 |
 | miniplex-CcSsTDiU.js         |        15,321 |         3,691 |
 | r3f-drei-BBowdFUa.js         |     1,102,772 |       295,112 |
 | rapier-OqXz4Tqe.js           |     2,259,862 |       843,205 |
 | rolldown-runtime-QTnfLwEv.js |           694 |           423 |
 | vendor-CjzUeMs7.js           |       813,431 |       231,758 |
-| **Total**                    | **4,312,224** | **1,412,053** |
+| **Total**                    | **4,313,523** | **1,412,554** |
 
 ## Post-build fish models
 

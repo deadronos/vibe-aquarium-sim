@@ -23,8 +23,9 @@ describe('classifyDependencyChunk', () => {
   });
 
   it.each(['/repo/src/main.tsx', '/repo/public/fish.glb', '/repo/node_modules-ish/file.js'])(
-    'returns undefined for app file %s', (id) => {
+    'returns undefined for app file %s',
+    (id) => {
       expect(classifyDependencyChunk(id)).toBeUndefined();
-    },
+    }
   );
 });

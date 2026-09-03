@@ -26,7 +26,7 @@
 
 - [ ] **Step 1: Write the failing generated-asset test.**
 
-~~~ts
+```ts
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -56,26 +56,26 @@ describe('fish production assets', () => {
     );
   });
 });
-~~~
+```
 
 - [ ] **Step 2: Run the focused test and verify failure.**
 
-~~~bash
+```bash
 NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-phase5-assets.localstorage' npm run test -- tests/fishAssets.test.ts
-~~~
+```
 
 Expected: failure because current GLBs lack both extensions and the obsolete source still exists.
 
 - [ ] **Step 3: Pin tooling and establish source inputs.**
 
-~~~bash
+```bash
 npm install --save-dev --save-exact @gltf-transform/core@4.5.0 @gltf-transform/extensions@4.5.0 @gltf-transform/functions@4.5.0 meshoptimizer@0.23.0 sharp@0.35.4
 mkdir -p assets/source/fish
 git mv public/Copilot3D-fish.glb assets/source/fish/Copilot3D-fish.glb
 git mv public/Copilot3D-fish2.glb assets/source/fish/Copilot3D-fish2.glb
 git mv public/Copilot3D-fish3.glb assets/source/fish/Copilot3D-fish3.glb
 git rm src/assets/gltf/CopilotClownFish.glb
-~~~
+```
 
 Run rg before removal: rg -n "CopilotClownFish|assets/gltf" src tests scripts. The binary must have no references.
 
@@ -83,7 +83,7 @@ Run rg before removal: rg -n "CopilotClownFish|assets/gltf" src tests scripts. T
 
 Create scripts/optimize-fish-assets.mjs with these exact operations:
 
-~~~js
+```js
 const io = new NodeIO().registerExtensions([EXTMeshoptCompression, EXTTextureWebP]);
 await MeshoptEncoder.ready;
 const document = await io.read(input);
@@ -92,16 +92,16 @@ await document.transform(
   textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 82, effort: 6 })
 );
 await io.write(output, document);
-~~~
+```
 
 The script must process exactly the three files in assets/source/fish, write matching names to public, resolve the root with fileURLToPath(new URL('..', import.meta.url)), and print per-file plus total raw-byte reductions.
 
 Add package scripts:
 
-~~~json
+```json
 "assets:optimize": "node scripts/optimize-fish-assets.mjs",
 "assets:verify": "node scripts/verify-fish-assets.mjs"
-~~~
+```
 
 - [ ] **Step 5: Add the artifact verifier and make the focused test pass.**
 
@@ -109,10 +109,10 @@ verify-fish-assets.mjs must validate GLB magic, required extensions, at least on
 
 - [ ] **Step 6: Commit.**
 
-~~~bash
+```bash
 git add assets/source/fish public/Copilot3D-fish*.glb scripts/optimize-fish-assets.mjs scripts/verify-fish-assets.mjs tests/fishAssets.test.ts package.json package-lock.json
 git commit -m "perf: optimize fish assets with meshopt and webp"
-~~~
+```
 
 ### Task 2: Make dependency chunk classification path-safe
 
@@ -120,7 +120,7 @@ git commit -m "perf: optimize fish assets with meshopt and webp"
 
 - [ ] **Step 1: Write tests for Rapier-before-R3F-before-Three ordering.**
 
-~~~ts
+```ts
 import { describe, expect, it } from 'vitest';
 import { classifyDependencyChunk } from '../src/performance/chunkClassification';
 
@@ -140,19 +140,19 @@ describe('classifyDependencyChunk', () => {
     expect(classifyDependencyChunk('/repo/src/main.tsx')).toBeUndefined();
   });
 });
-~~~
+```
 
 - [ ] **Step 2: Run the focused test and verify the helper is missing.**
 
-~~~bash
+```bash
 NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-phase5-chunks.localstorage' npm run test -- tests/chunkClassification.test.ts
-~~~
+```
 
 Expected: failure because the helper does not exist.
 
 - [ ] **Step 3: Implement the path-safe classifier.**
 
-~~~ts
+```ts
 export type DependencyChunk = 'rapier' | 'r3f-drei' | 'vendor' | 'miniplex' | 'tweening';
 
 export function classifyDependencyChunk(id: string): DependencyChunk | undefined {
@@ -174,7 +174,7 @@ export function classifyDependencyChunk(id: string): DependencyChunk | undefined
   if (hasPrefix(['tween/', 'gsap/'])) return 'tweening';
   return 'vendor';
 }
-~~~
+```
 
 - [ ] **Step 4: Wire Vite to the helper, run focused tests, build, and inspect dist/assets JS names.**
 
@@ -182,10 +182,10 @@ Expected: tests/build pass, dependency-specific chunks are present when Rollup h
 
 - [ ] **Step 5: Commit.**
 
-~~~bash
+```bash
 git add src/performance/chunkClassification.ts tests/chunkClassification.test.ts vite.config.ts
 git commit -m "perf: make dependency chunking path-aware"
-~~~
+```
 
 ### Task 3: Add shared bundle reporting and tightened budgets
 
@@ -197,9 +197,9 @@ Create a temporary dist/assets/a.js and two root GLBs, call collectBundleReport(
 
 - [ ] **Step 2: Run the focused test and verify the collector is missing.**
 
-~~~bash
+```bash
 NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-phase5-report.localstorage' npm run test -- tests/bundleReport.test.ts
-~~~
+```
 
 Expected: failure because the collector does not exist.
 
@@ -207,13 +207,13 @@ Expected: failure because the collector does not exist.
 
 Export collectBundleReport(distDir) from scripts/bundle-report.mjs using fs readdirSync/statSync and gzipSync. Return this stable, sorted shape:
 
-~~~js
+```js
 {
   javascript: { rawBytes, gzipBytes, files: [{ name, rawBytes, gzipBytes }] },
   models: { totalBytes, files: [{ name, bytes }] },
   criticalModel: { name: 'Copilot3D-fish.glb', bytes }
 }
-~~~
+```
 
 The CLI accepts --dist and --output, prints markdown, and writes deterministic content with no timestamp/hash.
 
@@ -221,11 +221,11 @@ The CLI accepts --dist and --output, prints markdown, and writes deterministic c
 
 Use these defaults and retain environment overrides:
 
-~~~js
+```js
 const maxJavaScriptGzipBytes = Number(process.env.MAX_JS_GZIP_BYTES ?? 1_700_000);
 const maxModelBytes = Number(process.env.MAX_MODEL_BYTES ?? 2_921_368);
 const maxCriticalModelBytes = Number(process.env.MAX_CRITICAL_MODEL_BYTES ?? 960_000);
-~~~
+```
 
 Print a critical-model line and fail if that limit is exceeded.
 
@@ -235,14 +235,14 @@ Add report:bundle as node scripts/bundle-report.mjs --dist dist --output docs/pe
 
 - [ ] **Step 6: Run and commit.**
 
-~~~bash
+```bash
 npm run build
 npm run report:bundle
 npm run check:bundle
 NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-phase5-report.localstorage' npm run test -- tests/bundleReport.test.ts
 git add scripts/bundle-report.mjs scripts/check-bundle-budget.mjs tests/bundleReport.test.ts docs/performance/asset-transfer.md package.json
 git commit -m "perf: report and gate asset transfer budgets"
-~~~
+```
 
 ### Task 4: Refactor fish model loading to critical-plus-deferred assets
 
@@ -250,7 +250,7 @@ git commit -m "perf: report and gate asset transfer budgets"
 
 - [ ] **Step 1: Add and test the pure fallback helper.**
 
-~~~ts
+```ts
 export type FishModelIndex = 0 | 1 | 2;
 
 export function resolveFishModelIndex(
@@ -260,7 +260,7 @@ export function resolveFishModelIndex(
   const index: FishModelIndex = requested === 1 || requested === 2 ? requested : 0;
   return available[index] ? index : 0;
 }
-~~~
+```
 
 Test requested variants both unavailable and available, plus invalid requests.
 
@@ -272,12 +272,12 @@ Props are modelIndex, gltf, meshRef, uniformsRef, lighting, and onReady. The com
 
 Each variant boundary catches load errors, logs FishRenderSystem: failed to load model #N once, and renders null. Add this Window shape to src/declarations.d.ts:
 
-~~~ts
+```ts
 __vibe_fishAssetStatus?: {
   primary: 'loading' | 'ready' | 'error';
   variants: ['loading' | 'ready' | 'error', 'loading' | 'ready' | 'error'];
 };
-~~~
+```
 
 Keep one stable status object, update it from readiness/error callbacks, and delete it on unmount.
 
@@ -295,10 +295,10 @@ Make useGLTF mocks URL-based. Add tests for primary-first request, variant failu
 
 - [ ] **Step 7: Commit.**
 
-~~~bash
+```bash
 git add src/systems/FishModelMesh.tsx src/systems/FishRenderSystem.tsx src/systems/fishModels.ts src/declarations.d.ts tests/FishRenderSystem.loading.test.tsx tests/FishRenderSystem.test.ts tests/fishLightingMaterial.test.tsx tests/FishRenderSystem.adaptive.test.tsx tests/FishRenderSystem.cap.test.tsx
 git commit -m "perf: defer fish variant model loading"
-~~~
+```
 
 ### Task 5: Verify browser transfer order and visual continuity
 
@@ -306,57 +306,56 @@ git commit -m "perf: defer fish variant model loading"
 
 - [ ] **Step 1: Add the critical-first smoke test.**
 
-Track GLB request URLs before navigation, use domcontentloaded for the first assertion, assert the first fish request ends with Copilot3D-fish.glb, then wait for window.__vibe_fishAssetStatus primary ready and both variants ready. Verify canvas visibility and no page errors/404 responses.
+Track GLB request URLs before navigation, use domcontentloaded for the first assertion, assert the first fish request ends with Copilot3D-fish.glb, then wait for window.\_\_vibe_fishAssetStatus primary ready and both variants ready. Verify canvas visibility and no page errors/404 responses.
 
 - [ ] **Step 2: Run the focused production-preview smoke test.**
 
-~~~bash
+```bash
 npm run build
 npm run check:bundle
 npx playwright test tests/e2e/smoke.spec.ts -g "critical fish model"
-~~~
+```
 
 Expected: primary precedes variants, all optimized GLBs return model/gltf-binary, status reaches ready, and there are no errors.
 
 - [ ] **Step 3: Commit.**
 
-~~~bash
+```bash
 git add tests/e2e/smoke.spec.ts docs/performance/asset-transfer.md
 git commit -m "test: verify critical fish asset loading"
-~~~
+```
 
 ### Task 6: Full validation and handoff
 
 - [ ] **Step 1: Run static checks and the complete unit suite.**
 
-~~~bash
+```bash
 npm run format:check
 npm run lint -- --max-warnings=0
 npm run typecheck
 NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-phase5-final.localstorage' npm run test -- --run
-~~~
+```
 
 Expected: all commands exit 0 and the suite reports at least the 145 baseline passing tests plus new coverage.
 
 - [ ] **Step 2: Run production validation.**
 
-~~~bash
+```bash
 npm run build
 npm run assets:verify
 npm run report:bundle
 npm run check:bundle
 npm run test:smoke
 git diff --check
-~~~
+```
 
 Expected: at least 30% fish-asset reduction, all smoke scenarios pass, and diff check is clean.
 
 - [ ] **Step 3: Verify branch state and prepare the PR.**
 
-~~~bash
+```bash
 git status --short --branch
 git log --oneline --decorate -8
-~~~
+```
 
 The PR description must include baseline/post raw and gzip tables, exact optimizer settings, chunk observations, browser request-order/visual results, validation commands, and links to issues 145 and 150.
-

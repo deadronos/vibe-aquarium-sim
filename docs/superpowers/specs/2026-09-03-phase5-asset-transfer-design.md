@@ -1,7 +1,7 @@
 # Phase 5: Simulation-start transfer design
 
-Date: 2026-09-03  
-Issue: #145  
+Date: 2026-09-03
+Issue: #145
 Branch: `codex/phase5-asset-transfer`
 
 ## Problem and goals
