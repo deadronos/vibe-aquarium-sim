@@ -1,6 +1,7 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import React, { act } from 'react';
+import * as THREE from 'three';
 import { useGameStore } from '../src/gameStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { getQualitySettings } from '../src/performance/qualityPresets';
@@ -49,7 +50,7 @@ describe('Tank material defaults', () => {
   beforeEach(() => {
     // deterministic defaults
     act(() => {
-      useQualityStore.setState({ settings: getQualitySettings('low', 2) });
+      useQualityStore.setState({ level: 'low', settings: getQualitySettings('low', 2) });
       useGameStore.setState({ visualQualityOverrides: {} });
     });
     useFrameSpy.mockClear();
@@ -77,5 +78,28 @@ describe('Tank material defaults', () => {
     );
 
     expect(renderer.scene.children.length).toBeGreaterThan(0);
+  });
+
+  it('uses a non-transmissive material for low WebGPU quality', async () => {
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider isWebGPU>
+        <Tank />
+      </VisualQualityProvider>
+    );
+
+    const physicalMaterials: unknown[] = [];
+    const visit = (node: { instance?: { material?: THREE.Material }; children?: unknown[] }) => {
+      if (node.instance?.material?.type === 'MeshPhysicalMaterial') {
+        physicalMaterials.push(node.instance.material);
+      }
+      for (const child of node.children ?? []) {
+        visit(child as { instance?: { material?: THREE.Material }; children?: unknown[] });
+      }
+    };
+    for (const child of renderer.scene.children) {
+      visit(child as { instance?: { material?: THREE.Material }; children?: unknown[] });
+    }
+
+    expect(physicalMaterials).toHaveLength(0);
   });
 });

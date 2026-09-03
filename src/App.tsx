@@ -3,6 +3,8 @@ import DebugHUD from './components/DebugHUD';
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import { readBoolFromStorage, writeBoolToStorage } from './utils/storageUtils';
 import { SettingsModal } from './components/ui/SettingsModal';
+import { useQualityStore } from './performance/qualityStore';
+import { resolveQualityLevel } from './performance/qualityQuery';
 
 import './App.css';
 
@@ -30,6 +32,13 @@ function App() {
   const setDebugVisible = useCallback((next: boolean) => {
     setShowDebugPanel(next);
     writeBoolToStorage('hud.debug.visible', next);
+  }, []);
+
+  useEffect(() => {
+    const requestedQuality = resolveQualityLevel(window.location.search);
+    if (requestedQuality !== null) {
+      useQualityStore.getState().setLevel(requestedQuality);
+    }
   }, []);
 
   useEffect(() => {

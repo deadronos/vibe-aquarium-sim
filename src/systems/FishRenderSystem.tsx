@@ -88,7 +88,8 @@ export const FishRenderSystem = () => {
     const cResolved = c.geo ? c : fallback(2);
 
     // Skip material enhancement on WebGPU (incompatible with onBeforeCompile injection)
-    if (isWebGPU) {
+    // and at low quality when both optional lighting effects are disabled.
+    if (isWebGPU || (!fishRimLightingEnabled && !fishSubsurfaceScatteringEnabled)) {
       return {
         geometryA: aResolved.geo!,
         materialA: aResolved.mat!,
@@ -121,7 +122,14 @@ export const FishRenderSystem = () => {
       materialC: cEnhanced.material,
       uniformsC: normalizeUniforms(cEnhanced.uniforms),
     };
-  }, [gltfA.scene, gltfB.scene, gltfC.scene, isWebGPU]);
+  }, [
+    fishRimLightingEnabled,
+    fishSubsurfaceScatteringEnabled,
+    gltfA.scene,
+    gltfB.scene,
+    gltfC.scene,
+    isWebGPU,
+  ]);
 
   useEffect(() => {
     const rimStrength = fishRimLightingEnabled ? DEFAULT_VIBE_FISH_RIM_STRENGTH : 0;

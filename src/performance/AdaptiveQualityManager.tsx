@@ -2,12 +2,10 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
-import {
-  getDeviceMaxDpr,
-  nextHigherQuality,
-  nextLowerQuality,
-  getQualitySettings,
-} from './qualityPresets';
+import { getDeviceMaxDpr, nextHigherQuality, nextLowerQuality } from './qualityPresets';
+import { getQualityProfile, type RendererBackend } from './qualityProfile';
+import { applyQualityShadowMap } from './qualityShadow';
+import { recordQualityTransition } from './qualityTelemetry';
 import { useQualityStore } from './qualityStore';
 import { useVisualQuality } from './VisualQualityContext';
 
@@ -26,33 +24,6 @@ export interface AdaptiveQualityManagerProps {
   directionalLightRef?: RefObject<THREE.DirectionalLight | null>;
   spotLightRef?: RefObject<THREE.SpotLight | null>;
 }
-
-/**
- * Apply a shadow map size to a light, but only when the size actually changed.
- * This is a one-time resize triggered by quality-level changes (useEffect),
- * NOT per-frame. Per-frame dynamic resizing would crash WebGPU with
- * "Destroyed texture used in a submit". This deferred approach is safe for
- * both WebGL and WebGPU backends.
- *
- * IMPORTANT: We do NOT manually dispose the old shadow map. Three.js handles
- * RenderTarget disposal and recreation internally when `needsUpdate` is true.
- * Manual disposal causes "Destroyed texture used in a submit" on WebGPU
- * because the GPU command buffer may still reference the texture.
- */
-const applyShadowMapSize = (
-  light: THREE.DirectionalLight | THREE.SpotLight | null | undefined,
-  targetSize: number
-): void => {
-  if (!light?.shadow) return;
-  const current = light.shadow.mapSize;
-  if (current.width === targetSize && current.height === targetSize) return;
-
-  light.shadow.mapSize.set(targetSize, targetSize);
-  // Let Three.js handle the RenderTarget lifecycle — it will dispose the old
-  // shadow map and create a new one with the updated dimensions during the
-  // next shadow render pass.
-  light.shadow.needsUpdate = true;
-};
 
 export const AdaptiveQualityManager = ({
   directionalLightRef,
@@ -88,8 +59,9 @@ export const AdaptiveQualityManager = ({
   });
 
   useEffect(() => {
-    const settings = getQualitySettings(level, deviceMaxDprRef.current);
-    const nextDpr = settings.dpr;
+    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const nextDpr = profile.dpr;
 
     if (
       lastAppliedDprRef.current === null ||
@@ -102,23 +74,50 @@ export const AdaptiveQualityManager = ({
     if (directionalLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== settings.shadowMapSize
+        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
       ) {
-        applyShadowMapSize(directionalLightRef.current, settings.shadowMapSize);
+        applyQualityShadowMap(directionalLightRef.current, profile.shadowMapSize, backend);
       }
     }
 
     if (spotLightRef?.current && !isWebGPU) {
       if (
         lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== settings.shadowMapSize
+        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
       ) {
-        applyShadowMapSize(spotLightRef.current, settings.shadowMapSize);
+        applyQualityShadowMap(spotLightRef.current, profile.shadowMapSize, backend);
       }
     }
 
-    lastAppliedShadowSizeRef.current = settings.shadowMapSize;
+    lastAppliedShadowSizeRef.current = profile.shadowMapSize;
   }, [directionalLightRef, isWebGPU, level, setDpr, spotLightRef]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const current = window.__vibe_qualityStatus;
+    window.__vibe_qualityStatus = {
+      backend,
+      level,
+      shadowMapSize: profile.shadowMapSize,
+      causticsEnabled: profile.causticsEnabled,
+      fishRimLightingEnabled: profile.fishRimLightingEnabled,
+      fishSubsurfaceScatteringEnabled: profile.fishSubsurfaceScatteringEnabled,
+      spotLightShadowsEnabled: profile.spotLightShadowsEnabled,
+      tankTransmissionEnabled: profile.tankTransmissionEnabled,
+      tankTransmissionDispersionEnabled: profile.tankTransmissionDispersionEnabled,
+      stressMode: current?.stressMode,
+      fishCount: current?.fishCount,
+    };
+  }, [isWebGPU, level]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') delete window.__vibe_qualityStatus;
+    };
+  }, []);
 
   useFrame((_, delta) => {
     if (!isAdaptiveEnabled) return;
@@ -164,6 +163,13 @@ export const AdaptiveQualityManager = ({
       const next = nextLowerQuality(level);
       if (next !== level) {
         applyLevelWithDeviceClamp(next);
+        recordQualityTransition({
+          from: level,
+          to: next,
+          backend: isWebGPU ? 'webgpu' : 'webgl',
+          ema,
+          reason: 'low-fps',
+        });
         cooldownRef.current = COOLDOWN_SECONDS;
       }
       return;
@@ -175,13 +181,29 @@ export const AdaptiveQualityManager = ({
       if (next !== level) {
         // Avoid upgrading beyond what the device DPR makes meaningful.
         const deviceMaxDpr = deviceMaxDprRef.current;
-        const nextSettings = getQualitySettings(next, deviceMaxDpr);
-        const currentSettings = getQualitySettings(level, deviceMaxDpr);
-        const dprDelta = nextSettings.dpr - currentSettings.dpr;
+        const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+        const nextProfile = getQualityProfile(next, backend, deviceMaxDpr);
+        const currentProfile = getQualityProfile(level, backend, deviceMaxDpr);
+        const dprDelta = nextProfile.dpr - currentProfile.dpr;
 
-        if (dprDelta > 0.05 || nextSettings.shadowMapSize !== currentSettings.shadowMapSize) {
+        if (dprDelta > 0.05 || nextProfile.shadowMapSize !== currentProfile.shadowMapSize) {
           applyLevelWithDeviceClamp(next);
+          recordQualityTransition({
+            from: level,
+            to: next,
+            backend,
+            ema,
+            reason: 'high-fps',
+          });
           cooldownRef.current = COOLDOWN_SECONDS;
+        } else {
+          recordQualityTransition({
+            from: level,
+            to: next,
+            backend,
+            ema,
+            reason: 'device-clamp',
+          });
         }
       }
       return;

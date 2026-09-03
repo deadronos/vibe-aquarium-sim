@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phase 1 merged; Phase 2 telemetry/per-frame allocation reduction complete pending PR #152 review.
-- Branch: `codex/phase2-telemetry` (PR #152 now targeting `main`)
+- Phase: Phase 1 and Phase 2 merged; Phase 3 adaptive quality complete pending PR review.
+- Branch: `codex/phase2-adaptive-quality` (issue #143)
 
 ## Known issues / technical debt
 
@@ -82,3 +82,11 @@
 - **Debug UX:** `DebugHUD` now explicitly creates the telemetry collector while visible and cleans up telemetry when hidden; low-frequency HUD snapshots preserve React updates despite stable system status references.
 - **Validation:** Added disabled/enabled telemetry tests and Debug HUD lifecycle coverage. Full suite: 112 passed, 1 skipped; lint, typecheck, formatting, build, bundle budgets, and both browser smoke tests pass.
 - **Documentation:** Added `docs/performance/frame-loop-telemetry.md` with the steady-state test contract and repeatable Chrome Performance/Memory profiling procedure.
+
+### 2026-09-03 (Phase 3)
+
+- **Quality profiles:** Added backend-aware quality resolution. Low disables caustics, fish rim/SSS, spot shadows, tank transmission, and dispersion; WebGPU uses smaller startup shadow maps.
+- **Safety:** Initial shadow sizes are resolved before lights mount; WebGL may resize after transitions, while WebGPU never resizes or manually disposes shadow maps. Low WebGPU keeps the tank mounted on a standard material path.
+- **Adaptive telemetry:** Added hysteretic downshift/recovery coverage with bounded opt-in `qualityTransitions` diagnostics and a resolved `__vibe_qualityStatus` snapshot.
+- **Stress coverage:** Added `?quality=low&stress=quality` browser smoke coverage with a bounded 300-fish school; normal startup remains 30 fish.
+- **Validation:** Full unit suite: 125 passed, 1 skipped; format, lint, typecheck, build, bundle budget, and all three preview smoke tests pass locally.

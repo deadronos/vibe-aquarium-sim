@@ -4,6 +4,8 @@ import React, { act } from 'react';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 
 import { useGameStore } from '../src/gameStore';
+import { getQualitySettings } from '../src/performance/qualityPresets';
+import { useQualityStore } from '../src/performance/qualityStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import {
@@ -69,6 +71,7 @@ describe('fish lighting material injection', () => {
     // Reset overrides first to avoid cross-test contamination.
     act(() => {
       useGameStore.setState({ visualQualityOverrides: {} });
+      useQualityStore.setState({ level: 'high', settings: getQualitySettings('high', 2) });
     });
 
     // Ensure the mocked GLTF loader returns stable, Three-backed scenes.
@@ -204,7 +207,7 @@ describe('fish lighting material injection', () => {
     expect(second.uniforms).toBe(first.uniforms);
   });
 
-  it('sets rim/sss strengths to 0 when disabled via visualQualityOverrides', async () => {
+  it('skips rim/sss enhancement when both effects are disabled via overrides', async () => {
     useFrameSpy.mockClear();
 
     act(() => {
@@ -235,13 +238,7 @@ describe('fish lighting material injection', () => {
 
         for (const m of mats) {
           const data = m.userData as Record<string, unknown>;
-          const lighting = data.vibeFishLighting as
-            | { uniforms: VibeFishLightingUniforms }
-            | undefined;
-          expect(lighting).toBeDefined();
-
-          expect(lighting!.uniforms.vibeRimStrength.value).toBe(0);
-          expect(lighting!.uniforms.vibeSSSStrength.value).toBe(0);
+          expect(data.vibeFishLighting).toBeUndefined();
         }
       }
     } finally {

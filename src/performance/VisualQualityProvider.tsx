@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useGameStore } from '../gameStore';
 import { useQualityStore } from './qualityStore';
+import { getQualityProfile } from './qualityProfile';
 import { VisualQualityContext, type VisualQualityContextValue } from './VisualQualityContext';
 
 export const VisualQualityProvider = ({
@@ -11,62 +12,50 @@ export const VisualQualityProvider = ({
   children: ReactNode;
   isWebGPU?: boolean;
 }) => {
-  const causticsEnabled = useQualityStore((s) => s.settings.causticsEnabled);
-  const fishRimLightingEnabled = useQualityStore((s) => s.settings.fishRimLightingEnabled);
-  const fishSubsurfaceScatteringEnabled = useQualityStore(
-    (s) => s.settings.fishSubsurfaceScatteringEnabled
-  );
-  const waterSurfaceUpgradeEnabled = useQualityStore((s) => s.settings.waterSurfaceUpgradeEnabled);
-  const waterVolumeUpgradeEnabled = useQualityStore((s) => s.settings.waterVolumeUpgradeEnabled);
-  const ambientParticlesEnabled = useQualityStore((s) => s.settings.ambientParticlesEnabled);
-  const depthOfFieldEnabled = useQualityStore((s) => s.settings.depthOfFieldEnabled);
+  const settings = useQualityStore((s) => s.settings);
 
   const overrides = useGameStore((s) => s.visualQualityOverrides ?? {});
 
-  const adaptiveInstanceUpdatesEnabled = useQualityStore(
-    (s) => s.settings.adaptiveInstanceUpdatesEnabled
-  );
-  const adaptiveSchedulerEnabled = useQualityStore((s) => s.settings.adaptiveSchedulerEnabled);
-
-  const value = useMemo<VisualQualityContextValue>(
-    () => ({
-      isWebGPU,
-      causticsEnabled: overrides.causticsEnabled ?? causticsEnabled,
-      fishRimLightingEnabled: overrides.fishRimLightingEnabled ?? fishRimLightingEnabled,
+  const value = useMemo<VisualQualityContextValue>(() => {
+    const qualityProfile = getQualityProfile(settings.level, isWebGPU ? 'webgpu' : 'webgl');
+    const mergedProfile = {
+      ...qualityProfile,
+      causticsEnabled: overrides.causticsEnabled ?? qualityProfile.causticsEnabled,
+      fishRimLightingEnabled:
+        overrides.fishRimLightingEnabled ?? qualityProfile.fishRimLightingEnabled,
       fishSubsurfaceScatteringEnabled:
-        overrides.fishSubsurfaceScatteringEnabled ?? fishSubsurfaceScatteringEnabled,
+        overrides.fishSubsurfaceScatteringEnabled ?? qualityProfile.fishSubsurfaceScatteringEnabled,
       waterSurfaceUpgradeEnabled:
-        overrides.waterSurfaceUpgradeEnabled ?? waterSurfaceUpgradeEnabled,
-      waterVolumeUpgradeEnabled: overrides.waterVolumeUpgradeEnabled ?? waterVolumeUpgradeEnabled,
-      ambientParticlesEnabled: overrides.ambientParticlesEnabled ?? ambientParticlesEnabled,
-      depthOfFieldEnabled: overrides.depthOfFieldEnabled ?? depthOfFieldEnabled,
-      // New adaptive flags
+        overrides.waterSurfaceUpgradeEnabled ?? qualityProfile.waterSurfaceUpgradeEnabled,
+      waterVolumeUpgradeEnabled:
+        overrides.waterVolumeUpgradeEnabled ?? qualityProfile.waterVolumeUpgradeEnabled,
+      ambientParticlesEnabled:
+        overrides.ambientParticlesEnabled ?? qualityProfile.ambientParticlesEnabled,
+      depthOfFieldEnabled: overrides.depthOfFieldEnabled ?? qualityProfile.depthOfFieldEnabled,
       adaptiveInstanceUpdatesEnabled:
-        overrides.adaptiveInstanceUpdatesEnabled ?? adaptiveInstanceUpdatesEnabled,
-      adaptiveSchedulerEnabled: overrides.adaptiveSchedulerEnabled ?? adaptiveSchedulerEnabled,
-    }),
-    [
+        overrides.adaptiveInstanceUpdatesEnabled ?? qualityProfile.adaptiveInstanceUpdatesEnabled,
+      adaptiveSchedulerEnabled:
+        overrides.adaptiveSchedulerEnabled ?? qualityProfile.adaptiveSchedulerEnabled,
+    };
+
+    return {
+      ...mergedProfile,
       isWebGPU,
-      ambientParticlesEnabled,
-      causticsEnabled,
-      depthOfFieldEnabled,
-      fishRimLightingEnabled,
-      fishSubsurfaceScatteringEnabled,
-      overrides.ambientParticlesEnabled,
-      overrides.causticsEnabled,
-      overrides.depthOfFieldEnabled,
-      overrides.fishRimLightingEnabled,
-      overrides.fishSubsurfaceScatteringEnabled,
-      overrides.waterSurfaceUpgradeEnabled,
-      overrides.waterVolumeUpgradeEnabled,
-      overrides.adaptiveInstanceUpdatesEnabled,
-      overrides.adaptiveSchedulerEnabled,
-      waterSurfaceUpgradeEnabled,
-      waterVolumeUpgradeEnabled,
-      adaptiveInstanceUpdatesEnabled,
-      adaptiveSchedulerEnabled,
-    ]
-  );
+      qualityProfile: mergedProfile,
+    };
+  }, [
+    isWebGPU,
+    settings.level,
+    overrides.ambientParticlesEnabled,
+    overrides.causticsEnabled,
+    overrides.depthOfFieldEnabled,
+    overrides.fishRimLightingEnabled,
+    overrides.fishSubsurfaceScatteringEnabled,
+    overrides.waterSurfaceUpgradeEnabled,
+    overrides.waterVolumeUpgradeEnabled,
+    overrides.adaptiveInstanceUpdatesEnabled,
+    overrides.adaptiveSchedulerEnabled,
+  ]);
 
   return <VisualQualityContext.Provider value={value}>{children}</VisualQualityContext.Provider>;
 };

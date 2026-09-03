@@ -9,6 +9,7 @@ import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { world } from '../src/store';
 import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
+import { getQualitySettings } from '../src/performance/qualityPresets';
 
 // Capture frame callbacks so tests can invoke them deterministically
 const frameCallbacks: Array<(state: unknown, delta: number) => void> = [];
@@ -147,6 +148,38 @@ describe('FishRenderSystem adaptive instance updates', () => {
     expect(inst.count).toBeGreaterThanOrEqual(1);
     // If matrices were written directly, setMatrixAt should have been called for most instances
     expect(instanceSpy.mock.calls.length).toBeGreaterThanOrEqual(Math.max(1, Math.floor(N * 0.9)));
+
+    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
+    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
+      await maybePromise;
+    }
+  });
+
+  it('skips optional fish lighting enhancement at low quality', async () => {
+    act(() => {
+      useQualityStore.setState({ level: 'low', settings: getQualitySettings('low', 2) });
+    });
+    world.add({
+      isFish: true,
+      position: new THREE.Vector3(0, 0, 0),
+      velocity: new THREE.Vector3(1, 0, 0),
+    });
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <FishRenderSystem />
+      </VisualQualityProvider>
+    );
+
+    const materials = renderer.scene.children
+      .map((child) => (child.instance as THREE.InstancedMesh).material)
+      .filter((material): material is THREE.Material => material instanceof THREE.Material);
+
+    expect(
+      materials.every(
+        (material) => !(material.userData as Record<string, unknown>).vibeFishLighting
+      )
+    ).toBe(true);
 
     const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
     if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {

@@ -47,6 +47,14 @@ declare global {
     from?: number;
     to: number;
   };
+  type VibeQualityTransitionEntry = {
+    from: 'low' | 'medium' | 'high' | 'ultra';
+    to: 'low' | 'medium' | 'high' | 'ultra';
+    backend: 'webgl' | 'webgpu';
+    ema: number;
+    reason: 'low-fps' | 'high-fps' | 'device-clamp';
+    time: number;
+  };
 
   type VibeDebugCollector = {
     simulateStep: VibeSimEntry[];
@@ -54,6 +62,7 @@ declare global {
     fishUseFrame: VibeFishUseFrameEntry[];
     scheduler?: VibeSchedEntry[];
     schedulerTuning?: VibeSchedulerTuningEntry[];
+    qualityTransitions?: VibeQualityTransitionEntry[];
     reset?: () => void;
     download?: () => boolean;
   };
@@ -65,6 +74,19 @@ declare global {
     __vibe_renderStatus?: VibeRenderStatus;
     __vibe_schedStatus?: VibeSchedStatus;
     __vibe_rendererStatus?: VibeRendererStatus;
+    __vibe_qualityStatus?: {
+      backend: 'webgl' | 'webgpu';
+      level: 'low' | 'medium' | 'high' | 'ultra';
+      shadowMapSize: number;
+      causticsEnabled: boolean;
+      fishRimLightingEnabled: boolean;
+      fishSubsurfaceScatteringEnabled: boolean;
+      spotLightShadowsEnabled: boolean;
+      tankTransmissionEnabled: boolean;
+      tankTransmissionDispersionEnabled: boolean;
+      stressMode?: boolean;
+      fishCount?: number;
+    };
     toggleBoidsWorker?: () => void;
   }
 }
