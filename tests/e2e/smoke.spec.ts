@@ -65,6 +65,40 @@ test('falls back cleanly when WebGPU is explicitly requested but unavailable', a
   expect(failedResponses).toEqual([]);
 });
 
+test('critical fish model loads before deferred variants', async ({ page }) => {
+  const pageErrors: string[] = [];
+  const failedResponses: string[] = [];
+  const fishRequestUrls: string[] = [];
+
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('response', (response) => {
+    if (response.status() === 404) failedResponses.push(response.url());
+  });
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith('.glb')) fishRequestUrls.push(request.url());
+  });
+
+  await page.goto('./', { waitUntil: 'domcontentloaded' });
+
+  await expect.poll(() => fishRequestUrls.length).toBeGreaterThan(0);
+  expect(new URL(fishRequestUrls[0]!).pathname).toMatch(/\/Copilot3D-fish\.glb$/);
+
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.primary), {
+      timeout: 20_000,
+    })
+    .toBe('ready');
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
+      timeout: 20_000,
+    })
+    .toEqual(['ready', 'ready']);
+  await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
+
+  expect(pageErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});
+
 test('applies the low-quality stress profile to a bounded larger school', async ({ page }) => {
   const { pageErrors, failedResponses } = await expectHealthyAquarium(
     page,
