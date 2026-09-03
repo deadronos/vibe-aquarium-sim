@@ -186,7 +186,7 @@ backend)`. Start from `getQualitySettings`, copy the immutable base values,
   `window.__vibe_qualityStatus` snapshot containing backend, level, shadow size,
   and optional-cost flags. Keep normal startup unchanged.
 
-- [ ] **Step 3: Run the complete validation matrix**
+- [x] **Step 3: Run the complete validation matrix**
 
   ```bash
   npm run format:check
@@ -199,7 +199,7 @@ backend)`. Start from `getQualitySettings`, copy the immutable base values,
   git diff --check
   ```
 
-- [ ] **Step 4: Update memory, issue #143, and open the PR**
+- [x] **Step 4: Update memory, issue #143, and open the PR**
 
   Record validation counts and the remaining #142/#145 order, comment on issue
   #143 with the branch/PR link, and open a ready-for-review PR targeting `main`.
