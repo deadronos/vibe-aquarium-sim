@@ -45,7 +45,10 @@ test.describe('mobile aquarium composition', () => {
     await expect(settingsButton).toBeFocused();
     await expect(page.locator('#vibe-app-shell')).not.toHaveJSProperty('inert', true);
 
-    await rail.getByRole('button', { name: 'Feed fish' }).click();
+    const feedButton = rail.getByRole('button', { name: 'Feed fish' });
+    const feedBox = await feedButton.boundingBox();
+    expect(feedBox).not.toBeNull();
+    await page.mouse.click(feedBox!.x + feedBox!.width / 2, feedBox!.y + feedBox!.height / 2);
     await expect(lastFed).toHaveText('Just now');
 
     const firstFeedTimestamp = await lastFed.getAttribute('datetime');
