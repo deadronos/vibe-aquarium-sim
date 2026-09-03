@@ -2,6 +2,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
+import { classifyDependencyChunk } from './src/performance/chunkClassification';
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
@@ -41,24 +42,7 @@ export default defineConfig(({ command }) => {
       rollupOptions: {
         output: {
           // Custom manual chunks to split large dependencies and keep the main bundle small.
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              // Some environments can exhibit library initialization order issues when
-              // large libs are split into separate chunks; merge `three` into the
-              // vendor chunk to ensure consistent evaluation order on deployed hosts.
-              if (id.includes('three')) return 'vendor';
-              if (id.includes('@react-three') || id.includes('drei')) return 'r3f-drei';
-              if (id.includes('@react-three/rapier') || id.includes('rapier')) return 'rapier';
-              if (id.includes('miniplex')) return 'miniplex';
-              // Merge zustand into vendor to avoid module initialization ordering issues that
-              // can cause runtime "Cannot access 'I' before initialization" errors in some
-              // deployed environments (observed on GitHub Pages). Keeping Zustand in the
-              // larger vendor chunk ensures correct evaluation order.
-              if (id.includes('zustand')) return 'vendor';
-              if (id.includes('tween') || id.includes('gsap')) return 'tweening';
-              return 'vendor';
-            }
-          },
+          manualChunks: classifyDependencyChunk,
         },
       },
     },

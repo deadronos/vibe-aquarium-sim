@@ -65,6 +65,78 @@ test('falls back cleanly when WebGPU is explicitly requested but unavailable', a
   expect(failedResponses).toEqual([]);
 });
 
+test('critical fish model loads before deferred variants settle', async ({ page }) => {
+  const pageErrors: string[] = [];
+  const failedResponses: string[] = [];
+  const fishRequestUrls: string[] = [];
+  const fishResponses: Array<{ url: string; status: number }> = [];
+  const fishRequestFailures: Array<{ url: string; error: string | null }> = [];
+
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('response', (response) => {
+    if (response.status() === 404) failedResponses.push(response.url());
+    if (new URL(response.url()).pathname.endsWith('.glb'))
+      fishResponses.push({ url: response.url(), status: response.status() });
+  });
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith('.glb')) fishRequestUrls.push(request.url());
+  });
+  page.on('requestfailed', (request) => {
+    if (new URL(request.url()).pathname.endsWith('.glb'))
+      fishRequestFailures.push({ url: request.url(), error: request.failure()?.errorText ?? null });
+  });
+
+  await page.goto('./', { waitUntil: 'domcontentloaded' });
+
+  await expect.poll(() => fishRequestUrls.length).toBeGreaterThan(0);
+  expect(new URL(fishRequestUrls[0]!).pathname).toMatch(/\/Copilot3D-fish\.glb$/);
+
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.primary), {
+      timeout: 20_000,
+    })
+    .toBe('ready');
+  try {
+    await expect
+      .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
+        // Variants load sequentially and each has its own 15s fail-closed
+        // timeout, so allow both stages to settle on slower CI runners.
+        timeout: 45_000,
+      })
+      .toEqual([
+        expect.stringMatching(/^(ready|error)$/),
+        expect.stringMatching(/^(ready|error)$/),
+      ]);
+  } catch (error) {
+    const diagnostics = await page.evaluate(
+      ({ responses, requestFailures }) => ({
+        status: window.__vibe_fishAssetStatus,
+        glbResources: performance
+          .getEntriesByType('resource')
+          .filter((entry) => entry.name.endsWith('.glb'))
+          .map((entry) => {
+            const resource = entry as PerformanceResourceTiming;
+            return {
+              name: resource.name,
+              duration: resource.duration,
+              transferSize: resource.transferSize,
+              encodedBodySize: resource.encodedBodySize,
+            };
+          }),
+        responses,
+        requestFailures,
+      }),
+      { responses: fishResponses, requestFailures: fishRequestFailures }
+    );
+    console.log(`Fish asset diagnostics: ${JSON.stringify(diagnostics)}`);
+    throw error;
+  }
+  await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
+
+  expect(pageErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});
+
 test('applies the low-quality stress profile to a bounded larger school', async ({ page }) => {
   const { pageErrors, failedResponses } = await expectHealthyAquarium(
     page,

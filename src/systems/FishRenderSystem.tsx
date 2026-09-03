@@ -1,24 +1,20 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { Object3D, InstancedMesh, Vector3, Quaternion } from 'three';
+import { InstancedMesh, Object3D, Quaternion, Vector3 } from 'three';
 import { world } from '../store';
 import type { Entity } from '../store';
-
 import { useVisualQuality } from '../performance/VisualQualityContext';
 import { useQualityStore } from '../performance/qualityStore';
-
-import { MODEL_URLS, extractModelAssets } from './fishModels';
-import {
-  DEFAULT_VIBE_FISH_RIM_STRENGTH,
-  DEFAULT_VIBE_FISH_SSS_STRENGTH,
-  enhanceFishMaterialWithRimAndSSS,
-  type VibeFishLightingUniforms,
-} from '../shaders/fishLightingMaterial';
 import { flushDirtyInstanceMatrices } from './fishRenderFlush';
 import { MAX_INSTANCES_PER_MODEL, warnInstanceCap } from './instanceCapWarning';
+import { MODEL_URLS, resolveFishModelIndex, type FishModelIndex } from './fishModels';
+import { FishModelErrorBoundary, FishModelMesh } from './FishModelMesh';
+import type { VibeFishLightingUniforms } from '../shaders/fishLightingMaterial';
+
 const QUATERNION_POOL_SIZE = MAX_INSTANCES_PER_MODEL * 3;
+const OPTIONAL_FISH_MODEL_TIMEOUT_MS = 15_000;
 const tempObj = new Object3D();
 const tempVec = new Vector3();
 const tempQuat = new Quaternion();
@@ -38,6 +34,60 @@ function createQuaternionFreeList() {
 
 const fishEntitiesQuery = world.with('isFish', 'position', 'velocity');
 
+type DeferredFishModelProps = {
+  modelIndex: 1 | 2;
+  meshRef: React.MutableRefObject<InstancedMesh | null>;
+  uniformsRef: React.MutableRefObject<VibeFishLightingUniforms[]>;
+  fishRimLightingEnabled: boolean;
+  fishSubsurfaceScatteringEnabled: boolean;
+  isWebGPU: boolean;
+  onReady: () => void;
+};
+
+const DeferredFishModel = ({ modelIndex, ...props }: DeferredFishModelProps) => {
+  const gltf = useGLTF(MODEL_URLS[modelIndex]);
+  return <FishModelMesh modelIndex={modelIndex} gltf={gltf} {...props} />;
+};
+
+type DeferredFishModelSlotProps = DeferredFishModelProps & { onError: () => void };
+
+/**
+ * Optional variants must never hold the Suspense tree in a permanent loading
+ * state. The slot itself stays outside the boundary so its timeout effect can
+ * run while the loader is suspended; the primary model remains authoritative.
+ */
+const DeferredFishModelSlot = ({ onError, onReady, ...props }: DeferredFishModelSlotProps) => {
+  const [timedOut, setTimedOut] = useState(false);
+  const settledRef = useRef(false);
+  const handleReady = useCallback(() => {
+    settledRef.current = true;
+    onReady();
+  }, [onReady]);
+  const handleError = useCallback(() => {
+    settledRef.current = true;
+    onError();
+  }, [onError]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (settledRef.current) return;
+      settledRef.current = true;
+      onError();
+      setTimedOut(true);
+    }, OPTIONAL_FISH_MODEL_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [onError]);
+
+  if (timedOut) return null;
+  return (
+    <Suspense fallback={null}>
+      <FishModelErrorBoundary modelIndex={props.modelIndex} onError={handleError}>
+        <DeferredFishModel {...props} onReady={handleReady} />
+      </FishModelErrorBoundary>
+    </Suspense>
+  );
+};
+
 export const FishRenderSystem = () => {
   const {
     fishRimLightingEnabled,
@@ -45,125 +95,61 @@ export const FishRenderSystem = () => {
     adaptiveInstanceUpdatesEnabled,
     isWebGPU,
   } = useVisualQuality();
-
-  // Load GLTF scenes
   const gltfA = useGLTF(MODEL_URLS[0]);
-  const gltfB = useGLTF(MODEL_URLS[1]);
-  const gltfC = useGLTF(MODEL_URLS[2]);
-
-  const meshRefA = useRef<InstancedMesh>(null);
-  const meshRefB = useRef<InstancedMesh>(null);
-  const meshRefC = useRef<InstancedMesh>(null);
-
-  // Extract geometry/material for each model (use first mesh found)
-
-  const {
-    geometryA,
-    materialA,
-    uniformsA,
-    geometryB,
-    materialB,
-    uniformsB,
-    geometryC,
-    materialC,
-    uniformsC,
-  } = useMemo(() => {
-    const a = extractModelAssets(gltfA.scene);
-    const b = extractModelAssets(gltfB.scene);
-    const c = extractModelAssets(gltfC.scene);
-
-    // Provide graceful fallback instead of throwing so app remains stable in production
-    function fallback(index: number) {
-      console.warn(
-        `FishRenderSystem: Missing geometry/material for model #${index}, using fallback box mesh`
-      );
-      return {
-        geo: new THREE.BoxGeometry(0.5, 0.2, 0.1),
-        mat: new THREE.MeshStandardMaterial({ color: 0xff00ff }),
-      };
-    }
-
-    const aResolved = a.geo ? a : fallback(0);
-    const bResolved = b.geo ? b : fallback(1);
-    const cResolved = c.geo ? c : fallback(2);
-
-    // Skip material enhancement on WebGPU (incompatible with onBeforeCompile injection)
-    // and at low quality when both optional lighting effects are disabled.
-    if (isWebGPU || (!fishRimLightingEnabled && !fishSubsurfaceScatteringEnabled)) {
-      return {
-        geometryA: aResolved.geo!,
-        materialA: aResolved.mat!,
-        uniformsA: [],
-        geometryB: bResolved.geo!,
-        materialB: bResolved.mat!,
-        uniformsB: [],
-        geometryC: cResolved.geo!,
-        materialC: cResolved.mat!,
-        uniformsC: [],
-      };
-    }
-
-    const aEnhanced = enhanceFishMaterialWithRimAndSSS(aResolved.mat!);
-    const bEnhanced = enhanceFishMaterialWithRimAndSSS(bResolved.mat!);
-    const cEnhanced = enhanceFishMaterialWithRimAndSSS(cResolved.mat!);
-
-    const normalizeUniforms = (
-      u: VibeFishLightingUniforms | VibeFishLightingUniforms[]
-    ): VibeFishLightingUniforms[] => (Array.isArray(u) ? u : [u]);
-
-    return {
-      geometryA: aResolved.geo!,
-      materialA: aEnhanced.material,
-      uniformsA: normalizeUniforms(aEnhanced.uniforms),
-      geometryB: bResolved.geo!,
-      materialB: bEnhanced.material,
-      uniformsB: normalizeUniforms(bEnhanced.uniforms),
-      geometryC: cResolved.geo!,
-      materialC: cEnhanced.material,
-      uniformsC: normalizeUniforms(cEnhanced.uniforms),
-    };
-  }, [
-    fishRimLightingEnabled,
-    fishSubsurfaceScatteringEnabled,
-    gltfA.scene,
-    gltfB.scene,
-    gltfC.scene,
-    isWebGPU,
-  ]);
+  const [primaryReady, setPrimaryReady] = useState(false);
+  const [variantOneSettled, setVariantOneSettled] = useState(false);
+  const meshRefA = useRef<InstancedMesh | null>(null);
+  const meshRefB = useRef<InstancedMesh | null>(null);
+  const meshRefC = useRef<InstancedMesh | null>(null);
+  const uniformsARef = useRef<VibeFishLightingUniforms[]>([]);
+  const uniformsBRef = useRef<VibeFishLightingUniforms[]>([]);
+  const uniformsCRef = useRef<VibeFishLightingUniforms[]>([]);
+  const modelAvailabilityRef = useRef<[boolean, boolean, boolean]>([true, false, false]);
+  const fishAssetStatusRef = useRef<VibeFishAssetStatus>({
+    primary: 'loading',
+    variants: ['loading', 'loading'],
+  });
 
   useEffect(() => {
-    const rimStrength = fishRimLightingEnabled ? DEFAULT_VIBE_FISH_RIM_STRENGTH : 0;
-    const sssStrength = fishSubsurfaceScatteringEnabled ? DEFAULT_VIBE_FISH_SSS_STRENGTH : 0;
-
-    const apply = (u: VibeFishLightingUniforms) => {
-      u.vibeRimStrength.value = rimStrength;
-      u.vibeSSSStrength.value = sssStrength;
+    const status = fishAssetStatusRef.current;
+    window.__vibe_fishAssetStatus = status;
+    return () => {
+      if (window.__vibe_fishAssetStatus === status) delete window.__vibe_fishAssetStatus;
     };
+  }, []);
 
-    for (const u of uniformsA) apply(u);
-    for (const u of uniformsB) apply(u);
-    for (const u of uniformsC) apply(u);
-  }, [fishRimLightingEnabled, fishSubsurfaceScatteringEnabled, uniformsA, uniformsB, uniformsC]);
+  const markModelReady = useCallback((modelIndex: FishModelIndex) => {
+    const status = fishAssetStatusRef.current;
+    if (modelIndex === 0) {
+      status.primary = 'ready';
+      setPrimaryReady(true);
+    } else {
+      status.variants[modelIndex - 1] = 'ready';
+      if (modelIndex === 1) setVariantOneSettled(true);
+    }
+    modelAvailabilityRef.current[modelIndex] = true;
+  }, []);
+  const markVariantError = useCallback((modelIndex: 1 | 2) => {
+    fishAssetStatusRef.current.variants[modelIndex - 1] = 'error';
+    if (modelIndex === 1) setVariantOneSettled(true);
+  }, []);
+  const markPrimaryReady = useCallback(() => markModelReady(0), [markModelReady]);
+  const markVariantOneReady = useCallback(() => markModelReady(1), [markModelReady]);
+  const markVariantTwoReady = useCallback(() => markModelReady(2), [markModelReady]);
+  const markVariantOneError = useCallback(() => markVariantError(1), [markVariantError]);
+  const markVariantTwoError = useCallback(() => markVariantError(2), [markVariantError]);
 
   const frameId = useRef(0);
   const elapsedTimeRef = useRef(0);
-
-  // Per-entity bookkeeping is stored directly on the entity to avoid Map iterator
-  // allocations in the useFrame hot path.
   const activeEntitiesRef = useRef<Entity[]>([]);
   const prevEntitiesRef = useRef<Entity[]>([]);
-
-  // Preallocated quaternion pool + free-list (no allocations in useFrame hot path)
   const quaternionPool = useMemo(() => {
     const pool: Quaternion[] = new Array(QUATERNION_POOL_SIZE);
     for (let i = 0; i < QUATERNION_POOL_SIZE; i++) pool[i] = new Quaternion();
     return pool;
   }, []);
-
   const quaternionFallback = useMemo(() => new Quaternion(), []);
-
   const quaternionFreeListRef = useRef<Int32Array>(createQuaternionFreeList());
-
   const quaternionFreeTop = useRef(QUATERNION_POOL_SIZE);
 
   useEffect(() => {
@@ -171,267 +157,195 @@ export const FishRenderSystem = () => {
     return () => {
       const activeEntities = activeEntitiesRef.current;
       const prevEntities = prevEntitiesRef.current;
-
-      // Release any in-flight entities and scrub bookkeeping fields.
       for (let i = 0; i < activeEntities.length; i++) {
         const entity = activeEntities[i]!;
         entity.__vibeFishQuatIndex = undefined;
         entity.__vibeFishSeenFrame = undefined;
         entity.__vibeFishRenderedFrame = undefined;
       }
-
       for (let i = 0; i < prevEntities.length; i++) {
         const entity = prevEntities[i]!;
         entity.__vibeFishQuatIndex = undefined;
         entity.__vibeFishSeenFrame = undefined;
         entity.__vibeFishRenderedFrame = undefined;
       }
-
       activeEntities.length = 0;
       prevEntities.length = 0;
-
-      // Reset pool bookkeeping for clean remounts.
       quaternionFreeTop.current = QUATERNION_POOL_SIZE;
       for (let i = 0; i < QUATERNION_POOL_SIZE; i++) quaternionFreeList[i] = i;
     };
   }, []);
 
-  // Adaptive instance update controls (PoC)
-  const instanceUpdateEmaRef = useRef<number>(0);
-  const updateFrequencyRef = useRef<number>(1); // 1 = every frame, 2 = every other frame, etc.
-  const renderStatusRef = useRef({
-    updateFreq: 1,
-    ema: 0,
-    activeEntities: 0,
-    frameDuration: 0,
-  });
-
-  // Chunked update data structures (mutable via refs)
+  const instanceUpdateEmaRef = useRef(0);
+  const updateFrequencyRef = useRef(1);
+  const renderStatusRef = useRef({ updateFreq: 1, ema: 0, activeEntities: 0, frameDuration: 0 });
   const matrixPoolARef = useRef(createMatrixPool());
   const matrixPoolBRef = useRef(createMatrixPool());
   const matrixPoolCRef = useRef(createMatrixPool());
   const dirtyARef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
   const dirtyBRef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
   const dirtyCRef = useRef(new Uint8Array(MAX_INSTANCES_PER_MODEL));
-  const nextFlushARef = useRef<number>(0);
-  const nextFlushBRef = useRef<number>(0);
-  const nextFlushCRef = useRef<number>(0);
+  const nextFlushARef = useRef(0);
+  const nextFlushBRef = useRef(0);
+  const nextFlushCRef = useRef(0);
 
   useFrame((_, delta) => {
     elapsedTimeRef.current += delta;
     const time = elapsedTimeRef.current;
-    for (const uniform of uniformsA) uniform.vibeTime.value = time;
-    for (const uniform of uniformsB) uniform.vibeTime.value = time;
-    for (const uniform of uniformsC) uniform.vibeTime.value = time;
+    const uniformsA = uniformsARef.current;
+    const uniformsB = uniformsBRef.current;
+    const uniformsC = uniformsCRef.current;
+    for (let i = 0; i < uniformsA.length; i++) uniformsA[i]!.vibeTime.value = time;
+    for (let i = 0; i < uniformsB.length; i++) uniformsB[i]!.vibeTime.value = time;
+    for (let i = 0; i < uniformsC.length; i++) uniformsC[i]!.vibeTime.value = time;
     frameId.current++;
-    if (!meshRefA.current || !meshRefB.current || !meshRefC.current) return;
-
-    const pocEnabledFromFlag = !!adaptiveInstanceUpdatesEnabled;
-    const pocEnabledFromWindow =
-      typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
-    const pocEnabled = pocEnabledFromFlag && pocEnabledFromWindow;
+    const meshA = meshRefA.current;
+    if (!meshA) return;
+    const meshB = meshRefB.current;
+    const meshC = meshRefC.current;
+    const pocEnabled =
+      !!adaptiveInstanceUpdatesEnabled &&
+      (typeof window === 'undefined' || window.__vibe_poc_enabled !== false);
     const dbg = typeof window !== 'undefined' ? window.__vibe_debug : undefined;
-    // The render loop does not need timing for its normal or adaptive flush
-    // paths. Sample the clock only while an explicit debug collector exists.
     const timingEnabled = Boolean(dbg);
     const frameStart = timingEnabled ? performance.now() : 0;
-
-    const quaternionFreeList = quaternionFreeListRef.current!;
-
+    const quaternionFreeList = quaternionFreeListRef.current;
     const activeEntities = activeEntitiesRef.current;
     const prevEntities = prevEntitiesRef.current;
     activeEntities.length = 0;
-
     let countA = 0;
     let countB = 0;
     let countC = 0;
-
     let wroteA = false;
     let wroteB = false;
     let wroteC = false;
-
     const fishEntities = fishEntitiesQuery.entities;
+    const available = modelAvailabilityRef.current;
+
     for (let i = 0, len = fishEntities.length; i < len; i++) {
       const entity = fishEntities[i]!;
       if (!entity.position) continue;
       entity.__vibeFishSeenFrame = frameId.current;
       activeEntities.push(entity);
-
-      // Assign model index to the entity if it doesn't already have one
-      // We store it directly on the entity as `modelIndex` (0, 1, or 2) for simplicity.
-      if (entity.modelIndex !== 0 && entity.modelIndex !== 1 && entity.modelIndex !== 2) {
-        entity.modelIndex = 0;
-      }
-      const modelIndex: 0 | 1 | 2 = entity.modelIndex;
-
-      // Choose which mesh and count to use
+      let modelIndex = resolveFishModelIndex(entity.modelIndex ?? Number.NaN, available);
+      if ((modelIndex === 1 && !meshB) || (modelIndex === 2 && !meshC)) modelIndex = 0;
       const idx = modelIndex === 0 ? countA++ : modelIndex === 1 ? countB++ : countC++;
-
       if (idx >= MAX_INSTANCES_PER_MODEL) {
-        // Entity is active/seen, but won't be rendered this frame due to per-model cap.
-        // Ensure it's NOT marked as rendered this frame so sweep can reclaim its quaternion.
         entity.__vibeFishRenderedFrame = undefined;
-
-        // Emit a throttled warning so developers/users know fish are being dropped
         warnInstanceCap(modelIndex, fishEntities.length);
         continue;
       }
-
       entity.__vibeFishRenderedFrame = frameId.current;
-
       tempObj.position.copy(entity.position);
-
-      // Rotation smoothing per-entity
       let quaternionIndex = entity.__vibeFishQuatIndex;
       if (typeof quaternionIndex !== 'number') quaternionIndex = undefined;
-
       if (quaternionIndex === undefined) {
-        if (quaternionFreeTop.current > 0) {
-          quaternionIndex = quaternionFreeList[--quaternionFreeTop.current]!;
-        } else {
-          quaternionIndex = -1;
-        }
+        quaternionIndex =
+          quaternionFreeTop.current > 0 ? quaternionFreeList[--quaternionFreeTop.current]! : -1;
         entity.__vibeFishQuatIndex = quaternionIndex;
       }
-
-      const prev = quaternionIndex >= 0 ? quaternionPool[quaternionIndex]! : quaternionFallback;
-
+      const previous = quaternionIndex >= 0 ? quaternionPool[quaternionIndex]! : quaternionFallback;
       if (entity.velocity && entity.velocity.lengthSq() > 0.005) {
         tempVec.copy(entity.velocity).normalize();
         tempQuat.setFromUnitVectors(FORWARD, tempVec);
-        prev.slerp(tempQuat, 0.15);
-        tempObj.quaternion.copy(prev);
-      } else {
-        tempObj.quaternion.copy(prev);
+        previous.slerp(tempQuat, 0.15);
       }
-
+      tempObj.quaternion.copy(previous);
       tempObj.scale.setScalar(0.3);
       tempObj.updateMatrix();
-
-      // Record matrix into per-model pool and mark dirty for chunked flush
       if (modelIndex === 0) {
         matrixPoolARef.current[idx]!.copy(tempObj.matrix);
-        if (pocEnabled) {
-          dirtyARef.current[idx] = 1;
-        } else {
-          meshRefA.current.setMatrixAt(idx, tempObj.matrix);
+        if (pocEnabled) dirtyARef.current[idx] = 1;
+        else {
+          meshA.setMatrixAt(idx, tempObj.matrix);
           wroteA = true;
         }
       } else if (modelIndex === 1) {
         matrixPoolBRef.current[idx]!.copy(tempObj.matrix);
-        if (pocEnabled) {
-          dirtyBRef.current[idx] = 1;
-        } else {
-          meshRefB.current.setMatrixAt(idx, tempObj.matrix);
+        if (pocEnabled) dirtyBRef.current[idx] = 1;
+        else {
+          meshB!.setMatrixAt(idx, tempObj.matrix);
           wroteB = true;
         }
       } else {
         matrixPoolCRef.current[idx]!.copy(tempObj.matrix);
-        if (pocEnabled) {
-          dirtyCRef.current[idx] = 1;
-        } else {
-          meshRefC.current.setMatrixAt(idx, tempObj.matrix);
+        if (pocEnabled) dirtyCRef.current[idx] = 1;
+        else {
+          meshC!.setMatrixAt(idx, tempObj.matrix);
           wroteC = true;
         }
       }
     }
 
-    // Cleanup: sweep entities that were active last frame but not seen this frame.
     for (let i = 0; i < prevEntities.length; i++) {
       const entity = prevEntities[i]!;
-      if (entity.__vibeFishSeenFrame !== frameId.current) {
-        // Entity no longer active; release quaternion and clear all bookkeeping.
-        const idx = entity.__vibeFishQuatIndex;
-        if (
-          typeof idx === 'number' &&
-          idx >= 0 &&
-          idx < QUATERNION_POOL_SIZE &&
-          quaternionFreeTop.current < QUATERNION_POOL_SIZE
-        ) {
-          quaternionFreeList[quaternionFreeTop.current++] = idx;
-        }
-
-        entity.__vibeFishQuatIndex = undefined;
-        entity.__vibeFishSeenFrame = undefined;
-        entity.__vibeFishRenderedFrame = undefined;
+      if (
+        entity.__vibeFishSeenFrame === frameId.current &&
+        entity.__vibeFishRenderedFrame === frameId.current
+      )
         continue;
+      const idx = entity.__vibeFishQuatIndex;
+      if (
+        typeof idx === 'number' &&
+        idx >= 0 &&
+        idx < QUATERNION_POOL_SIZE &&
+        quaternionFreeTop.current < QUATERNION_POOL_SIZE
+      ) {
+        quaternionFreeList[quaternionFreeTop.current++] = idx;
       }
-
-      if (entity.__vibeFishRenderedFrame !== frameId.current) {
-        // Entity is still active/seen, but wasn't rendered this frame (cap). Reclaim quaternion.
-        const idx = entity.__vibeFishQuatIndex;
-        if (
-          typeof idx === 'number' &&
-          idx >= 0 &&
-          idx < QUATERNION_POOL_SIZE &&
-          quaternionFreeTop.current < QUATERNION_POOL_SIZE
-        ) {
-          quaternionFreeList[quaternionFreeTop.current++] = idx;
-        }
-
-        entity.__vibeFishQuatIndex = undefined;
-        entity.__vibeFishRenderedFrame = undefined;
-      }
+      entity.__vibeFishQuatIndex = undefined;
+      entity.__vibeFishRenderedFrame = undefined;
+      if (entity.__vibeFishSeenFrame !== frameId.current) entity.__vibeFishSeenFrame = undefined;
     }
-
-    // Release references in the previous list before reusing it.
     prevEntities.length = 0;
-
-    // Swap active/prev arrays (reusing the arrays; do not allocate).
-    const tmp = prevEntitiesRef.current;
+    const previousEntities = prevEntitiesRef.current;
     prevEntitiesRef.current = activeEntitiesRef.current;
-    activeEntitiesRef.current = tmp;
+    activeEntitiesRef.current = previousEntities;
+    meshA.count = Math.min(countA, MAX_INSTANCES_PER_MODEL);
+    if (meshB) meshB.count = Math.min(countB, MAX_INSTANCES_PER_MODEL);
+    if (meshC) meshC.count = Math.min(countC, MAX_INSTANCES_PER_MODEL);
 
-    // Update counts
-    meshRefA.current.count = Math.min(countA, MAX_INSTANCES_PER_MODEL);
-    meshRefB.current.count = Math.min(countB, MAX_INSTANCES_PER_MODEL);
-    meshRefC.current.count = Math.min(countC, MAX_INSTANCES_PER_MODEL);
-
-    // Adaptive instanceMatrix update frequency
     try {
       let frameDuration = 0;
       if (timingEnabled) {
         frameDuration = performance.now() - frameStart;
-
-        // EMA for frame duration
         const alpha = 0.06;
         instanceUpdateEmaRef.current = instanceUpdateEmaRef.current
           ? instanceUpdateEmaRef.current + (frameDuration - instanceUpdateEmaRef.current) * alpha
           : frameDuration;
       }
       const ema = instanceUpdateEmaRef.current;
-
       if (pocEnabled) {
-        // Chunked flush
-        // Budget derived from quality store (default fallback 128)
-        const TOTAL_BUDGET = useQualityStore.getState().instanceUpdateBudget || 128;
-
-        const perModel = Math.ceil(TOTAL_BUDGET / 3);
+        const totalBudget = useQualityStore.getState().instanceUpdateBudget || 128;
+        const perModel = Math.ceil(totalBudget / 3);
         const flushedA = flushDirtyInstanceMatrices(
-          meshRefA.current,
+          meshA,
           matrixPoolARef.current,
           dirtyARef.current,
           nextFlushARef,
-          meshRefA.current.count,
+          meshA.count,
           perModel
         );
-        const flushedB = flushDirtyInstanceMatrices(
-          meshRefB.current,
-          matrixPoolBRef.current,
-          dirtyBRef.current,
-          nextFlushBRef,
-          meshRefB.current.count,
-          perModel
-        );
-        const flushedC = flushDirtyInstanceMatrices(
-          meshRefC.current,
-          matrixPoolCRef.current,
-          dirtyCRef.current,
-          nextFlushCRef,
-          meshRefC.current.count,
-          perModel
-        );
-
+        const flushedB = meshB
+          ? flushDirtyInstanceMatrices(
+              meshB,
+              matrixPoolBRef.current,
+              dirtyBRef.current,
+              nextFlushBRef,
+              meshB.count,
+              perModel
+            )
+          : 0;
+        const flushedC = meshC
+          ? flushDirtyInstanceMatrices(
+              meshC,
+              matrixPoolCRef.current,
+              dirtyCRef.current,
+              nextFlushCRef,
+              meshC.count,
+              perModel
+            )
+          : 0;
         if (dbg)
           dbg.fishRender.push({
             frame: frameId.current,
@@ -442,54 +356,60 @@ export const FishRenderSystem = () => {
             flushed: flushedA + flushedB + flushedC,
           });
       } else {
-        // PoC disabled: matrices were written directly in the loop above.
-        if (wroteA) meshRefA.current.instanceMatrix.needsUpdate = true;
-        if (wroteB) meshRefB.current.instanceMatrix.needsUpdate = true;
-        if (wroteC) meshRefC.current.instanceMatrix.needsUpdate = true;
+        if (wroteA) meshA.instanceMatrix.needsUpdate = true;
+        if (wroteB) meshB!.instanceMatrix.needsUpdate = true;
+        if (wroteC) meshC!.instanceMatrix.needsUpdate = true;
       }
-
       if (dbg) {
-        // Mutate one object instead of allocating a status record every frame.
         const status = renderStatusRef.current;
         status.updateFreq = updateFrequencyRef.current;
         status.ema = instanceUpdateEmaRef.current || 0;
         status.activeEntities = activeEntities.length;
         status.frameDuration = frameDuration;
         window.__vibe_renderStatus = status;
-      } else if (typeof window !== 'undefined' && window.__vibe_renderStatus) {
-        // A HUD can be hidden while the simulation remains mounted.
+      } else if (typeof window !== 'undefined' && window.__vibe_renderStatus)
         delete window.__vibe_renderStatus;
-      }
     } catch {
-      /* ignore */
+      /* Render diagnostics must not interrupt simulation visuals. */
     }
   });
 
   return (
     <>
-      <instancedMesh
-        ref={meshRefA}
-        args={[geometryA!, materialA!, MAX_INSTANCES_PER_MODEL]}
-        castShadow
-        receiveShadow
-        frustumCulled={false}
+      <FishModelMesh
+        modelIndex={0}
+        gltf={gltfA}
+        meshRef={meshRefA}
+        uniformsRef={uniformsARef}
+        fishRimLightingEnabled={fishRimLightingEnabled}
+        fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
+        isWebGPU={isWebGPU}
+        onReady={markPrimaryReady}
       />
-
-      <instancedMesh
-        ref={meshRefB}
-        args={[geometryB!, materialB!, MAX_INSTANCES_PER_MODEL]}
-        castShadow
-        receiveShadow
-        frustumCulled={false}
-      />
-
-      <instancedMesh
-        ref={meshRefC}
-        args={[geometryC!, materialC!, MAX_INSTANCES_PER_MODEL]}
-        castShadow
-        receiveShadow
-        frustumCulled={false}
-      />
+      {primaryReady && (
+        <DeferredFishModelSlot
+          modelIndex={1}
+          meshRef={meshRefB}
+          uniformsRef={uniformsBRef}
+          fishRimLightingEnabled={fishRimLightingEnabled}
+          fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
+          isWebGPU={isWebGPU}
+          onReady={markVariantOneReady}
+          onError={markVariantOneError}
+        />
+      )}
+      {variantOneSettled && (
+        <DeferredFishModelSlot
+          modelIndex={2}
+          meshRef={meshRefC}
+          uniformsRef={uniformsCRef}
+          fishRimLightingEnabled={fishRimLightingEnabled}
+          fishSubsurfaceScatteringEnabled={fishSubsurfaceScatteringEnabled}
+          isWebGPU={isWebGPU}
+          onReady={markVariantTwoReady}
+          onError={markVariantTwoError}
+        />
+      )}
     </>
   );
 };

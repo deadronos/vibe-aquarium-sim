@@ -5,6 +5,10 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
+  // Each smoke page owns a software WebGL context plus Rapier workers. Keep
+  // CI serial so concurrent contexts cannot starve renderer initialization or
+  // defer asset decoding past the smoke-test timeout on shared runners.
+  workers: process.env.CI ? 1 : undefined,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',

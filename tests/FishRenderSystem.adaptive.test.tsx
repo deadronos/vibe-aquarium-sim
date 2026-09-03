@@ -19,19 +19,21 @@ vi.mock('@react-three/fiber', async () => {
   return {
     ...actual,
     useFrame: (cb: (state: unknown, delta: number) => void) => {
-      frameCallbacks.push(cb);
+      // React Three Fiber replaces the frame subscription on rerender. Keep
+      // only the active callback so deferred child mounting does not make this
+      // test invoke stale subscriptions.
+      frameCallbacks[0] = cb;
     },
   };
 });
 
 // Mock GLTF loader to provide simple scenes (three box meshes)
 const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
-  let callIndex = 0;
   let scenes: Array<{ traverse: (fn: (child: unknown) => void) => void }> = [];
 
-  const useGLTFMock = vi.fn(() => {
-    const scene = scenes[callIndex] ?? scenes[scenes.length - 1];
-    callIndex++;
+  const useGLTFMock = vi.fn((url: string) => {
+    const index = url.includes('fish3') ? 2 : url.includes('fish2') ? 1 : 0;
+    const scene = scenes[index] ?? scenes[scenes.length - 1];
     return { scene } as unknown as { scene: THREE.Object3D };
   });
 
@@ -41,7 +43,6 @@ const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
       scenes = nextScenes;
     },
     resetUseGLTFMock: () => {
-      callIndex = 0;
       useGLTFMock.mockClear();
     },
   };
