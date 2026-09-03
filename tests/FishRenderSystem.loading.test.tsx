@@ -79,6 +79,10 @@ describe('FishRenderSystem progressive model loading', () => {
 
     try {
       expect(useGLTFMock.mock.calls[0]?.[0]).toBe(MODEL_URLS[0]);
+      expect([...new Set(useGLTFMock.mock.calls.map(([url]) => url))]).toEqual([
+        MODEL_URLS[0],
+        MODEL_URLS[1],
+      ]);
       expect(renderer.scene.children).toHaveLength(1);
       expect(window.__vibe_fishAssetStatus).toMatchObject({
         primary: 'ready',

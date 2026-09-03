@@ -57,6 +57,7 @@ export const FishRenderSystem = () => {
   } = useVisualQuality();
   const gltfA = useGLTF(MODEL_URLS[0]);
   const [primaryReady, setPrimaryReady] = useState(false);
+  const [variantOneSettled, setVariantOneSettled] = useState(false);
   const meshRefA = useRef<InstancedMesh | null>(null);
   const meshRefB = useRef<InstancedMesh | null>(null);
   const meshRefC = useRef<InstancedMesh | null>(null);
@@ -84,11 +85,13 @@ export const FishRenderSystem = () => {
       setPrimaryReady(true);
     } else {
       status.variants[modelIndex - 1] = 'ready';
+      if (modelIndex === 1) setVariantOneSettled(true);
     }
     modelAvailabilityRef.current[modelIndex] = true;
   }, []);
   const markVariantError = useCallback((modelIndex: 1 | 2) => {
     fishAssetStatusRef.current.variants[modelIndex - 1] = 'error';
+    if (modelIndex === 1) setVariantOneSettled(true);
   }, []);
   const markPrimaryReady = useCallback(() => markModelReady(0), [markModelReady]);
   const markVariantOneReady = useCallback(() => markModelReady(1), [markModelReady]);
@@ -358,7 +361,7 @@ export const FishRenderSystem = () => {
           </FishModelErrorBoundary>
         </Suspense>
       )}
-      {primaryReady && (
+      {variantOneSettled && (
         <Suspense fallback={null}>
           <FishModelErrorBoundary modelIndex={2} onError={markVariantTwoError}>
             <DeferredFishModel
