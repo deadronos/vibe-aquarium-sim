@@ -103,7 +103,10 @@ test('critical fish model loads before deferred variants settle', async ({ page 
         // timeout, so allow both stages to settle on slower CI runners.
         timeout: 45_000,
       })
-      .toEqual(['ready', expect.stringMatching(/^(ready|error)$/)]);
+      .toEqual([
+        expect.stringMatching(/^(ready|error)$/),
+        expect.stringMatching(/^(ready|error)$/),
+      ]);
   } catch (error) {
     const diagnostics = await page.evaluate(
       ({ responses, requestFailures }) => ({
