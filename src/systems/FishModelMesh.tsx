@@ -1,4 +1,11 @@
-import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from 'react';
+import {
+  Component,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  type MutableRefObject,
+  type ReactNode,
+} from 'react';
 import { InstancedMesh } from 'three';
 import * as THREE from 'three';
 
@@ -71,7 +78,7 @@ export const FishModelMesh = ({
     };
   }, [uniforms, uniformsRef]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onReady();
   }, [onReady]);
 
