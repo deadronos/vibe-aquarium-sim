@@ -88,11 +88,23 @@ test('critical fish model loads before deferred variants', async ({ page }) => {
       timeout: 20_000,
     })
     .toBe('ready');
-  await expect
-    .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
-      timeout: 20_000,
-    })
-    .toEqual(['ready', 'ready']);
+  try {
+    await expect
+      .poll(() => page.evaluate(() => window.__vibe_fishAssetStatus?.variants), {
+        timeout: 20_000,
+      })
+      .toEqual(['ready', 'ready']);
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => ({
+      status: window.__vibe_fishAssetStatus,
+      glbResources: performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((name) => name.endsWith('.glb')),
+    }));
+    console.log(`Fish asset diagnostics: ${JSON.stringify(diagnostics)}`);
+    throw error;
+  }
   await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
 
   expect(pageErrors).toEqual([]);
