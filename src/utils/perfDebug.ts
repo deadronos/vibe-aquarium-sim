@@ -12,6 +12,7 @@ export function ensurePerfDebug() {
       }>,
       fishUseFrame: [] as Array<{ duration: number; modelIndex: number | null }>,
       qualityTransitions: [] as VibeQualityTransitionEntry[],
+      transport: null as VibeTransportStatus | null,
       reset() {
         this.simulateStep.length = 0;
         this.fishRender.length = 0;
@@ -26,6 +27,7 @@ export function ensurePerfDebug() {
             fishRender: this.fishRender.slice(),
             fishUseFrame: this.fishUseFrame.slice(),
             qualityTransitions: this.qualityTransitions?.slice() ?? [],
+            transport: this.transport ?? null,
           };
           const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
           const url = URL.createObjectURL(blob);

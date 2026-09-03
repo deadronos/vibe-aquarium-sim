@@ -76,6 +76,7 @@ declare global {
     scheduler?: VibeSchedEntry[];
     schedulerTuning?: VibeSchedulerTuningEntry[];
     qualityTransitions?: VibeQualityTransitionEntry[];
+    transport?: VibeTransportStatus | null;
     reset?: () => void;
     download?: () => boolean;
   };
