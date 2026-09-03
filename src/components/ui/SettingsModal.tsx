@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import './SettingsModal.css';
 
 type SettingsModalProps = {
@@ -6,30 +6,91 @@ type SettingsModalProps = {
   onClose: () => void;
   showDebugPanel: boolean;
   setShowDebugPanel: (next: boolean) => void;
+  returnFocusRef?: React.RefObject<HTMLButtonElement | null>;
+  backgroundRef?: React.RefObject<HTMLDivElement | null>;
 };
+
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 export function SettingsModal({
   open,
   onClose,
   showDebugPanel,
   setShowDebugPanel,
+  returnFocusRef,
+  backgroundRef,
 }: SettingsModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
   useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useLayoutEffect(() => {
     if (!open) return;
 
+    const explicitOpener = returnFocusRef?.current;
+    const activeElement = explicitOpener ?? document.activeElement;
+    openerRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+
+    const shell = backgroundRef?.current;
+    const inertShell = shell as (HTMLDivElement & { inert?: boolean }) | null | undefined;
+    const wasInert = inertShell?.inert ?? false;
+    if (inertShell) inertShell.inert = true;
+
+    closeButtonRef.current?.focus();
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (element) => !element.hasAttribute('disabled') && element.tabIndex >= 0
+      );
+      if (focusable.length === 0) return;
+
+      const current = document.activeElement;
+      const currentIndex = focusable.indexOf(current as HTMLElement);
+      const nextIndex =
+        currentIndex < 0
+          ? e.shiftKey
+            ? focusable.length - 1
+            : 0
+          : (currentIndex + (e.shiftKey ? -1 : 1) + focusable.length) % focusable.length;
+
+      e.preventDefault();
+      focusable[nextIndex].focus();
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      if (inertShell) inertShell.inert = wasInert;
+
+      const opener = openerRef.current;
+      if (opener?.isConnected) opener.focus();
+      openerRef.current = null;
+    };
+  }, [backgroundRef, open, returnFocusRef]);
 
   if (!open) return null;
 
   return (
     <div className="vibe-modal-overlay" role="presentation" onMouseDown={onClose}>
       <div
+        ref={modalRef}
         className="vibe-modal"
         role="dialog"
         aria-modal="true"
@@ -40,7 +101,13 @@ export function SettingsModal({
           <div id="vibe-settings-title" className="vibe-modal-title">
             Settings
           </div>
-          <button type="button" className="vibe-modal-close" onClick={onClose} aria-label="Close">
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="vibe-modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
             ×
           </button>
         </div>
