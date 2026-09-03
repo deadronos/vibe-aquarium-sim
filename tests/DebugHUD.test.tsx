@@ -78,10 +78,6 @@ describe('DebugHUD telemetry opt-in', () => {
   });
 
   it('keeps the latest transport snapshot when the opt-in collector resets', () => {
-    const collector = ensurePerfDebug();
-    expect(collector).not.toBeNull();
-    if (!collector) return;
-
     const status: VibeTransportStatus = {
       mode: 'shared',
       isolationSupported: true,
@@ -94,7 +90,13 @@ describe('DebugHUD telemetry opt-in', () => {
       busy: false,
       latestReason: null,
     };
-    collector.transport = status;
+    window.__vibe_transportStatus = status;
+
+    const collector = ensurePerfDebug();
+    expect(collector).not.toBeNull();
+    if (!collector) return;
+
+    expect(collector.transport).toBe(status);
     collector.simulateStep.push({ duration: 1, time: 1, fishCount: 2 });
 
     collector.reset?.();

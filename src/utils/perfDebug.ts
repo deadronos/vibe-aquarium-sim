@@ -12,7 +12,7 @@ export function ensurePerfDebug() {
       }>,
       fishUseFrame: [] as Array<{ duration: number; modelIndex: number | null }>,
       qualityTransitions: [] as VibeQualityTransitionEntry[],
-      transport: null as VibeTransportStatus | null,
+      transport: w.__vibe_transportStatus ?? null,
       reset() {
         this.simulateStep.length = 0;
         this.fishRender.length = 0;
