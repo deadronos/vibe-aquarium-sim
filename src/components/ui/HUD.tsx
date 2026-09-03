@@ -226,7 +226,9 @@ export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => 
 
                 <div className="hud-stat">
                   <span className="hud-stat-label">Last Fed</span>
-                  <span className="hud-stat-value">{formatTimeAgo(lastFedTime)}</span>
+                  <time className="hud-stat-value" dateTime={lastFedTime?.toISOString()}>
+                    {formatTimeAgo(lastFedTime)}
+                  </time>
                 </div>
               </div>
             </details>

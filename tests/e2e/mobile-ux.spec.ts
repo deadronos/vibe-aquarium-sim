@@ -48,11 +48,12 @@ test.describe('mobile aquarium composition', () => {
     await rail.getByRole('button', { name: 'Feed fish' }).click();
     await expect(lastFed).toHaveText('Just now');
 
-    await expect
-      .poll(() => lastFed.textContent(), { timeout: 8_000, intervals: [1_000] })
-      .not.toBe('Just now');
+    const firstFeedTimestamp = await lastFed.getAttribute('datetime');
+    expect(firstFeedTimestamp).not.toBeNull();
+    await page.waitForTimeout(20);
     await page.keyboard.press('f');
     await expect(lastFed).toHaveText('Just now');
+    await expect.poll(() => lastFed.getAttribute('datetime')).not.toBe(firstFeedTimestamp);
 
     await decorButton.click();
     await expect(decorButton).toHaveAttribute('aria-pressed', 'true');
