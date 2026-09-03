@@ -12,7 +12,7 @@ import { MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
 const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
-const outputDirectory = path.join(repositoryRoot, 'public');
+const defaultOutputDirectory = path.join(repositoryRoot, 'public');
 const fishAssetNames = ['Copilot3D-fish.glb', 'Copilot3D-fish2.glb', 'Copilot3D-fish3.glb'];
 const GLB_MAGIC = 0x46546c67;
 const GLB_VERSION = 2;
@@ -125,6 +125,9 @@ async function validateParsedDocument(filePath) {
 async function verifyFishAssets() {
   let totalBytes = 0;
   let hasFailure = false;
+  const outputDirectory = process.env.FISH_ASSET_DIR?.trim()
+    ? path.resolve(process.env.FISH_ASSET_DIR)
+    : defaultOutputDirectory;
 
   for (const assetName of fishAssetNames) {
     const filePath = path.join(outputDirectory, assetName);

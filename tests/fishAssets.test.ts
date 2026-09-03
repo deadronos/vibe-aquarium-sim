@@ -1,5 +1,6 @@
 import { execFileSync } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { describe, expect, it } from 'vitest';
 
@@ -112,21 +113,30 @@ describe('fish asset contract', () => {
   });
 
   it('rejects a fish GLB with a corrupted Meshopt payload', () => {
-    const assetPath = path.resolve(process.cwd(), 'public/Copilot3D-fish.glb');
-    const original = fs.readFileSync(assetPath);
-    const corrupted = Buffer.from(original);
-    corrupted[findFirstMeshoptPayloadOffset(assetPath)] ^= 0xff;
+    const sourceDirectory = path.resolve(process.cwd(), 'public');
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-aquarium-fish-assets-'));
 
     try {
+      for (const assetName of FISH_ASSET_NAMES) {
+        fs.copyFileSync(
+          path.join(sourceDirectory, assetName),
+          path.join(temporaryDirectory, assetName)
+        );
+      }
+
+      const assetPath = path.join(temporaryDirectory, 'Copilot3D-fish.glb');
+      const corrupted = Buffer.from(fs.readFileSync(assetPath));
+      corrupted[findFirstMeshoptPayloadOffset(assetPath)] ^= 0xff;
       fs.writeFileSync(assetPath, corrupted);
       expect(() =>
         execFileSync(process.execPath, ['scripts/verify-fish-assets.mjs'], {
           cwd: process.cwd(),
+          env: { ...process.env, FISH_ASSET_DIR: temporaryDirectory },
           stdio: 'pipe',
         })
       ).toThrow();
     } finally {
-      fs.writeFileSync(assetPath, original);
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
     }
   });
 });
