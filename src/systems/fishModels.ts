@@ -19,7 +19,7 @@ const isFishModelIndex = (value: unknown): value is FishModelIndex =>
  * remains the stable visual fallback.
  */
 export function resolveFishModelIndex(
-  requested: unknown,
+  requested: number,
   available: readonly [boolean, boolean, boolean]
 ): FishModelIndex {
   return isFishModelIndex(requested) && available[requested] ? requested : 0;

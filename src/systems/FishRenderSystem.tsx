@@ -184,7 +184,7 @@ export const FishRenderSystem = () => {
       if (!entity.position) continue;
       entity.__vibeFishSeenFrame = frameId.current;
       activeEntities.push(entity);
-      let modelIndex = resolveFishModelIndex(entity.modelIndex, available);
+      let modelIndex = resolveFishModelIndex(entity.modelIndex ?? Number.NaN, available);
       if ((modelIndex === 1 && !meshB) || (modelIndex === 2 && !meshC)) modelIndex = 0;
       const idx = modelIndex === 0 ? countA++ : modelIndex === 1 ? countB++ : countC++;
       if (idx >= MAX_INSTANCES_PER_MODEL) {

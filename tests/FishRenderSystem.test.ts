@@ -48,7 +48,7 @@ describe('FishRenderSystem model configuration', () => {
   it('normalizes invalid requested model indices to the primary model', () => {
     const available: readonly [boolean, boolean, boolean] = [true, true, true];
 
-    expect(resolveFishModelIndex(undefined, available)).toBe(0);
+    expect(resolveFishModelIndex(Number.NaN, available)).toBe(0);
     expect(resolveFishModelIndex(-1, available)).toBe(0);
     expect(resolveFishModelIndex(3, available)).toBe(0);
     expect(resolveFishModelIndex(1.5, available)).toBe(0);
