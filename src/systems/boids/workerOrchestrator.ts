@@ -31,7 +31,6 @@ export class WorkerOrchestrator {
   private worker: Worker | null = null;
   private disposed = false;
   private useWorker = true;
-  private useSharedBuffers = false;
   private hasJob = false;
   private pendingResult: SimulationOutput | null = null;
   private pendingFishCount = 0;
@@ -76,7 +75,6 @@ export class WorkerOrchestrator {
 
   private setTransportMode(mode: TransportMode, reason: string | null = null) {
     this.transportStatus.mode = mode;
-    this.useSharedBuffers = mode === 'shared';
     if (reason !== null) this.transportStatus.latestReason = reason;
     this.publishTransportStatus();
   }

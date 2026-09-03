@@ -96,6 +96,20 @@ describe('WorkerOrchestrator transport lifecycle', () => {
     orchestrator.dispose();
   });
 
+  it('keeps SharedArrayBuffer as the preferred transport on an isolated page', () => {
+    setIsolation(true);
+    const orchestrator = new WorkerOrchestrator();
+    const worker = MockWorker.instances[0];
+
+    expect(orchestrator.getTransportStatus().mode).toBe('shared');
+    expect(orchestrator.submitJob(createInput())).toBe(true);
+    expect(worker.posted).toHaveLength(2);
+    expect((worker.posted[0].message as { type: string }).type).toBe('shared-buffers');
+    expect((worker.posted[1].message as { type: string }).type).toBe('shared-job');
+
+    orchestrator.dispose();
+  });
+
   it('posts a transfer list and releases the returned slot only after clearing the result', () => {
     const orchestrator = new WorkerOrchestrator();
     const worker = MockWorker.instances[0];

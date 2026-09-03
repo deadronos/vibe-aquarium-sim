@@ -67,7 +67,7 @@ self.onmessage = (event: MessageEvent<BoidsWorkerMessage>) => {
           foodCount: message.foodCount,
           eatenFoodCount: result.eatenFoodIndices.length,
         } satisfies BoidsWorkerResponse,
-        transferables
+        { transfer: transferables }
       );
       return;
     }

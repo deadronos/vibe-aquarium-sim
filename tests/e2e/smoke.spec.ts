@@ -91,3 +91,25 @@ test('applies the low-quality stress profile to a bounded larger school', async 
   expect(pageErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
 });
+
+test('uses a non-isolated worker transport without overlapping jobs', async ({ page }) => {
+  const { pageErrors, failedResponses } = await expectHealthyAquarium(page);
+
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_transportStatus?.mode), {
+      timeout: 20_000,
+    })
+    .toMatch(/^(transfer|copy)$/);
+  await expect
+    .poll(() => page.evaluate(() => window.__vibe_transportStatus?.submitted ?? 0), {
+      timeout: 20_000,
+    })
+    .toBeGreaterThan(0);
+
+  const status = await page.evaluate(() => window.__vibe_transportStatus);
+  expect(status?.isolationSupported).toBe(false);
+  expect(status?.overlapCount).toBe(0);
+  expect(status?.completed).toBeLessThanOrEqual(status?.submitted ?? 0);
+  expect(pageErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});

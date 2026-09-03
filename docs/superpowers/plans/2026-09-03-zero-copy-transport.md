@@ -18,7 +18,7 @@
 - Modify: `src/workers/boids/types.ts` only if a shared metadata alias prevents duplicate protocol fields.
 - Test: `tests/transferBuffers.test.ts`.
 
-- [ ] **Step 1: Write failing ownership and payload tests**
+- [x] **Step 1: Write failing ownership and payload tests**
 
   Add tests that create a slot for 2 fish/1 food, copy a `SimulationInput`
   snapshot into it, serialize a transfer payload, hydrate the payload, and
@@ -27,7 +27,7 @@
   capacity. Add a test that a slot can be marked `in-flight`, returned as
   `pending-result`, and released exactly once.
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-transfer-buffers.localstorage' npm run test -- tests/transferBuffers.test.ts
@@ -35,7 +35,7 @@
 
   Expected: import/export failures because the transfer module does not exist.
 
-- [ ] **Step 3: Implement the slot module**
+- [x] **Step 3: Implement the slot module**
 
   Define `TransferableSimulationBuffers`, `TransferableSimulationBufferPayload`,
   `TransferableSimulationJobMessage`, and `TransferableSimulationSuccessMessage`.
@@ -46,7 +46,7 @@
   hydrate returned buffers, and create `SimulationOutput`/`SimulationInput`
   views without copying.
 
-- [ ] **Step 4: Run focused tests and commit**
+- [x] **Step 4: Run focused tests and commit**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-transfer-buffers.localstorage' npm run test -- tests/transferBuffers.test.ts
@@ -62,7 +62,7 @@
 - Modify: `src/workers/boids.worker.ts` to hydrate transfer jobs, run `simulateStep` with transfer output views, and transfer the slot back.
 - Test: `tests/transferWorkerProtocol.test.ts`.
 
-- [ ] **Step 1: Write failing worker protocol tests**
+- [x] **Step 1: Write failing worker protocol tests**
 
   Add a deterministic test that builds a transfer job from a known input,
   hydrates it as worker input, runs `simulateStep` into its output target, and
@@ -70,13 +70,13 @@
   tests for transfer-job, transfer-success, shared-job, and cloned success
   discrimination.
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-transfer-protocol.localstorage' npm run test -- tests/transferWorkerProtocol.test.ts
   ```
 
-- [ ] **Step 3: Implement transfer message handling**
+- [x] **Step 3: Implement transfer message handling**
 
   Extend `BoidsWorkerMessage` and `BoidsWorkerResponse` with `transfer-job` and
   `mode: 'transfer'`. In the worker, hydrate the transfer payload, create an
@@ -86,7 +86,7 @@
   branches unchanged and route all exceptions through the existing error
   response.
 
-- [ ] **Step 4: Run focused tests and commit**
+- [x] **Step 4: Run focused tests and commit**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-transfer-protocol.localstorage' npm run test -- tests/transferWorkerProtocol.test.ts
@@ -103,7 +103,7 @@
 - Modify: `src/declarations.d.ts` for transport status types.
 - Test: `tests/workerOrchestrator.test.ts`.
 
-- [ ] **Step 1: Write failing orchestrator tests**
+- [x] **Step 1: Write failing orchestrator tests**
 
   Mock `Worker` with controllable `postMessage`, `onmessage`, `onerror`, and
   `terminate` handlers. Assert mode selection for isolated SharedArrayBuffer,
@@ -116,13 +116,13 @@
   handling, worker errors that invalidate detached slots, and the invariant that
   `postMessage` is never called for a second job while one is busy.
 
-- [ ] **Step 2: Run focused tests and verify they fail**
+- [x] **Step 2: Run focused tests and verify they fail**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-orchestrator.localstorage' npm run test -- tests/workerOrchestrator.test.ts
   ```
 
-- [ ] **Step 3: Implement transport selection and lifecycle**
+- [x] **Step 3: Implement transport selection and lifecycle**
 
   Add explicit `transportMode`, two transfer slots, active/pending slot indexes,
   and a slot invalidation path. Select SharedArrayBuffer first, then transfer
@@ -134,7 +134,7 @@
   Never replace an in-flight slot during growth and never read a buffer after it
   has been transferred away.
 
-- [ ] **Step 4: Publish transport status and run focused tests**
+- [x] **Step 4: Publish transport status and run focused tests**
 
   Publish `window.__vibe_transportStatus` on mode changes, capacity growth,
   job submission/completion, and errors. Include mode, isolation support,
@@ -157,7 +157,7 @@
 - Create: `tests/workerTransport.bench.test.ts`.
 - Test: `tests/DebugHUD.test.tsx` and `tests/workerTransport.bench.test.ts`.
 
-- [ ] **Step 1: Write failing diagnostics and benchmark tests**
+- [x] **Step 1: Write failing diagnostics and benchmark tests**
 
   Assert that `ensurePerfDebug` initializes an optional transport snapshot,
   reset/download preserve it, and the Debug HUD displays the active mode without
@@ -165,7 +165,7 @@
   iterations at 100, 1,000, and 5,000 fish, logging cloned preparation versus
   transferable preparation averages without a brittle threshold.
 
-- [ ] **Step 2: Implement diagnostics and benchmark harness**
+- [x] **Step 2: Implement diagnostics and benchmark harness**
 
   Mirror the orchestrator status into the opt-in collector and render a compact
   transport line in Debug HUD. Keep all status updates event-driven and outside
@@ -173,7 +173,7 @@
   preparation/round-trip simulation overhead, clearly labeling synthetic
   in-process results.
 
-- [ ] **Step 3: Run focused tests and commit**
+- [x] **Step 3: Run focused tests and commit**
 
   ```bash
   NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-transport-bench.localstorage' npm run test -- tests/DebugHUD.test.tsx tests/workerTransport.bench.test.ts
@@ -190,7 +190,7 @@
 - Create: `docs/performance/zero-copy-transport.md` with modes, ownership rules, and benchmark commands/results.
 - Modify: `memory/activeContext.md`, `memory/progress.md`, and this plan.
 
-- [ ] **Step 1: Write the failing browser smoke assertion**
+- [x] **Step 1: Write the failing browser smoke assertion**
 
   Add a test that starts the production preview on the default non-isolated
   page, waits for `window.__vibe_transportStatus.mode` to become `transfer` (or
@@ -198,21 +198,21 @@
   `busy`/job counters for no overlap, and preserves the existing page-error and
   404 checks.
 
-- [ ] **Step 2: Run the smoke test to verify the assertion fails**
+- [x] **Step 2: Run the smoke test to verify the assertion fails**
 
   ```bash
   npm run build
   npm run test:smoke -- --grep "transport"
   ```
 
-- [ ] **Step 3: Implement smoke/status documentation**
+- [x] **Step 3: Implement smoke/status documentation**
 
   Document that snapshot views are copied into owned transfer slots, returned
   slots remain pending until result application, detached slots are invalidated,
   and SharedArrayBuffer remains preferred under isolation. Record the observed
   100/1,000/5,000-fish benchmark output and the preview smoke procedure.
 
-- [ ] **Step 4: Run the complete validation matrix and commit handoff docs**
+- [x] **Step 4: Run the complete validation matrix and commit handoff docs**
 
   ```bash
   npm run format:check
