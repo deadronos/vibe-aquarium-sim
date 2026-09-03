@@ -320,6 +320,20 @@
 
 @media (orientation: landscape) and (max-height: 520px) {
   .hud-panel {
+    display: none;
+  }
+
+  .mobile-action-rail {
+    position: fixed;
+    top: 50%;
+    right: calc(8px + env(safe-area-inset-right));
+    display: flex;
+    max-height: calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    transform: translateY(-50%);
+    pointer-events: auto;
+  }
+
+  .hud-panel {
     width: min(40vw, 300px);
     max-height: calc(100vh - 24px - env(safe-area-inset-top));
     overflow: auto;

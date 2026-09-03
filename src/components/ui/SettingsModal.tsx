@@ -88,7 +88,14 @@ export function SettingsModal({
   if (!open) return null;
 
   return (
-    <div className="vibe-modal-overlay" role="presentation" onMouseDown={onClose}>
+    <div
+      className="vibe-modal-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+    >
       <div
         ref={modalRef}
         className="vibe-modal"
