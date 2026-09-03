@@ -29,6 +29,8 @@ function App() {
   }, []);
 
   const closeSettings = useCallback(() => {
+    const shell = appShellRef.current as (HTMLDivElement & { inert?: boolean }) | null;
+    if (shell) shell.inert = false;
     setSettingsOpen(false);
   }, []);
 
