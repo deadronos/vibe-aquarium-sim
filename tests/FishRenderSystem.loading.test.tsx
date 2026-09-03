@@ -82,8 +82,7 @@ describe('FishRenderSystem progressive model loading', () => {
       expect(renderer.scene.children).toHaveLength(1);
       expect(window.__vibe_fishAssetStatus).toMatchObject({
         primary: 'ready',
-        variant1: 'loading',
-        variant2: 'loading',
+        variants: ['loading', 'loading'],
       });
     } finally {
       await unmount(renderer);
@@ -110,8 +109,7 @@ describe('FishRenderSystem progressive model loading', () => {
       expect(renderer.scene.children).toHaveLength(2);
       expect(window.__vibe_fishAssetStatus).toMatchObject({
         primary: 'ready',
-        variant1: 'error',
-        variant2: 'ready',
+        variants: ['error', 'ready'],
       });
     } finally {
       await unmount(renderer);
@@ -133,8 +131,7 @@ describe('FishRenderSystem progressive model loading', () => {
       expect(renderer.scene.children).toHaveLength(3);
       expect(window.__vibe_fishAssetStatus).toMatchObject({
         primary: 'ready',
-        variant1: 'ready',
-        variant2: 'ready',
+        variants: ['ready', 'ready'],
       });
     } finally {
       await unmount(renderer);

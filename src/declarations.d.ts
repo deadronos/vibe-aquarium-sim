@@ -72,8 +72,7 @@ declare global {
   type VibeFishAssetLoadState = 'loading' | 'ready' | 'error';
   type VibeFishAssetStatus = {
     primary: VibeFishAssetLoadState;
-    variant1: VibeFishAssetLoadState;
-    variant2: VibeFishAssetLoadState;
+    variants: [VibeFishAssetLoadState, VibeFishAssetLoadState];
   };
 
   type VibeDebugCollector = {

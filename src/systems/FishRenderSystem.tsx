@@ -66,8 +66,7 @@ export const FishRenderSystem = () => {
   const availableModelIndicesRef = useRef<FishModelIndex[]>([0]);
   const fishAssetStatusRef = useRef<VibeFishAssetStatus>({
     primary: 'loading',
-    variant1: 'loading',
-    variant2: 'loading',
+    variants: ['loading', 'loading'],
   });
 
   useEffect(() => {
@@ -83,14 +82,14 @@ export const FishRenderSystem = () => {
     if (modelIndex === 0) {
       status.primary = 'ready';
       setPrimaryReady(true);
-    } else if (modelIndex === 1) status.variant1 = 'ready';
-    else status.variant2 = 'ready';
+    } else {
+      status.variants[modelIndex - 1] = 'ready';
+    }
     const available = availableModelIndicesRef.current;
     if (!available.includes(modelIndex)) available.push(modelIndex);
   }, []);
   const markVariantError = useCallback((modelIndex: 1 | 2) => {
-    if (modelIndex === 1) fishAssetStatusRef.current.variant1 = 'error';
-    else fishAssetStatusRef.current.variant2 = 'error';
+    fishAssetStatusRef.current.variants[modelIndex - 1] = 'error';
   }, []);
   const markPrimaryReady = useCallback(() => markModelReady(0), [markModelReady]);
   const markVariantOneReady = useCallback(() => markModelReady(1), [markModelReady]);
