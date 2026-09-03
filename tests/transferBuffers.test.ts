@@ -62,7 +62,14 @@ describe('transferable boids buffers', () => {
     expect(buffers.positions.buffer).toBeInstanceOf(ArrayBuffer);
     expect(Array.from(buffers.positions.subarray(0, 6))).toEqual([1, 2, 3, 4, 5, 6]);
     expect(Array.from(buffers.velocities.subarray(0, 6))).toEqual(
-      expect.arrayContaining([expect.closeTo(0.1), expect.closeTo(0.2), expect.closeTo(0.3), expect.closeTo(0.4), 0.5, expect.closeTo(0.6)])
+      expect.arrayContaining([
+        expect.closeTo(0.1),
+        expect.closeTo(0.2),
+        expect.closeTo(0.3),
+        expect.closeTo(0.4),
+        0.5,
+        expect.closeTo(0.6),
+      ])
     );
     expect(Array.from(buffers.modelIndices.subarray(0, 2))).toEqual([2, 1]);
     expect(Array.from(buffers.foodPositions.subarray(0, 3))).toEqual([9, 8, 7]);
@@ -109,7 +116,11 @@ describe('transferable boids buffers', () => {
     };
 
     const workerInput = createTransferSimulationInput(message, buffers);
-    const outputTarget = createTransferSimulationOutputTarget(buffers, input.fishCount, input.foodCount);
+    const outputTarget = createTransferSimulationOutputTarget(
+      buffers,
+      input.fishCount,
+      input.foodCount
+    );
     outputTarget.steering[0] = 42;
     outputTarget.eatenFoodIndices[0] = 0;
     outputTarget.eatenFoodCount[0] = 1;

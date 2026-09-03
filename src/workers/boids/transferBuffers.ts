@@ -131,9 +131,7 @@ export function copySimulationInputToTransfer(
   buffers.eatenFoodCount[0] = 0;
 }
 
-export function serializeTransferableSimulationBuffers(
-  buffers: TransferableSimulationBuffers
-) {
+export function serializeTransferableSimulationBuffers(buffers: TransferableSimulationBuffers) {
   const payload: TransferableSimulationBufferPayload = {
     fishCapacity: buffers.fishCapacity,
     foodCapacity: buffers.foodCapacity,

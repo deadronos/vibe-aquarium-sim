@@ -53,11 +53,7 @@ self.onmessage = (event: MessageEvent<BoidsWorkerMessage>) => {
       const transferBuffers = hydrateTransferableSimulationBuffers(message.payload);
       const result = simulateStep(
         createTransferSimulationInput(message, transferBuffers),
-        createTransferSimulationOutputTarget(
-          transferBuffers,
-          message.fishCount,
-          message.foodCount
-        )
+        createTransferSimulationOutputTarget(transferBuffers, message.fishCount, message.foodCount)
       );
       const { payload, transferables } = serializeTransferableSimulationBuffers(transferBuffers);
 
