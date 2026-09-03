@@ -24,20 +24,34 @@ describe('collectBundleReport', () => {
   it('reports sorted JavaScript gzip sizes and fish model totals', () => {
     const distDirectory = createFixtureDirectory();
     const aJavaScript = Buffer.from('export const aquarium = "calm";\n');
+    const bJavaScript = Buffer.from('export const current = "gentle";\n');
     const zJavaScript = Buffer.from('export const bubbles = 3;\n');
     const criticalModel = Buffer.from([0x67, 0x6c, 0x62]);
     const variantModel = Buffer.from([0x66, 0x69, 0x73, 0x68]);
 
     fs.writeFileSync(path.join(distDirectory, 'assets', 'z.js'), zJavaScript);
     fs.writeFileSync(path.join(distDirectory, 'assets', 'a.js'), aJavaScript);
+    fs.writeFileSync(path.join(distDirectory, 'assets', 'B.js'), bJavaScript);
     fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish2.glb'), variantModel);
     fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish.glb'), criticalModel);
 
-    expect(collectBundleReport(distDirectory)).toEqual({
+    const report = collectBundleReport(distDirectory);
+
+    expect(report.javascript.gzipBytes).toBeGreaterThan(0);
+    expect(report.javascript.files.every((file) => file.gzipBytes > 0)).toBe(true);
+    expect(report).toEqual({
       javascript: {
-        rawBytes: aJavaScript.byteLength + zJavaScript.byteLength,
-        gzipBytes: gzipSync(aJavaScript).byteLength + gzipSync(zJavaScript).byteLength,
+        rawBytes: aJavaScript.byteLength + bJavaScript.byteLength + zJavaScript.byteLength,
+        gzipBytes:
+          gzipSync(aJavaScript).byteLength +
+          gzipSync(bJavaScript).byteLength +
+          gzipSync(zJavaScript).byteLength,
         files: [
+          {
+            name: 'B.js',
+            rawBytes: bJavaScript.byteLength,
+            gzipBytes: gzipSync(bJavaScript).byteLength,
+          },
           {
             name: 'a.js',
             rawBytes: aJavaScript.byteLength,

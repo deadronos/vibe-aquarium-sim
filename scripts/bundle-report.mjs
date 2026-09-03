@@ -11,7 +11,7 @@ function collectFiles(directory, extension, mapFile) {
     .readdirSync(directory)
     .filter((name) => name.endsWith(extension))
     .map((name) => mapFile(name, path.join(directory, name)))
-    .sort((left, right) => left.name.localeCompare(right.name));
+    .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
 }
 
 export function collectBundleReport(distDir) {
