@@ -227,7 +227,7 @@
   git commit -m "docs: document zero-copy transport phase"
   ```
 
-- [ ] **Step 5: Push, open the PR, and update tracking**
+- [x] **Step 5: Push, open the PR, and update tracking**
 
   Push `codex/phase4-zero-copy-transport`, open a ready-for-review PR against
   `main`, comment on issue #142 with the PR and validation evidence, and leave
