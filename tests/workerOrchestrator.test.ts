@@ -150,6 +150,7 @@ describe('WorkerOrchestrator transport lifecycle', () => {
     expect(orchestrator.isBusy()).toBe(false);
     expect(orchestrator.getPendingResult()?.result.steering[0]).toBe(4);
     expect(orchestrator.getTransportStatus().completed).toBe(1);
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 8 }))).toBe(false);
 
     orchestrator.clearPendingResult();
     expect(orchestrator.getPendingResult()).toBeNull();
