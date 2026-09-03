@@ -2,6 +2,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { NodeIO } from '@gltf-transform/core';
+import {
+  EXTMeshoptCompression,
+  EXTTextureWebP,
+  KHRMeshQuantization,
+} from '@gltf-transform/extensions';
+import { MeshoptDecoder } from 'meshoptimizer';
+import sharp from 'sharp';
+
 const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
 const outputDirectory = path.join(repositoryRoot, 'public');
 const fishAssetNames = ['Copilot3D-fish.glb', 'Copilot3D-fish2.glb', 'Copilot3D-fish3.glb'];
@@ -9,6 +18,10 @@ const GLB_MAGIC = 0x46546c67;
 const GLB_VERSION = 2;
 const JSON_CHUNK_TYPE = 0x4e4f534a;
 const MAX_TOTAL_BYTES = 2_921_368;
+
+const io = new NodeIO()
+  .registerExtensions([EXTMeshoptCompression, EXTTextureWebP, KHRMeshQuantization])
+  .registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
 
 function formatBytes(bytes) {
   return `${bytes.toLocaleString('en-US')} bytes`;
@@ -72,6 +85,43 @@ function validateDocument(document) {
   }
 }
 
+async function validateParsedDocument(filePath) {
+  await MeshoptDecoder.ready;
+  const document = await io.read(filePath);
+  const root = document.getRoot();
+  const scenes = root.listScenes();
+  const meshes = root.listMeshes();
+  const accessors = root.listAccessors();
+  const textures = root.listTextures();
+
+  if (scenes.length === 0) {
+    throw new Error('loader found no scenes');
+  }
+  if (meshes.length === 0 || !meshes.some((mesh) => mesh.listPrimitives().length > 0)) {
+    throw new Error('loader found no renderable meshes');
+  }
+  for (const accessor of accessors) {
+    const array = accessor.getArray();
+    if (!array || array.length !== accessor.getCount() * accessor.getElementSize()) {
+      throw new Error(
+        `loader found invalid accessor data in ${accessor.getName() || 'unnamed accessor'}`
+      );
+    }
+  }
+
+  const webpTextures = textures.filter((texture) => texture.getMimeType() === 'image/webp');
+  if (webpTextures.length === 0) {
+    throw new Error('loader found no image/webp textures');
+  }
+  for (const texture of webpTextures) {
+    const image = texture.getImage();
+    if (!image || image.byteLength === 0) {
+      throw new Error(`loader found empty image data in ${texture.getName() || 'unnamed texture'}`);
+    }
+    await sharp(image).raw().toBuffer();
+  }
+}
+
 async function verifyFishAssets() {
   let totalBytes = 0;
   let hasFailure = false;
@@ -83,6 +133,7 @@ async function verifyFishAssets() {
       const bytes = new Uint8Array(file.buffer, file.byteOffset, file.byteLength);
       const document = readGlbJson(filePath, bytes);
       validateDocument(document);
+      await validateParsedDocument(filePath);
       totalBytes += bytes.byteLength;
       console.log(`${assetName}: valid (${formatBytes(bytes.byteLength)})`);
     } catch (error) {
