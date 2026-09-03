@@ -85,6 +85,7 @@ export class WorkerOrchestrator {
     this.transportStatus.busy = this.hasJob;
     if (typeof window !== 'undefined') {
       window.__vibe_transportStatus = this.transportStatus;
+      if (window.__vibe_debug) window.__vibe_debug.transport = this.transportStatus;
     }
   }
 
