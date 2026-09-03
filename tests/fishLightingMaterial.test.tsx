@@ -29,13 +29,11 @@ vi.mock('@react-three/fiber', async () => {
 });
 
 const { useGLTFMock, resetUseGLTFMock, setUseGLTFScenes } = vi.hoisted(() => {
-  let callIndex = 0;
-
   let scenes: Array<{ traverse: (fn: (child: unknown) => void) => void }> = [];
 
-  const useGLTFMock = vi.fn(() => {
-    const scene = scenes[callIndex] ?? scenes[scenes.length - 1];
-    callIndex++;
+  const useGLTFMock = vi.fn((url: string) => {
+    const index = url.includes('fish3') ? 2 : url.includes('fish2') ? 1 : 0;
+    const scene = scenes[index] ?? scenes[scenes.length - 1];
     return { scene };
   });
 
@@ -45,7 +43,6 @@ const { useGLTFMock, resetUseGLTFMock, setUseGLTFScenes } = vi.hoisted(() => {
       scenes = nextScenes;
     },
     resetUseGLTFMock: () => {
-      callIndex = 0;
       useGLTFMock.mockClear();
     },
   };

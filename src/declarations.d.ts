@@ -69,6 +69,13 @@ declare global {
     latestReason: string | null;
   };
 
+  type VibeFishAssetLoadState = 'loading' | 'ready' | 'error';
+  type VibeFishAssetStatus = {
+    primary: VibeFishAssetLoadState;
+    variant1: VibeFishAssetLoadState;
+    variant2: VibeFishAssetLoadState;
+  };
+
   type VibeDebugCollector = {
     simulateStep: VibeSimEntry[];
     fishRender: VibeRenderEntry[];
@@ -102,6 +109,7 @@ declare global {
       fishCount?: number;
     };
     __vibe_transportStatus?: VibeTransportStatus;
+    __vibe_fishAssetStatus?: VibeFishAssetStatus;
     toggleBoidsWorker?: () => void;
   }
 }
