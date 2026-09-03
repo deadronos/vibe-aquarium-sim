@@ -8,9 +8,9 @@ export function classifyDependencyChunk(id: string): DependencyChunk | undefined
 
   const dependency = normalized.slice(nodeModulesIndex + marker.length);
   if (
-    dependency.startsWith('@react-three/rapier') ||
-    dependency.startsWith('@dimforge/rapier3d-compat') ||
-    dependency.startsWith('@dimforge/rapier3d')
+    dependency.startsWith('@react-three/rapier/') ||
+    dependency.startsWith('@dimforge/rapier3d-compat/') ||
+    dependency.startsWith('@dimforge/rapier3d/')
   ) {
     return 'rapier';
   }

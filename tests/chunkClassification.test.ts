@@ -6,6 +6,8 @@ describe('classifyDependencyChunk', () => {
     ['/app/node_modules/@react-three/rapier/dist/index.js', 'rapier'],
     ['C:\\repo\\node_modules\\@dimforge\\rapier3d-compat\\rapier.js', 'rapier'],
     ['/repo/node_modules/@dimforge/rapier3d/compat.js', 'rapier'],
+    ['/repo/node_modules/@react-three/rapier-extra/index.js', 'r3f-drei'],
+    ['/repo/node_modules/@dimforge/rapier3d-extra/index.js', 'vendor'],
     ['/repo/node_modules/@react-three/fiber/dist/index.js', 'r3f-drei'],
     ['/repo/node_modules/drei/core/index.js', 'r3f-drei'],
     ['/repo/node_modules/three-stdlib/helpers.js', 'r3f-drei'],
