@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phases 1–3 merged; Phase 4 zero-copy transport is complete on the review branch.
-- Branch: `codex/phase4-zero-copy-transport` (issue #142)
+- Phase: Phases 1–5 merged; Phase 6 mobile UX is implemented on the review branch.
+- Branch: `codex/phase6-mobile-ux` (issue #147)
 
 ## Known issues / technical debt
 
@@ -97,3 +97,10 @@
 - **Ownership:** Transfer slots explicitly move through free, in-flight, pending-result, and invalid states. Snapshot buffers remain reusable; detached slots are invalidated after post/worker errors and are never read or replaced while in flight.
 - **Diagnostics:** Published `window.__vibe_transportStatus` with mode, capacities, counters, busy state, overlap count, and latest reason. The opt-in Debug HUD and downloaded traces mirror the stable status object.
 - **Validation:** Transfer slot/protocol/orchestrator tests pass, benchmark coverage logs 50 iterations at 100/1,000/5,000 fish, and preview smoke coverage asserts non-isolated transfer/copy mode with zero overlaps. Full validation is green: 145 unit tests passed with 1 skipped, plus format, lint, typecheck, build, bundle budgets, and four preview smoke tests.
+
+### 2026-09-04 (Phase 6)
+
+- **Mobile composition:** Added a narrow-screen right-edge action rail for Feed, Decor, and Settings, with safe-area offsets, 44px touch targets, high-contrast focus states, and short-landscape support. The expanded HUD remains available on larger screens.
+- **Interaction:** Unified pointer, rail, and `F`-key feeding through a renderer-independent `feedAt` action at the tank center; `F` ignores text-entry targets. Decor toggles existing placement mode with pressed semantics and Escape cancellation.
+- **Accessibility:** Settings now enters focus on open, traps Tab/Shift+Tab, closes on Escape/backdrop/close activation, marks the aquarium shell inert, and restores focus to the invoking trigger.
+- **Validation:** Added component tests and two production-preview Playwright flows for phone and short-landscape viewports, including reduced-motion and no-console-error checks. Focused tests, lint, typecheck, and build are green; full validation remains before PR handoff.
