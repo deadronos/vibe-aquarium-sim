@@ -21,6 +21,15 @@ afterEach(() => {
 });
 
 describe('collectBundleReport', () => {
+  it('rejects a build without the critical fish model', () => {
+    const distDirectory = createFixtureDirectory();
+    fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish2.glb'), Buffer.from([0x66, 0x69]));
+
+    expect(() => collectBundleReport(distDirectory)).toThrow(
+      'Critical model Copilot3D-fish.glb is missing from the bundle output.'
+    );
+  });
+
   it('reports sorted JavaScript gzip sizes and fish model totals', () => {
     const distDirectory = createFixtureDirectory();
     const aJavaScript = Buffer.from('export const aquarium = "calm";\n');

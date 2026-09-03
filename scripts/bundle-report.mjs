@@ -33,6 +33,9 @@ export function collectBundleReport(distDir) {
     bytes: fs.statSync(file).size,
   }));
   const criticalModel = modelFiles.find((file) => file.name === criticalModelName);
+  if (!criticalModel) {
+    throw new Error(`Critical model ${criticalModelName} is missing from the bundle output.`);
+  }
 
   return {
     javascript: {
@@ -46,7 +49,7 @@ export function collectBundleReport(distDir) {
     },
     criticalModel: {
       name: criticalModelName,
-      bytes: criticalModel?.bytes ?? 0,
+      bytes: criticalModel.bytes,
     },
   };
 }
