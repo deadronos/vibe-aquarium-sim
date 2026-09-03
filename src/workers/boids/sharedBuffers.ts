@@ -4,6 +4,10 @@ import type {
   SimulationOutputTarget,
   SpeciesParams,
 } from './types';
+import type {
+  TransferableSimulationJobMessage,
+  TransferableSimulationSuccessMessage,
+} from './transferBuffers';
 
 const MIN_FISH_CAPACITY = 16;
 const MIN_FOOD_CAPACITY = 8;
@@ -78,11 +82,13 @@ export type WorkerSimulationErrorMessage = {
 export type BoidsWorkerMessage =
   | SimulationInput
   | SharedSimulationBuffersMessage
-  | SharedSimulationJobMessage;
+  | SharedSimulationJobMessage
+  | TransferableSimulationJobMessage;
 
 export type BoidsWorkerResponse =
   | SharedSimulationSuccessMessage
   | ClonedSimulationSuccessMessage
+  | TransferableSimulationSuccessMessage
   | WorkerSimulationErrorMessage;
 
 const nextCapacity = (requested: number, minimum: number) =>
@@ -246,4 +252,22 @@ export function isSharedSimulationJobMessage(
   message: BoidsWorkerMessage
 ): message is SharedSimulationJobMessage {
   return 'type' in message && message.type === 'shared-job';
+}
+
+export function isTransferSimulationJobMessage(
+  message: BoidsWorkerMessage
+): message is TransferableSimulationJobMessage {
+  return 'type' in message && message.type === 'transfer-job';
+}
+
+export function isTransferSimulationSuccessMessage(
+  message: BoidsWorkerResponse
+): message is TransferableSimulationSuccessMessage {
+  return message.type === 'success' && message.mode === 'transfer';
+}
+
+export function isClonedSimulationSuccessMessage(
+  message: BoidsWorkerResponse
+): message is ClonedSimulationSuccessMessage {
+  return message.type === 'success' && message.mode === 'copy';
 }
