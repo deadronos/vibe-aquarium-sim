@@ -2,10 +2,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { collectBundleReport } from './bundle-report.mjs';
 
+function parseThreshold(environmentVariable, defaultValue) {
+  const value = process.env[environmentVariable];
+  if (value === undefined) return defaultValue;
+
+  const threshold = Number(value);
+  if (value.trim() === '' || !Number.isFinite(threshold) || threshold < 0) {
+    throw new Error(`${environmentVariable} must be a finite, non-negative number.`);
+  }
+  return threshold;
+}
+
 const distDir = path.resolve('dist');
-const maxJavaScriptGzipBytes = Number(process.env.MAX_JS_GZIP_BYTES ?? 1_700_000);
-const maxModelBytes = Number(process.env.MAX_MODEL_BYTES ?? 2_921_368);
-const maxCriticalModelBytes = Number(process.env.MAX_CRITICAL_MODEL_BYTES ?? 960_000);
+const maxJavaScriptGzipBytes = parseThreshold('MAX_JS_GZIP_BYTES', 1_700_000);
+const maxModelBytes = parseThreshold('MAX_MODEL_BYTES', 2_921_368);
+const maxCriticalModelBytes = parseThreshold('MAX_CRITICAL_MODEL_BYTES', 960_000);
 
 if (!fs.existsSync(distDir)) {
   console.error('Bundle budget check failed: dist/ does not exist. Run npm run build first.');

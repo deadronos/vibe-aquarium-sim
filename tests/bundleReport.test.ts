@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -14,6 +15,17 @@ function createFixtureDirectory(): string {
   return directory;
 }
 
+function createBudgetFixtureDirectory(): string {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'vibe-aquarium-bundle-budget-'));
+  temporaryDirectories.push(directory);
+  const distDirectory = path.join(directory, 'dist');
+  fs.mkdirSync(path.join(distDirectory, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(distDirectory, 'assets', 'a.js'), 'export const fish = 1;\n');
+  fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish.glb'), Buffer.from([0x66]));
+  fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish2.glb'), Buffer.from([0x67]));
+  return directory;
+}
+
 afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) {
     fs.rmSync(directory, { recursive: true, force: true });
@@ -21,6 +33,32 @@ afterEach(() => {
 });
 
 describe('collectBundleReport', () => {
+  it('fails closed for invalid budget overrides while accepting valid overrides', () => {
+    const fixtureDirectory = createBudgetFixtureDirectory();
+    const budgetCheckPath = path.resolve(process.cwd(), 'scripts/check-bundle-budget.mjs');
+    const validEnvironment = {
+      ...process.env,
+      MAX_JS_GZIP_BYTES: '100000',
+      MAX_MODEL_BYTES: '100000',
+      MAX_CRITICAL_MODEL_BYTES: '100000',
+    };
+
+    expect(() =>
+      execFileSync(process.execPath, [budgetCheckPath], {
+        cwd: fixtureDirectory,
+        env: validEnvironment,
+        stdio: 'pipe',
+      })
+    ).not.toThrow();
+    expect(() =>
+      execFileSync(process.execPath, [budgetCheckPath], {
+        cwd: fixtureDirectory,
+        env: { ...validEnvironment, MAX_MODEL_BYTES: 'not-a-number' },
+        stdio: 'pipe',
+      })
+    ).toThrow();
+  });
+
   it('rejects a build without the critical fish model', () => {
     const distDirectory = createFixtureDirectory();
     fs.writeFileSync(path.join(distDirectory, 'Copilot3D-fish2.glb'), Buffer.from([0x66, 0x69]));
