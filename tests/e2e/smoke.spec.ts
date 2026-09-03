@@ -69,13 +69,21 @@ test('critical fish model loads before deferred variants', async ({ page }) => {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
   const fishRequestUrls: string[] = [];
+  const fishResponses: Array<{ url: string; status: number }> = [];
+  const fishRequestFailures: Array<{ url: string; error: string | null }> = [];
 
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('response', (response) => {
     if (response.status() === 404) failedResponses.push(response.url());
+    if (new URL(response.url()).pathname.endsWith('.glb'))
+      fishResponses.push({ url: response.url(), status: response.status() });
   });
   page.on('request', (request) => {
     if (new URL(request.url()).pathname.endsWith('.glb')) fishRequestUrls.push(request.url());
+  });
+  page.on('requestfailed', (request) => {
+    if (new URL(request.url()).pathname.endsWith('.glb'))
+      fishRequestFailures.push({ url: request.url(), error: request.failure()?.errorText ?? null });
   });
 
   await page.goto('./', { waitUntil: 'domcontentloaded' });
@@ -95,13 +103,26 @@ test('critical fish model loads before deferred variants', async ({ page }) => {
       })
       .toEqual(['ready', 'ready']);
   } catch (error) {
-    const diagnostics = await page.evaluate(() => ({
-      status: window.__vibe_fishAssetStatus,
-      glbResources: performance
-        .getEntriesByType('resource')
-        .map((entry) => entry.name)
-        .filter((name) => name.endsWith('.glb')),
-    }));
+    const diagnostics = await page.evaluate(
+      ({ responses, requestFailures }) => ({
+        status: window.__vibe_fishAssetStatus,
+        glbResources: performance
+          .getEntriesByType('resource')
+          .filter((entry) => entry.name.endsWith('.glb'))
+          .map((entry) => {
+            const resource = entry as PerformanceResourceTiming;
+            return {
+              name: resource.name,
+              duration: resource.duration,
+              transferSize: resource.transferSize,
+              encodedBodySize: resource.encodedBodySize,
+            };
+          }),
+        responses,
+        requestFailures,
+      }),
+      { responses: fishResponses, requestFailures: fishRequestFailures }
+    );
     console.log(`Fish asset diagnostics: ${JSON.stringify(diagnostics)}`);
     throw error;
   }
