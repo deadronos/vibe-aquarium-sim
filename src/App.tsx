@@ -94,7 +94,7 @@ function App() {
     <>
       <div ref={appShellRef} id="vibe-app-shell">
         {/* HUD overlay outside Canvas */}
-        <HUD onOpenSettings={openSettings} />
+        <HUD onOpenSettings={openSettings} shortcutsDisabled={settingsOpen} />
         {showDebugPanel && <DebugHUD />}
 
         {started ? (

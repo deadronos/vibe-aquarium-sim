@@ -10,6 +10,7 @@ import './HUD.css';
 
 type HUDProps = {
   onOpenSettings?: (trigger?: HTMLButtonElement) => void;
+  shortcutsDisabled?: boolean;
 };
 
 const getDefaultPanelOpen = (): boolean => {
@@ -37,7 +38,7 @@ const formatTimeAgo = (date: Date | null): string => {
   return `${hours}h ago`;
 };
 
-export const HUD = ({ onOpenSettings }: HUDProps) => {
+export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => {
   const [fishCount, setFishCount] = useState(0);
   const [foodCount, setFoodCount] = useState(0);
   const [, forceUpdate] = useState(0);
@@ -113,6 +114,8 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
     ];
 
   useEffect(() => {
+    if (shortcutsDisabled) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input or using a modified shortcut.
       if (
@@ -157,6 +160,7 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
     stopPlacingDecoration,
     handleDecorationClick,
     handleFeed,
+    shortcutsDisabled,
   ]);
 
   return (

@@ -102,4 +102,15 @@ describe('HUD', () => {
     expect(feedSpy).toHaveBeenNthCalledWith(2, TANK_CENTER);
     input.remove();
   });
+
+  it('disables global shortcuts while Settings is open', () => {
+    const feedSpy = vi.spyOn(feedingActions, 'feedAt').mockImplementation(() => {});
+    render(<HUD shortcutsDisabled />);
+
+    fireEvent.keyDown(window, { key: 'f' });
+    fireEvent.keyDown(window, { key: '1' });
+
+    expect(feedSpy).not.toHaveBeenCalled();
+    expect(useGameStore.getState().isPlacingDecoration).toBe(false);
+  });
 });

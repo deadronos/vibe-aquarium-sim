@@ -28,13 +28,31 @@ test.describe('mobile aquarium composition', () => {
       .locator('.hud-stat')
       .filter({ hasText: 'Last Fed' })
       .locator('.hud-stat-value');
+
+    const decorButton = rail.getByRole('button', { name: 'Place decoration' });
+    const settingsButton = rail.getByRole('button', { name: 'Open settings' });
+    const dialog = page.getByRole('dialog', { name: 'Settings' });
+
+    await expect(lastFed).toHaveText('Never');
+    await settingsButton.click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('f');
+    await page.keyboard.press('1');
+    await expect(lastFed).toHaveText('Never');
+    await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(settingsButton).toBeFocused();
+
     await rail.getByRole('button', { name: 'Feed fish' }).click();
     await expect(lastFed).toHaveText('Just now');
 
+    await expect
+      .poll(() => lastFed.textContent(), { timeout: 8_000, intervals: [1_000] })
+      .not.toBe('Just now');
     await page.keyboard.press('f');
     await expect(lastFed).toHaveText('Just now');
 
-    const decorButton = rail.getByRole('button', { name: 'Place decoration' });
     await decorButton.click();
     await expect(decorButton).toHaveAttribute('aria-pressed', 'true');
     await expect(rail).toContainText('Click tank floor to place');
@@ -42,9 +60,7 @@ test.describe('mobile aquarium composition', () => {
     await page.keyboard.press('Escape');
     await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
 
-    const settingsButton = rail.getByRole('button', { name: 'Open settings' });
     await settingsButton.click();
-    const dialog = page.getByRole('dialog', { name: 'Settings' });
     await expect(dialog).toBeVisible();
     const closeButton = dialog.getByRole('button', { name: 'Close' });
     const debugCheckbox = dialog.getByRole('checkbox', { name: 'Show debug panel' });
@@ -81,6 +97,17 @@ test.describe('mobile aquarium composition', () => {
     expect(railBox!.x + railBox!.width).toBeLessThanOrEqual(844);
     expect(railBox!.y).toBeGreaterThanOrEqual(0);
     expect(railBox!.y + railBox!.height).toBeLessThanOrEqual(390);
+
+    const actionButtons = rail.getByRole('button');
+    await expect(actionButtons).toHaveCount(3);
+    for (let index = 0; index < (await actionButtons.count()); index += 1) {
+      const box = await actionButtons.nth(index).boundingBox();
+      expect(box, `landscape action button ${index} should have a touch-sized box`).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+    const railDisplay = await rail.evaluate((element) => getComputedStyle(element).flexDirection);
+    expect(railDisplay).toBe('column');
 
     await rail.getByRole('button', { name: 'Place decoration' }).click();
     await expect(rail).toContainText('Click tank floor to place');
