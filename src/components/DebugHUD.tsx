@@ -11,6 +11,7 @@ type RenderStatus = {
   frameDuration?: number;
 } | null;
 type SchedStatus = { ema: number; currentMax?: number; lastDuration?: number } | null;
+type TransportStatus = VibeTransportStatus | null;
 type Counts = { simulate: number; render: number; fishUse: number; scheduler: number } | null;
 
 declare global {
@@ -51,6 +52,7 @@ declare global {
       scheduler?: SchedEntry[];
       schedulerTuning?: SchedulerTuningEntry[];
       qualityTransitions?: VibeQualityTransitionEntry[];
+      transport?: TransportStatus;
       reset?: () => void;
       download?: () => boolean;
     };
@@ -61,6 +63,7 @@ declare global {
 export const DebugHUD: React.FC = () => {
   const [renderStatus, setRenderStatus] = useState<RenderStatus>(null);
   const [schedStatus, setSchedStatus] = useState<SchedStatus>(null);
+  const [transportStatus, setTransportStatus] = useState<TransportStatus>(null);
   const [counts, setCounts] = useState<Counts>(null);
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export const DebugHUD: React.FC = () => {
         const rs = window.__vibe_renderStatus || null;
         const ss = window.__vibe_schedStatus || null;
         const dbg = window.__vibe_debug || null;
+        const ts = window.__vibe_transportStatus || dbg?.transport || null;
         const c = dbg
           ? {
               simulate: dbg.simulateStep.length,
@@ -99,6 +103,7 @@ export const DebugHUD: React.FC = () => {
         // React still receives a new value and re-renders the displayed data.
         setRenderStatus(rs ? { ...rs } : null);
         setSchedStatus(ss ? { ...ss } : null);
+        setTransportStatus(ts ? { ...ts } : null);
         setCounts(c);
       } catch (err) {
         // swallow - non-critical
@@ -165,6 +170,12 @@ export const DebugHUD: React.FC = () => {
         Counts:{' '}
         {counts
           ? `fishRender ${counts.render} • simulate ${counts.simulate} • scheduler ${counts.scheduler}`
+          : '—'}
+      </div>
+      <div className="line">
+        Transport:{' '}
+        {transportStatus
+          ? `${transportStatus.mode} • jobs ${transportStatus.submitted}/${transportStatus.completed} • ${transportStatus.busy ? 'busy' : 'idle'}`
           : '—'}
       </div>
 

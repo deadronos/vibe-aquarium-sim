@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phase 1 and Phase 2 merged; Phase 3 adaptive quality complete pending PR review.
-- Branch: `codex/phase2-adaptive-quality` (issue #143)
+- Phase: Phases 1–3 merged; Phase 4 zero-copy transport is complete on the review branch.
+- Branch: `codex/phase4-zero-copy-transport` (issue #142)
 
 ## Known issues / technical debt
 
@@ -90,3 +90,10 @@
 - **Adaptive telemetry:** Added hysteretic downshift/recovery coverage with bounded opt-in `qualityTransitions` diagnostics and a resolved `__vibe_qualityStatus` snapshot.
 - **Stress coverage:** Added `?quality=low&stress=quality` browser smoke coverage with a bounded 300-fish school; normal startup remains 30 fish.
 - **Validation:** Full unit suite: 125 passed, 1 skipped; format, lint, typecheck, build, bundle budget, and all three preview smoke tests pass locally.
+
+### 2026-09-03 (Phase 4)
+
+- **Transport:** Added a transferable `ArrayBuffer` ping-pong fallback for non-isolated worker pages while retaining SharedArrayBuffer as the preferred isolated path and cloned worker messages/main-thread simulation as fallbacks.
+- **Ownership:** Transfer slots explicitly move through free, in-flight, pending-result, and invalid states. Snapshot buffers remain reusable; detached slots are invalidated after post/worker errors and are never read or replaced while in flight.
+- **Diagnostics:** Published `window.__vibe_transportStatus` with mode, capacities, counters, busy state, overlap count, and latest reason. The opt-in Debug HUD and downloaded traces mirror the stable status object.
+- **Validation:** Transfer slot/protocol/orchestrator tests pass, benchmark coverage logs 50 iterations at 100/1,000/5,000 fish, and preview smoke coverage asserts non-isolated transfer/copy mode with zero overlaps. Full validation is green: 145 unit tests passed with 1 skipped, plus format, lint, typecheck, build, bundle budgets, and four preview smoke tests.

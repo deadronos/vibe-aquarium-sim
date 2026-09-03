@@ -55,6 +55,19 @@ declare global {
     reason: 'low-fps' | 'high-fps' | 'device-clamp';
     time: number;
   };
+  type VibeTransportMode = 'shared' | 'transfer' | 'copy' | 'main-thread';
+  type VibeTransportStatus = {
+    mode: VibeTransportMode;
+    isolationSupported: boolean;
+    fishCapacity: number;
+    foodCapacity: number;
+    submitted: number;
+    completed: number;
+    errors: number;
+    overlapCount: number;
+    busy: boolean;
+    latestReason: string | null;
+  };
 
   type VibeDebugCollector = {
     simulateStep: VibeSimEntry[];
@@ -63,6 +76,7 @@ declare global {
     scheduler?: VibeSchedEntry[];
     schedulerTuning?: VibeSchedulerTuningEntry[];
     qualityTransitions?: VibeQualityTransitionEntry[];
+    transport?: VibeTransportStatus | null;
     reset?: () => void;
     download?: () => boolean;
   };
@@ -87,6 +101,7 @@ declare global {
       stressMode?: boolean;
       fishCount?: number;
     };
+    __vibe_transportStatus?: VibeTransportStatus;
     toggleBoidsWorker?: () => void;
   }
 }
