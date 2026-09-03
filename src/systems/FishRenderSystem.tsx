@@ -63,7 +63,7 @@ export const FishRenderSystem = () => {
   const uniformsARef = useRef<VibeFishLightingUniforms[]>([]);
   const uniformsBRef = useRef<VibeFishLightingUniforms[]>([]);
   const uniformsCRef = useRef<VibeFishLightingUniforms[]>([]);
-  const availableModelIndicesRef = useRef<FishModelIndex[]>([0]);
+  const modelAvailabilityRef = useRef<[boolean, boolean, boolean]>([true, false, false]);
   const fishAssetStatusRef = useRef<VibeFishAssetStatus>({
     primary: 'loading',
     variants: ['loading', 'loading'],
@@ -85,8 +85,7 @@ export const FishRenderSystem = () => {
     } else {
       status.variants[modelIndex - 1] = 'ready';
     }
-    const available = availableModelIndicesRef.current;
-    if (!available.includes(modelIndex)) available.push(modelIndex);
+    modelAvailabilityRef.current[modelIndex] = true;
   }, []);
   const markVariantError = useCallback((modelIndex: 1 | 2) => {
     fishAssetStatusRef.current.variants[modelIndex - 1] = 'error';
@@ -178,7 +177,7 @@ export const FishRenderSystem = () => {
     let wroteB = false;
     let wroteC = false;
     const fishEntities = fishEntitiesQuery.entities;
-    const available = availableModelIndicesRef.current;
+    const available = modelAvailabilityRef.current;
 
     for (let i = 0, len = fishEntities.length; i < len; i++) {
       const entity = fishEntities[i]!;

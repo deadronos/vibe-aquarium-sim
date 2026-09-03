@@ -2,12 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import * as THREE from 'three';
-import {
-  MODEL_URLS,
-  extractModelAssets,
-  resolveFishModelIndex,
-  type FishModelIndex,
-} from '../src/systems/fishModels';
+import { MODEL_URLS, extractModelAssets, resolveFishModelIndex } from '../src/systems/fishModels';
 
 describe('FishRenderSystem model configuration', () => {
   it('exposes three model URLs and includes the 3rd model', () => {
@@ -51,7 +46,7 @@ describe('FishRenderSystem model configuration', () => {
   });
 
   it('normalizes invalid requested model indices to the primary model', () => {
-    const available: readonly FishModelIndex[] = [0, 1, 2];
+    const available: readonly [boolean, boolean, boolean] = [true, true, true];
 
     expect(resolveFishModelIndex(undefined, available)).toBe(0);
     expect(resolveFishModelIndex(-1, available)).toBe(0);
@@ -60,14 +55,14 @@ describe('FishRenderSystem model configuration', () => {
   });
 
   it('falls back to the primary model while a requested variant is unavailable', () => {
-    const available: readonly FishModelIndex[] = [0];
+    const available: readonly [boolean, boolean, boolean] = [true, false, false];
 
     expect(resolveFishModelIndex(1, available)).toBe(0);
     expect(resolveFishModelIndex(2, available)).toBe(0);
   });
 
   it('preserves requested variants once they are ready', () => {
-    const available: readonly FishModelIndex[] = [0, 2];
+    const available: readonly [boolean, boolean, boolean] = [true, false, true];
 
     expect(resolveFishModelIndex(0, available)).toBe(0);
     expect(resolveFishModelIndex(2, available)).toBe(2);

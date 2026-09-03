@@ -20,9 +20,9 @@ const isFishModelIndex = (value: unknown): value is FishModelIndex =>
  */
 export function resolveFishModelIndex(
   requested: unknown,
-  available: readonly FishModelIndex[]
+  available: readonly [boolean, boolean, boolean]
 ): FishModelIndex {
-  return isFishModelIndex(requested) && available.includes(requested) ? requested : 0;
+  return isFishModelIndex(requested) && available[requested] ? requested : 0;
 }
 
 // Exported helper used by the component and unit tests
