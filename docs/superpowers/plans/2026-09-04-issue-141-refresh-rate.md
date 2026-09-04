@@ -256,3 +256,6 @@ Review the complete branch diff against `origin/main`, address any Critical or I
 - Final validation after the review follow-up: the same full matrix remains
   green (format, lint, both typechecks, 205 tests / 1 skipped, build, bundle
   budgets, 7 browser smoke tests, and `git diff --check`).
+- Final scope/telemetry validation: the same matrix remains green after
+  narrowing the deterministic harness claim and making adaptive telemetry
+  genuinely opt-in when the debug collector is absent.

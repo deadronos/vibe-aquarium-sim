@@ -112,3 +112,4 @@
 - **Documentation:** Added `docs/performance/fixed-step-refresh-rate.md` and corrected `docs/agents/architecture.md` to describe Rapier before/after-step ownership and render-frame boundaries.
 - **Validation:** Focused trajectory tests pass (8 tests); the scheduler/system regression suite passes (14 tests); final full format/lint/application-and-scoped-typecheck/test/build/bundle/smoke validation is green with 205 tests passed and 1 skipped.
 - **Adaptive telemetry:** Removed the stale max-sub-step throttle after Rapier became the fixed-step owner; adaptive mode now measures callback cost without reporting ineffective pacing changes.
+- **Scope:** Documented that async worker delivery and React hook-registration ordering remain browser-backed follow-ups under #148; this issue proves identical pre-queued-control trajectories and fixed-step ownership.
