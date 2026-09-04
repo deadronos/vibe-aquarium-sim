@@ -6,6 +6,7 @@ import { SchedulerSystem } from '../src/systems/SchedulerSystem';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { world } from '../src/store';
 import { fixedScheduler } from '../src/utils/FixedStepScheduler';
+import { getDecorationSpawnDescriptors, getInitialFishSpawn } from '../src/config/artDirection';
 
 vi.mock('@react-three/rapier', () => ({
   useBeforePhysicsStep: () => {},
@@ -36,8 +37,20 @@ describe('SimulationScene integration', () => {
     );
 
     // Spawner mounts synchronously in useEffect
-    const expectedCount = 45; // 30 fish + 15 decorations
+    const expectedCount = 30 + getDecorationSpawnDescriptors().length;
     expect(world.entities.length).toBe(expectedCount);
+
+    const fish = world.with('isFish').entities;
+    expect(fish.map((entity) => entity.modelIndex).sort()).toEqual(
+      Array.from({ length: 30 }, (_, index) => getInitialFishSpawn(index, 30).modelIndex).sort()
+    );
+    expect(Math.min(...fish.map((entity) => entity.position?.x ?? 0))).toBeLessThan(-0.5);
+    expect(Math.max(...fish.map((entity) => entity.position?.x ?? 0))).toBeGreaterThan(0.5);
+
+    const decorations = world.with('isDecoration').entities;
+    expect(decorations.map((entity) => entity.position?.x ?? 0).every((x) => Math.abs(x) >= 0.42)).toBe(
+      true
+    );
 
     // Simulate adaptive scheduler reducing max steps
     fixedScheduler.setMaxSubSteps(1);
