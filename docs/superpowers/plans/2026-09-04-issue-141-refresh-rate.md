@@ -247,3 +247,6 @@ Review the complete branch diff against `origin/main`, address any Critical or I
   lint, typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle
   budgets, 7 browser smoke tests, and `git diff --check` passed. A fresh full
   matrix is required after the correction.
+- Post-correction full validation: format, lint, application and scoped Issue
+  #141 typechecks, 51 test files / 205 tests passed (1 skipped), build, bundle
+  budgets, 7 browser smoke tests, and `git diff --check` passed.
