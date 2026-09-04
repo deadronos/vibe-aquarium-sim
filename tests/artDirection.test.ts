@@ -1,7 +1,10 @@
 import {
   AQUARIUM_PALETTE,
+  ART_DIRECTION_LIGHTING,
+  GLASS_MATERIAL,
   DECORATION_CLUSTERS,
   DECORATION_MATERIAL,
+  WATER_MATERIAL,
   getDecorationSpawnDescriptors,
   getInitialFishSpawn,
 } from '../src/config/artDirection';
@@ -51,5 +54,14 @@ describe('aquarium art direction', () => {
       AQUARIUM_PALETTE.rock,
       AQUARIUM_PALETTE.coral,
     ]);
+  });
+
+  test('keeps the focal lighting and silhouette materials quality-invariant', () => {
+    expect(ART_DIRECTION_LIGHTING.keyIntensity).toBeGreaterThan(
+      ART_DIRECTION_LIGHTING.hemisphereIntensity
+    );
+    expect(WATER_MATERIAL.volumeOpacity).toBeLessThan(0.3);
+    expect(GLASS_MATERIAL.standardOpacity).toBeLessThan(0.25);
+    expect(AQUARIUM_PALETTE.waterDeep).toBe(AQUARIUM_PALETTE.waterDeep.toLowerCase());
   });
 });

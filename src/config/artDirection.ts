@@ -1,6 +1,7 @@
 import type { DecorationType } from '../domain/types';
 
 export const AQUARIUM_PALETTE = {
+  sceneBackground: '#071c21',
   waterDeep: '#123b43',
   waterSurface: '#1d5960',
   waterHighlight: '#8fc8c0',

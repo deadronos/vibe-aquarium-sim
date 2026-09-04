@@ -1,5 +1,6 @@
 import { Box, Plane } from '@react-three/drei';
 import { TANK_DIMENSIONS } from '../config/constants';
+import { AQUARIUM_PALETTE } from '../config/artDirection';
 
 export const LivingRoom = () => {
   // Aquarium is centered at [0, 0, 0] with dimensions TANK_DIMENSIONS
@@ -23,10 +24,18 @@ export const LivingRoom = () => {
         castShadow
       >
         <meshStandardMaterial
-          color="#1a1a1a" // Dark charcoal
+          color={AQUARIUM_PALETTE.stand}
           roughness={0.7}
           metalness={0.1}
         />
+      </Box>
+
+      <Box
+        args={[standWidth * 0.82, standHeight * 0.62, standDepth + 0.012]}
+        position={[0, -tankHeight / 2 - standHeight * 0.56, standDepth * 0.02]}
+        receiveShadow
+      >
+        <meshStandardMaterial color={AQUARIUM_PALETTE.standInset} roughness={0.82} />
       </Box>
 
       {/* Back Wall */}
@@ -37,7 +46,7 @@ export const LivingRoom = () => {
         receiveShadow
       >
         <meshStandardMaterial
-          color="#808080" // Darker greyish wall
+          color={AQUARIUM_PALETTE.roomWall}
           roughness={0.9}
         />
       </Plane>
@@ -49,20 +58,17 @@ export const LivingRoom = () => {
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
       >
-        <meshStandardMaterial
-          color="#a38c71" // Warm wood-like tone
-          roughness={0.8}
-        />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.roomFloor} roughness={0.86} />
       </Plane>
 
-      {/* Optional: A small potted plant or object next to it */}
+      {/* A quiet warm prop helps ground the stand without competing with the tank. */}
       <Box
-        args={[0.4, 0.6, 0.4]}
-        position={[standWidth / 2 + 0.5, -tankHeight / 2 - standHeight + 0.3, 0]}
+        args={[0.28, 0.42, 0.28]}
+        position={[standWidth / 2 + 0.42, -tankHeight / 2 - standHeight + 0.21, -0.08]}
         receiveShadow
         castShadow
       >
-        <meshStandardMaterial color="#3d5a40" roughness={0.9} />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.pot} roughness={0.92} />
       </Box>
     </group>
   );

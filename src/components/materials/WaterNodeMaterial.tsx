@@ -20,6 +20,7 @@ import {
 } from 'three/tsl';
 import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
+import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../../config/artDirection';
 
 // Extend so we can use <meshBasicNodeMaterial /> in JSX
 extend({ MeshBasicNodeMaterial });
@@ -51,13 +52,13 @@ interface WaterVolumeNodeMaterialProps {
 }
 
 export const WaterVolumeNodeMaterial = ({
-  waterColor = '#1a4d6d',
-  opacity = 0.3,
+  waterColor = AQUARIUM_PALETTE.waterDeep,
+  opacity = WATER_MATERIAL.volumeOpacity,
   causticsScale = 2.0,
   causticsSpeed = 0.5,
-  causticsIntensity = 0.3,
-  volumeSpecularStrength = 0.18,
-  volumeShimmerStrength = 0.12,
+  causticsIntensity = WATER_MATERIAL.causticsIntensity,
+  volumeSpecularStrength = WATER_MATERIAL.volumeSpecularStrength,
+  volumeShimmerStrength = WATER_MATERIAL.volumeShimmerStrength,
 }: WaterVolumeNodeMaterialProps) => {
   const t = time;
 
@@ -117,11 +118,11 @@ interface WaterSurfaceNodeMaterialProps {
 }
 
 export const WaterSurfaceNodeMaterial = ({
-  surfaceTint = '#aaddff',
-  surfaceOpacity = 0.18,
-  surfaceStrength = 0.75,
-  surfaceShimmerStrength = 1.0,
-  surfaceFresnelStrength = 1.0,
+  surfaceTint = AQUARIUM_PALETTE.waterSurface,
+  surfaceOpacity = WATER_MATERIAL.surfaceOpacity,
+  surfaceStrength = WATER_MATERIAL.surfaceStrength,
+  surfaceShimmerStrength = WATER_MATERIAL.surfaceShimmerStrength,
+  surfaceFresnelStrength = WATER_MATERIAL.surfaceFresnelStrength,
 }: WaterSurfaceNodeMaterialProps) => {
   const t = time;
   const mainUv = uv();

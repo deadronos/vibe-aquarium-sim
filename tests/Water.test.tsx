@@ -31,6 +31,7 @@ import { useGameStore } from '../src/gameStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { Water } from '../src/components/Water';
+import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../src/config/artDirection';
 
 // Mock ResizeObserver which is needed by R3F/Three
 global.ResizeObserver = class ResizeObserver {
@@ -66,7 +67,10 @@ describe('Water', () => {
     expect(material.type).toBe('ShaderMaterial');
 
     expect(material.uniforms.waterColor.value).toBeInstanceOf(Color);
-    expect(material.uniforms.opacity.value).toBe(0.3);
+    expect(material.uniforms.waterColor.value.getHexString()).toBe(
+      AQUARIUM_PALETTE.waterDeep.slice(1)
+    );
+    expect(material.uniforms.opacity.value).toBe(WATER_MATERIAL.volumeOpacity);
     expect(material.uniforms.causticsScale.value).toBe(2.0);
     expect(material.uniforms.causticsSpeed.value).toBe(0.5);
     expect(material.uniforms.causticsIntensity.value).toBe(0);

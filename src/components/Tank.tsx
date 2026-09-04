@@ -7,6 +7,11 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { useEffect, useMemo, useRef } from 'react';
 
 import { TANK_DIMENSIONS } from '../config/constants';
+import {
+  AQUARIUM_PALETTE,
+  CAUSTICS_MATERIAL,
+  GLASS_MATERIAL,
+} from '../config/artDirection';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 
@@ -80,7 +85,12 @@ export const Tank = () => {
           args={[width + floorThickness * 2, floorThickness, depth + floorThickness * 2]}
           receiveShadow
         >
-          <meshStandardMaterial color="#1a1a1a" transparent opacity={0.8} />
+          <meshStandardMaterial
+            color={AQUARIUM_PALETTE.standInset}
+            roughness={0.94}
+            transparent
+            opacity={0.96}
+          />
         </Box>
       </RigidBody>
 
@@ -107,22 +117,24 @@ export const Tank = () => {
       <mesh geometry={mergedGeometry} castShadow receiveShadow>
         {useTransmissiveGlass ? (
           <GlassNodeMaterial
-            color="white"
-            roughness={0.05}
-            transmission={0.99}
-            thickness={1.5}
-            opacity={1.0}
-            ior={1.5}
-            chromaticAberration={tankTransmissionDispersionEnabled ? 0.06 : 0}
+            color={AQUARIUM_PALETTE.glassTint}
+            roughness={GLASS_MATERIAL.roughness}
+            transmission={GLASS_MATERIAL.transmission}
+            thickness={GLASS_MATERIAL.thickness}
+            opacity={1}
+            ior={GLASS_MATERIAL.ior}
+            chromaticAberration={
+              tankTransmissionDispersionEnabled ? GLASS_MATERIAL.dispersion : 0
+            }
           />
         ) : (
           <meshStandardMaterial
-            color="white"
-            roughness={0.1}
+            color={AQUARIUM_PALETTE.glassTint}
+            roughness={GLASS_MATERIAL.roughness}
             metalness={0.1}
-            transparent={true}
-            opacity={0.3}
-            side={2} // DoubleSide from THREE
+            transparent
+            opacity={GLASS_MATERIAL.standardOpacity}
+            side={THREE.DoubleSide}
           />
         )}
       </mesh>
@@ -162,10 +174,10 @@ const TankCausticsOverlayEnabled = () => {
   const uniforms = useMemo(
     () => ({
       time: { value: 0 },
-      intensity: { value: 0.85 },
-      scale: { value: 1.35 },
-      speed: { value: 0.45 },
-      color: { value: new Color('#aaddff') },
+      intensity: { value: CAUSTICS_MATERIAL.intensity },
+      scale: { value: CAUSTICS_MATERIAL.scale },
+      speed: { value: CAUSTICS_MATERIAL.speed },
+      color: { value: new Color(AQUARIUM_PALETTE.waterHighlight) },
     }),
     []
   );
@@ -211,7 +223,12 @@ const TankCausticsOverlayEnabled = () => {
   return (
     <mesh geometry={geometry}>
       {isWebGPU ? (
-        <TankCausticsNodeMaterial color="#aaddff" intensity={0.85} scale={1.35} speed={0.45} />
+        <TankCausticsNodeMaterial
+          color={AQUARIUM_PALETTE.waterHighlight}
+          intensity={CAUSTICS_MATERIAL.intensity}
+          scale={CAUSTICS_MATERIAL.scale}
+          speed={CAUSTICS_MATERIAL.speed}
+        />
       ) : (
         <shaderMaterial
           ref={materialRef}
