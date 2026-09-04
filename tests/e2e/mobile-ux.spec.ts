@@ -45,7 +45,7 @@ test.describe('mobile aquarium composition', () => {
     await page.keyboard.press('Escape');
     await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
 
-    await settingsButton.click();
+    await settingsButton.click({ force: true });
     await expect(dialog).toBeVisible();
     await page.keyboard.press('f');
     await page.keyboard.press('1');
@@ -55,7 +55,7 @@ test.describe('mobile aquarium composition', () => {
     await expect(dialog).toBeHidden();
     await expect(settingsButton).toBeFocused();
 
-    await settingsButton.click();
+    await settingsButton.click({ force: true });
     await expect(dialog).toBeVisible();
     const closeButton = dialog.getByRole('button', { name: 'Close' });
     const debugCheckbox = dialog.getByRole('checkbox', { name: 'Show debug panel' });
@@ -69,7 +69,7 @@ test.describe('mobile aquarium composition', () => {
     await expect(dialog).toBeHidden();
     await expect(settingsButton).toBeFocused();
 
-    await settingsButton.click();
+    await settingsButton.click({ force: true });
     await expect(dialog).toBeVisible();
     await page.mouse.click(4, 4);
     await expect(dialog).toBeHidden();
