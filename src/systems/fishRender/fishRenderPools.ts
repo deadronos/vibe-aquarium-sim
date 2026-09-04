@@ -11,6 +11,17 @@ export type FishRenderStatus = {
   frameDuration: number;
 };
 
+export type FishRenderFrameResult = {
+  countA: number;
+  countB: number;
+  countC: number;
+  activeEntities: number;
+  wroteA: boolean;
+  wroteB: boolean;
+  wroteC: boolean;
+  flushed: number;
+};
+
 export type FishRenderState = {
   frameId: number;
   elapsedTime: number;
@@ -26,6 +37,7 @@ export type FishRenderState = {
   instanceUpdateEma: number;
   updateFrequency: number;
   renderStatus: FishRenderStatus;
+  renderResult: FishRenderFrameResult;
 };
 
 const createMatrixPool = (): Matrix4[] => {
@@ -66,6 +78,16 @@ export function createFishRenderState(): FishRenderState {
     instanceUpdateEma: 0,
     updateFrequency: 1,
     renderStatus: { updateFreq: 1, ema: 0, activeEntities: 0, frameDuration: 0 },
+    renderResult: {
+      countA: 0,
+      countB: 0,
+      countC: 0,
+      activeEntities: 0,
+      wroteA: false,
+      wroteB: false,
+      wroteC: false,
+      flushed: 0,
+    },
   };
 }
 
@@ -98,6 +120,14 @@ export function resetFishRenderState(state: FishRenderState): void {
   state.renderStatus.ema = 0;
   state.renderStatus.activeEntities = 0;
   state.renderStatus.frameDuration = 0;
+  state.renderResult.countA = 0;
+  state.renderResult.countB = 0;
+  state.renderResult.countC = 0;
+  state.renderResult.activeEntities = 0;
+  state.renderResult.wroteA = false;
+  state.renderResult.wroteB = false;
+  state.renderResult.wroteC = false;
+  state.renderResult.flushed = 0;
 }
 
 export { MAX_INSTANCES_PER_MODEL };
