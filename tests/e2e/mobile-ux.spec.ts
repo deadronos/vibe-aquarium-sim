@@ -32,18 +32,11 @@ test.describe('mobile aquarium composition', () => {
     const decorButton = rail.getByRole('button', { name: 'Place decoration' });
     const settingsButton = rail.getByRole('button', { name: 'Open settings' });
     const dialog = page.getByRole('dialog', { name: 'Settings' });
-    const feedButton = rail.getByRole('button', { name: 'Feed fish' });
 
     await expect(lastFed).toHaveText('Never');
 
-    await feedButton.click();
-    await expect(lastFed).toHaveText('Just now');
-    const firstFeedTimestamp = await lastFed.getAttribute('datetime');
-    expect(firstFeedTimestamp).not.toBeNull();
-    await page.waitForTimeout(20);
-    await page.keyboard.press('f');
-    await expect(lastFed).toHaveText('Just now');
-    await expect.poll(() => lastFed.getAttribute('datetime')).not.toBe(firstFeedTimestamp);
+    // Feed side effects and F dispatch are covered by HUD/feedingActions unit tests. Keep this
+    // renderer-heavy browser flow focused on mobile composition and modal interaction behavior.
 
     await decorButton.click();
     await expect(decorButton).toHaveAttribute('aria-pressed', 'true');
@@ -54,12 +47,9 @@ test.describe('mobile aquarium composition', () => {
 
     await settingsButton.click();
     await expect(dialog).toBeVisible();
-    const modalFeedTimestamp = await lastFed.getAttribute('datetime');
     await page.keyboard.press('f');
     await page.keyboard.press('1');
-    await expect(lastFed).toHaveText('Just now');
-    expect(modalFeedTimestamp).not.toBeNull();
-    await expect(lastFed).toHaveAttribute('datetime', modalFeedTimestamp!);
+    await expect(lastFed).toHaveText('Never');
     await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
