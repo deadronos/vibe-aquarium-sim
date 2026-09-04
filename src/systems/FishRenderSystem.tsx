@@ -75,7 +75,7 @@ export const FishRenderSystem = () => {
     () => ({
       state: renderState,
       meshes: [null, null, null],
-      available: modelAvailabilityRef.current,
+      available: [true, false, false],
       adaptiveEnabled: false,
       instanceUpdateBudget: 128,
       delta: 0,
@@ -104,6 +104,7 @@ export const FishRenderSystem = () => {
     frameContext.meshes[0] = meshA;
     frameContext.meshes[1] = meshB;
     frameContext.meshes[2] = meshC;
+    frameContext.available = modelAvailabilityRef.current;
     frameContext.adaptiveEnabled = pocEnabled;
     frameContext.instanceUpdateBudget = useQualityStore.getState().instanceUpdateBudget || 128;
     frameContext.delta = delta;
