@@ -145,7 +145,7 @@ export default function SimulationScene() {
     <VisualQualityProvider isWebGPU={rendererConfig.type === 'webgpu'}>
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
-        shadows
+        shadows="percentage"
         gl={async (props) => {
           const Renderer = rendererConfig.ctor;
           let activeRendererType = rendererConfig.type;
