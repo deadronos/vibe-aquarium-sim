@@ -32,25 +32,12 @@ test.describe('mobile aquarium composition', () => {
     const decorButton = rail.getByRole('button', { name: 'Place decoration' });
     const settingsButton = rail.getByRole('button', { name: 'Open settings' });
     const dialog = page.getByRole('dialog', { name: 'Settings' });
-
-    await expect(lastFed).toHaveText('Never');
-    await settingsButton.click();
-    await expect(dialog).toBeVisible();
-    await page.keyboard.press('f');
-    await page.keyboard.press('1');
-    await expect(lastFed).toHaveText('Never');
-    await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
-    await page.keyboard.press('Escape');
-    await expect(dialog).toBeHidden();
-    await expect(settingsButton).toBeFocused();
-    await expect(page.locator('#vibe-app-shell')).not.toHaveJSProperty('inert', true);
-
     const feedButton = rail.getByRole('button', { name: 'Feed fish' });
-    const feedBox = await feedButton.boundingBox();
-    expect(feedBox).not.toBeNull();
-    await page.mouse.click(feedBox!.x + feedBox!.width / 2, feedBox!.y + feedBox!.height / 2);
-    await expect(lastFed).toHaveText('Just now');
 
+    await expect(lastFed).toHaveText('Never');
+
+    await feedButton.click();
+    await expect(lastFed).toHaveText('Just now');
     const firstFeedTimestamp = await lastFed.getAttribute('datetime');
     expect(firstFeedTimestamp).not.toBeNull();
     await page.waitForTimeout(20);
@@ -64,6 +51,20 @@ test.describe('mobile aquarium composition', () => {
 
     await page.keyboard.press('Escape');
     await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
+
+    await settingsButton.click();
+    await expect(dialog).toBeVisible();
+    const modalFeedTimestamp = await lastFed.getAttribute('datetime');
+    await page.keyboard.press('f');
+    await page.keyboard.press('1');
+    await expect(lastFed).toHaveText('Just now');
+    expect(modalFeedTimestamp).not.toBeNull();
+    await expect(lastFed).toHaveAttribute('datetime', modalFeedTimestamp!);
+    await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(settingsButton).toBeFocused();
+    await expect(page.locator('#vibe-app-shell')).not.toHaveJSProperty('inert', true);
 
     await settingsButton.click();
     await expect(dialog).toBeVisible();
