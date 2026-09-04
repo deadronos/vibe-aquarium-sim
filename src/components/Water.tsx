@@ -8,12 +8,13 @@ import {
   waterSurfaceVertexShader,
 } from '../shaders/waterSurfaceShader';
 import { TANK_DIMENSIONS } from '../config/constants';
+import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../config/artDirection';
 import { logShaderOnce } from '../utils/shaderDebug';
 import { WaterSurfaceNodeMaterial, WaterVolumeNodeMaterial } from './materials/WaterNodeMaterial';
 
-const CAUSTICS_INTENSITY_ENABLED = 0.3;
-const VOLUME_SPECULAR_STRENGTH_ENABLED = 0.18;
-const VOLUME_SHIMMER_STRENGTH_ENABLED = 0.12;
+const CAUSTICS_INTENSITY_ENABLED = WATER_MATERIAL.causticsIntensity;
+const VOLUME_SPECULAR_STRENGTH_ENABLED = WATER_MATERIAL.volumeSpecularStrength;
+const VOLUME_SHIMMER_STRENGTH_ENABLED = WATER_MATERIAL.volumeShimmerStrength;
 
 export const Water = () => {
   const volumeMaterialRef = useRef<ShaderMaterial>(null);
@@ -25,8 +26,8 @@ export const Water = () => {
   const volumeUniforms = useMemo(
     () => ({
       time: { value: 0 },
-      waterColor: { value: new Color('#1a4d6d') },
-      opacity: { value: 0.3 },
+      waterColor: { value: new Color(AQUARIUM_PALETTE.waterDeep) },
+      opacity: { value: WATER_MATERIAL.volumeOpacity },
       causticsScale: { value: 2.0 },
       causticsSpeed: { value: 0.5 },
       causticsIntensity: { value: CAUSTICS_INTENSITY_ENABLED },
@@ -39,11 +40,11 @@ export const Water = () => {
   const surfaceUniforms = useMemo(
     () => ({
       time: { value: 0 },
-      surfaceTint: { value: new Color('#aaddff') },
-      surfaceOpacity: { value: 0.18 },
-      surfaceStrength: { value: 0.75 },
-      surfaceShimmerStrength: { value: 1.0 },
-      surfaceFresnelStrength: { value: 1.0 },
+      surfaceTint: { value: new Color(AQUARIUM_PALETTE.waterSurface) },
+      surfaceOpacity: { value: WATER_MATERIAL.surfaceOpacity },
+      surfaceStrength: { value: WATER_MATERIAL.surfaceStrength },
+      surfaceShimmerStrength: { value: WATER_MATERIAL.surfaceShimmerStrength },
+      surfaceFresnelStrength: { value: WATER_MATERIAL.surfaceFresnelStrength },
     }),
     []
   );
@@ -88,8 +89,8 @@ export const Water = () => {
         <boxGeometry args={[waterWidth, waterHeight, waterDepth]} />
         {isWebGPU ? (
           <WaterVolumeNodeMaterial
-            waterColor="#1a4d6d"
-            opacity={0.3}
+            waterColor={AQUARIUM_PALETTE.waterDeep}
+            opacity={WATER_MATERIAL.volumeOpacity}
             causticsIntensity={causticsEnabled ? CAUSTICS_INTENSITY_ENABLED : 0}
             volumeSpecularStrength={
               waterVolumeUpgradeEnabled ? VOLUME_SPECULAR_STRENGTH_ENABLED : 0
@@ -115,11 +116,11 @@ export const Water = () => {
           <planeGeometry args={[waterWidth, waterDepth]} />
           {isWebGPU ? (
             <WaterSurfaceNodeMaterial
-              surfaceTint="#aaddff"
-              surfaceOpacity={0.18}
-              surfaceStrength={0.75}
-              surfaceShimmerStrength={1.0}
-              surfaceFresnelStrength={1.0}
+              surfaceTint={AQUARIUM_PALETTE.waterSurface}
+              surfaceOpacity={WATER_MATERIAL.surfaceOpacity}
+              surfaceStrength={WATER_MATERIAL.surfaceStrength}
+              surfaceShimmerStrength={WATER_MATERIAL.surfaceShimmerStrength}
+              surfaceFresnelStrength={WATER_MATERIAL.surfaceFresnelStrength}
             />
           ) : (
             <shaderMaterial

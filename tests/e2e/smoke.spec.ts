@@ -5,7 +5,11 @@ import { expect, test, type Page } from '@playwright/test';
 // treating a healthy but delayed startup as a flaky test.
 test.setTimeout(60_000);
 
-async function expectHealthyAquarium(page: Page, path = './') {
+async function expectHealthyAquarium(
+  page: Page,
+  path = './',
+  options: { expectDesktopHud?: boolean } = {}
+) {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
 
@@ -15,7 +19,9 @@ async function expectHealthyAquarium(page: Page, path = './') {
   });
 
   await page.goto(path, { waitUntil: 'networkidle' });
-  await expect(page.getByText('Fish', { exact: true })).toBeVisible();
+  if (options.expectDesktopHud !== false) {
+    await expect(page.getByText('Fish', { exact: true })).toBeVisible();
+  }
   await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
 
   return { pageErrors, failedResponses };
@@ -184,4 +190,20 @@ test('uses a non-isolated worker transport without overlapping jobs', async ({ p
   expect(status?.completed).toBeLessThanOrEqual(status?.submitted ?? 0);
   expect(pageErrors).toEqual([]);
   expect(failedResponses).toEqual([]);
+});
+
+test('captures cohesive visual review artifacts at desktop and phone sizes', async ({
+  page,
+}, testInfo) => {
+  const desktop = await expectHealthyAquarium(page);
+  await page.screenshot({ path: testInfo.outputPath('issue-146-desktop.png') });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = await expectHealthyAquarium(page, './', { expectDesktopHud: false });
+  await page.screenshot({ path: testInfo.outputPath('issue-146-mobile.png') });
+
+  expect(desktop.pageErrors).toEqual([]);
+  expect(desktop.failedResponses).toEqual([]);
+  expect(mobile.pageErrors).toEqual([]);
+  expect(mobile.failedResponses).toEqual([]);
 });

@@ -2,8 +2,8 @@
 
 ## Current focus
 
-- Branch: `codex/issue-141-refresh-rate`
-- Issue #141 refresh-rate evidence and the fixed-step ownership correction are implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is fully validated and ready for PR publication.
+- Branch: `codex/issue-146-cohesive-visuals`
+- Issue #146 cohesive visual direction is implemented and ready for final validation and PR handoff.
 
 ## Recent changes
 
@@ -20,6 +20,7 @@
 - Added a `SharedArrayBuffer` path for the boids worker when cross-origin isolation is available, with automatic fallback to cloned worker messages on non-isolated hosts (2026-03-29).
 - Added a transferable ping-pong `ArrayBuffer` path for non-isolated production pages; the host copies reusable snapshots into owned slots and never reads detached buffers (2026-09-03).
 - Backfilled tank visual materials and caustics values into `DES015` and created `TASK013` (completed) and `TASK014` (pending) to add verification tests (2026-01-13).
+- Added `DES016`/`TASK018`: centralized art direction, deterministic fish opening, side reef clusters, shared matte decor family, dark water backplate, and warm/cool lighting hierarchy (2026-09-04).
 - Fixed `npm run build` TypeScript errors introduced by debug/perf instrumentation and quality store state.
 - Implemented code-splitting (manualChunks) and lazy-loaded the simulation so Rapier loads only after start; added simulation autostart + loading overlay and removed StrictMode to avoid dev WebGL context loss (2026-01-14, TASK015).
 
@@ -31,6 +32,7 @@
 
 ## Active decisions / considerations
 
+- **Art direction**: Preserve a deep teal tank, subdued warm room, matte low-poly decor, and fish-first contrast across WebGL/WebGPU and quality levels.
 - **Particle Systems**: Use GPU-side wrapping (modulo arithmetic) for ambient/environmental particles to create infinite volumes without CPU allocation or complex buffer management.
 - Physics is the authoritative source of truth for simulation state; systems must drive the physics, not directly mutate positions.
 - Keep render-loop allocations to a minimum (module-level vector reuse). This is a strict performance constraint for `useFrame`-driven systems.

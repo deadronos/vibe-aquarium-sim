@@ -4,12 +4,19 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
 import type { Entity } from '../store';
 import type { DecorationType } from '../domain/types';
+import { AQUARIUM_PALETTE, DECORATION_MATERIAL } from '../config/artDirection';
 
 interface DecorationProps {
   entity: Entity;
 }
 
-// Seaweed - tall wavy plant
+const sharedDecorationMaterial = {
+  roughness: DECORATION_MATERIAL.roughness,
+  metalness: DECORATION_MATERIAL.metalness,
+  flatShading: DECORATION_MATERIAL.flatShading,
+};
+
+// Seaweed - a compact cluster of faceted blades with a slow current sway.
 const Seaweed: React.FC<{ blades?: { height: number; offset: number; phase: number }[] }> = ({
   blades: propBlades,
 }) => {
@@ -39,60 +46,57 @@ const Seaweed: React.FC<{ blades?: { height: number; offset: number; phase: numb
   return (
     <group ref={groupRef}>
       {blades.map((blade, i) => (
-        <mesh key={i} position={[blade.offset, blade.height / 2, 0]}>
-          <boxGeometry args={[0.03, blade.height, 0.02]} />
-          <meshStandardMaterial
-            color="#2d8a4e"
-            roughness={0.8}
-            emissive="#1a5c30"
-            emissiveIntensity={0.1}
-          />
+        <mesh key={i} position={[blade.offset, blade.height / 2, 0]} scale={[1, 1, 0.65]}>
+          <capsuleGeometry args={[0.018, blade.height * 0.82, 4, 4]} />
+          <meshStandardMaterial color={AQUARIUM_PALETTE.kelp} {...sharedDecorationMaterial} />
         </mesh>
       ))}
     </group>
   );
 };
 
-// Coral - branching structure
+// Coral - a low-poly branching accent with a darker base so it feels rooted.
 const Coral: React.FC<{ color?: string }> = ({ color: propColor }) => {
-  const color = propColor ?? '#ff6b6b';
+  const color = propColor ?? AQUARIUM_PALETTE.coral;
 
   return (
     <group>
-      {/* Main trunk */}
-      <mesh position={[0, 0.1, 0]}>
-        <cylinderGeometry args={[0.04, 0.06, 0.2, 8]} />
-        <meshStandardMaterial color={color} roughness={0.6} />
+      <mesh position={[0, 0.045, 0]} scale={[1.25, 0.45, 0.9]}>
+        <dodecahedronGeometry args={[0.09, 0]} />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.rock} {...sharedDecorationMaterial} />
       </mesh>
-      {/* Branches */}
-      <mesh position={[0.05, 0.2, 0]} rotation={[0, 0, -0.5]}>
-        <cylinderGeometry args={[0.02, 0.03, 0.12, 6]} />
-        <meshStandardMaterial color={color} roughness={0.6} />
+      <mesh position={[0, 0.14, 0]}>
+        <cylinderGeometry args={[0.035, 0.06, 0.22, 6]} />
+        <meshStandardMaterial color={color} {...sharedDecorationMaterial} />
+      </mesh>
+      <mesh position={[0.055, 0.25, 0]} rotation={[0, 0, -0.5]}>
+        <cylinderGeometry args={[0.016, 0.03, 0.14, 5]} />
+        <meshStandardMaterial color={color} {...sharedDecorationMaterial} />
       </mesh>
       <mesh position={[-0.04, 0.18, 0.03]} rotation={[0.3, 0, 0.4]}>
-        <cylinderGeometry args={[0.02, 0.03, 0.1, 6]} />
-        <meshStandardMaterial color={color} roughness={0.6} />
+        <cylinderGeometry args={[0.014, 0.026, 0.12, 5]} />
+        <meshStandardMaterial color={color} {...sharedDecorationMaterial} />
       </mesh>
       <mesh position={[0, 0.22, -0.04]} rotation={[-0.4, 0, 0]}>
-        <cylinderGeometry args={[0.015, 0.025, 0.08, 6]} />
-        <meshStandardMaterial color={color} roughness={0.6} />
+        <cylinderGeometry args={[0.012, 0.022, 0.1, 5]} />
+        <meshStandardMaterial color={color} {...sharedDecorationMaterial} />
       </mesh>
     </group>
   );
 };
 
-// Rock - irregular stone
-const Rock: React.FC<{ scale?: number; color?: THREE.Color }> = ({
+// Rock - a flattened faceted stone that anchors each cluster.
+const Rock: React.FC<{ scale?: number; color?: string | THREE.Color }> = ({
   scale: propScale,
   color: propColor,
 }) => {
   const scale = propScale ?? 1;
-  const color = propColor ?? new THREE.Color(0.4, 0.38, 0.36);
+  const color = propColor ?? AQUARIUM_PALETTE.rock;
 
   return (
-    <mesh position={[0, 0.06 * scale, 0]} scale={scale}>
-      <dodecahedronGeometry args={[0.08, 0]} />
-      <meshStandardMaterial color={color} roughness={0.9} flatShading />
+    <mesh position={[0, 0.055 * scale, 0]} scale={[scale * 1.15, scale * 0.72, scale]}>
+      <icosahedronGeometry args={[0.1, 1]} />
+      <meshStandardMaterial color={color} {...sharedDecorationMaterial} />
     </mesh>
   );
 };
