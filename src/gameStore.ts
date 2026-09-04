@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { VisualQualityFlags } from './performance/qualityPresets';
-
-export type DecorationType = 'seaweed' | 'coral' | 'rock';
+import type { DecorationType } from './domain/types';
 
 interface GameState {
   // Feeding

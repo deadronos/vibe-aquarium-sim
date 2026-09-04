@@ -142,4 +142,37 @@ describe('FishRenderSystem progressive model loading', () => {
       expect(window.__vibe_fishAssetStatus).toBeUndefined();
     }
   });
+
+  it('settles an optional variant after its loading timeout', async () => {
+    vi.useFakeTimers();
+    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000) });
+    setResponse(MODEL_URLS[1], new Promise<never>(() => {}));
+    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff) });
+
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <FishRenderSystem />
+      </VisualQualityProvider>
+    );
+
+    try {
+      expect(window.__vibe_fishAssetStatus).toMatchObject({
+        primary: 'ready',
+        variants: ['loading', 'loading'],
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(15_000);
+        await Promise.resolve();
+      });
+
+      expect(window.__vibe_fishAssetStatus).toMatchObject({
+        primary: 'ready',
+        variants: ['error', 'ready'],
+      });
+    } finally {
+      await unmount(renderer);
+      vi.useRealTimers();
+    }
+  });
 });

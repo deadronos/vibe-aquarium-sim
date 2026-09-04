@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import * as THREE from 'three';
-import type { Entity, DecorationType } from '../store';
+import type { Entity } from '../store';
+import type { DecorationType } from '../domain/types';
 
 interface DecorationProps {
   entity: Entity;
