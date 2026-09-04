@@ -17,6 +17,7 @@ export interface TrajectoryTrace {
   tickCount: number;
   final: TrajectorySnapshot;
   samples: TrajectorySnapshot[];
+  forceQueuesCleared: boolean;
 }
 
 class DeterministicRigidBody {
@@ -102,6 +103,7 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
   const rigidBody = new DeterministicRigidBody(initialPosition, initialVelocity);
   const scheduler = new FixedStepScheduler(1 / 60, 5);
   const samples: TrajectorySnapshot[] = [];
+  let forceQueuesCleared = true;
   const steering = new Vector3(0.008, 0.004, -0.006);
   const externalForce = new Vector3(0.002, -0.001, 0.0015);
 
@@ -109,6 +111,12 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
     entity.steeringForce?.copy(steering);
     entity.externalForce?.copy(externalForce);
     applyFishPhysicsStep(rigidBody, entity, fixedDt);
+    if (
+      (entity.steeringForce?.lengthSq() ?? 0) !== 0 ||
+      (entity.externalForce?.lengthSq() ?? 0) !== 0
+    ) {
+      forceQueuesCleared = false;
+    }
     rigidBody.integrate(fixedDt);
     syncFishPhysicsState(rigidBody, entity);
     samples.push(snapshot(rigidBody));
@@ -124,5 +132,5 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
     throw new Error('trajectory produced no fixed-step samples');
   }
 
-  return { tickCount: samples.length, final, samples };
+  return { tickCount: samples.length, final, samples, forceQueuesCleared };
 }

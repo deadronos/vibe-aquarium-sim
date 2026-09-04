@@ -47,6 +47,27 @@ describe('fixed-step refresh-rate trajectory', () => {
     }
   });
 
+  it('keeps every fixed-tick trajectory sample equivalent across display rates', () => {
+    const traces = renderRates.map((renderHz) =>
+      runFixedStepTrajectory({ renderHz, durationSeconds: 2 })
+    );
+    const baseline = traces[0]!.samples;
+
+    for (const trace of traces.slice(1)) {
+      expect(trace.samples).toHaveLength(baseline.length);
+      for (let tick = 0; tick < baseline.length; tick++) {
+        const expected = baseline[tick]!;
+        const actual = trace.samples[tick]!;
+        expect(actual.position.x).toBeCloseTo(expected.position.x, 9);
+        expect(actual.position.y).toBeCloseTo(expected.position.y, 9);
+        expect(actual.position.z).toBeCloseTo(expected.position.z, 9);
+        expect(actual.velocity.x).toBeCloseTo(expected.velocity.x, 9);
+        expect(actual.velocity.y).toBeCloseTo(expected.velocity.y, 9);
+        expect(actual.velocity.z).toBeCloseTo(expected.velocity.z, 9);
+      }
+    }
+  });
+
   it('replays an identical tick trace for identical inputs', () => {
     const first = runFixedStepTrajectory({ renderHz: 60, durationSeconds: 2 });
     const second = runFixedStepTrajectory({ renderHz: 60, durationSeconds: 2 });
@@ -93,7 +114,7 @@ Implement `runFixedStepTrajectory` with these exact contracts:
 
 ```ts
 export interface TrajectoryRequest {
-  renderHz: 30 | 60 | 120;
+  renderHz: number;
   durationSeconds: number;
 }
 
@@ -106,6 +127,7 @@ export interface TrajectoryTrace {
   tickCount: number;
   final: TrajectorySnapshot;
   samples: TrajectorySnapshot[];
+  forceQueuesCleared: boolean;
 }
 
 export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTrace;
@@ -122,6 +144,9 @@ trace. Drive exactly `renderHz * durationSeconds` frames with delta
 - [x] **Step 2: Run the focused test to verify it passes**
 
 Run the same command from Task 1. Expected: all four tests pass, with 60 fixed ticks at each display rate and identical deterministic traces.
+
+The final focused suite also compares every fixed-tick sample across rates and
+asserts that both queued force vectors are cleared on every callback.
 
 - [x] **Step 3: Commit the harness**
 
@@ -201,5 +226,8 @@ Review the complete branch diff against `origin/main`, address any Critical or I
 
 - Baseline: 50 test files passed, 1 skipped; 196 tests passed, 1 skipped.
 - Focused red check: missing `tests/support/fixedStepTrajectory` module failed as expected.
-- Focused green check: 6 trajectory assertions passed.
-- Full validation: format, lint, typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle budgets, 7 browser smoke tests, and `git diff --check` passed.
+- Focused green check: 8 trajectory tests passed, including full per-tick
+  trajectory equivalence and force-queue consumption.
+- Full validation before the final evidence strengthening: format, lint,
+  typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle
+  budgets, 7 browser smoke tests, and `git diff --check` passed.

@@ -26,14 +26,16 @@ The suite verifies:
 
 - 30, 60, and 120 render frames per second each produce exactly 60 fixed
   control ticks per simulated second.
-- Final position and velocity components match across rates within `1e-9`.
+- Every fixed-tick position and velocity component matches across rates within
+  `1e-9`, including the final sample.
+- Queued steering and external-force vectors are consumed on every fixed tick.
 - Replaying the same 60 Hz scenario produces an identical full tick trace.
 - Unsupported rates and non-positive durations fail before simulation setup.
 
-The current result is six passing assertions (three parameterized rate checks
-plus equivalence, replay, and validation checks). This is numerical fixed-step
-evidence; it does not claim WebGPU/WebGL visual parity, which remains tracked
-by issue #140.
+The current result is eight passing tests (three parameterized rate checks plus
+final equivalence, full-trace equivalence, force consumption, replay, and
+validation checks). This is numerical fixed-step evidence; it does not claim
+WebGPU/WebGL visual parity, which remains tracked by issue #140.
 
 ## Manual extension procedure
 

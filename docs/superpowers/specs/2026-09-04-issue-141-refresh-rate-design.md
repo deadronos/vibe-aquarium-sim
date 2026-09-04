@@ -15,16 +15,17 @@ allocations to the aquarium.
    60, and 120 render frames. Acceptance: each schedule records 60 ticks per
    simulated second.
 2. WHEN the same initial position, velocity, and per-tick queued forces are
-   used, THE SYSTEM SHALL produce matching final position and velocity across
-   30/60/120 Hz schedules. Acceptance: every component differs by no more than
-   `1e-9` in the deterministic harness.
+   used, THE SYSTEM SHALL produce matching position and velocity trajectories
+   across 30/60/120 Hz schedules. Acceptance: every fixed-tick component
+   differs by no more than `1e-9` in the deterministic harness.
 3. WHEN the harness is run twice with the same inputs, THE SYSTEM SHALL produce
    identical tick traces. Acceptance: the two traces compare equal without a
    tolerance.
 4. WHEN a fish control tick completes, THE SYSTEM SHALL preserve the existing
    Rapier source-of-truth lifecycle: controls are applied before integration and
    ECS state is synchronized after integration. Acceptance: the harness calls
-   the production helper pair and verifies queued forces are consumed once.
+   the production helper pair and verifies queued forces are consumed on every
+   tick.
 
 ## Chosen approach
 

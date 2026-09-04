@@ -26,6 +26,33 @@ describe('fixed-step refresh-rate trajectory', () => {
     }
   });
 
+  it('keeps every fixed-tick trajectory sample equivalent across display rates', () => {
+    const traces = renderRates.map((renderHz) =>
+      runFixedStepTrajectory({ renderHz, durationSeconds: 2 })
+    );
+    const baseline = traces[0]!.samples;
+
+    for (const trace of traces.slice(1)) {
+      expect(trace.samples).toHaveLength(baseline.length);
+      for (let tick = 0; tick < baseline.length; tick++) {
+        const expected = baseline[tick]!;
+        const actual = trace.samples[tick]!;
+        expect(actual.position.x).toBeCloseTo(expected.position.x, 9);
+        expect(actual.position.y).toBeCloseTo(expected.position.y, 9);
+        expect(actual.position.z).toBeCloseTo(expected.position.z, 9);
+        expect(actual.velocity.x).toBeCloseTo(expected.velocity.x, 9);
+        expect(actual.velocity.y).toBeCloseTo(expected.velocity.y, 9);
+        expect(actual.velocity.z).toBeCloseTo(expected.velocity.z, 9);
+      }
+    }
+  });
+
+  it('consumes the queued force vectors during every fixed tick', () => {
+    const trace = runFixedStepTrajectory({ renderHz: 60, durationSeconds: 1 });
+
+    expect(trace.forceQueuesCleared).toBe(true);
+  });
+
   it('replays an identical tick trace for identical inputs', () => {
     const first = runFixedStepTrajectory({ renderHz: 60, durationSeconds: 2 });
     const second = runFixedStepTrajectory({ renderHz: 60, durationSeconds: 2 });
