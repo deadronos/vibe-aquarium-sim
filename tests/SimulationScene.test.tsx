@@ -48,9 +48,9 @@ describe('SimulationScene integration', () => {
     expect(Math.max(...fish.map((entity) => entity.position?.x ?? 0))).toBeGreaterThan(0.5);
 
     const decorations = world.with('isDecoration').entities;
-    expect(decorations.map((entity) => entity.position?.x ?? 0).every((x) => Math.abs(x) >= 0.42)).toBe(
-      true
-    );
+    expect(
+      decorations.map((entity) => entity.position?.x ?? 0).every((x) => Math.abs(x) >= 0.42)
+    ).toBe(true);
 
     // Simulate adaptive scheduler reducing max steps
     fixedScheduler.setMaxSubSteps(1);

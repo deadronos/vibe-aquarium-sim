@@ -12,8 +12,8 @@ export const AQUARIUM_PALETTE = {
   rockLight: '#8f8b78',
   coral: '#c87862',
   coralShadow: '#744b4a',
-  roomWall: '#4a4a46',
-  roomWallLight: '#6b665a',
+  roomWall: '#343c38',
+  roomWallLight: '#4f5148',
   roomFloor: '#786550',
   stand: '#252b2a',
   standInset: '#111917',
@@ -33,7 +33,7 @@ export const ART_DIRECTION_LIGHTING = {
 } as const;
 
 export const WATER_MATERIAL = {
-  volumeOpacity: 0.24,
+  volumeOpacity: 0.38,
   causticsIntensity: 0.18,
   volumeSpecularStrength: 0.1,
   volumeShimmerStrength: 0.07,
@@ -95,7 +95,12 @@ export const DECORATION_CLUSTERS: readonly DecorationCluster[] = [
       { type: 'coral', x: -1.32, z: -0.38, props: { color: AQUARIUM_PALETTE.coral } },
       { type: 'coral', x: -1.68, z: 0.64, props: { color: AQUARIUM_PALETTE.coralShadow } },
       { type: 'rock', x: -1.5, z: -0.78, props: { scale: 1.15, color: AQUARIUM_PALETTE.rock } },
-      { type: 'rock', x: -1.2, z: -0.62, props: { scale: 0.82, color: AQUARIUM_PALETTE.rockLight } },
+      {
+        type: 'rock',
+        x: -1.2,
+        z: -0.62,
+        props: { scale: 0.82, color: AQUARIUM_PALETTE.rockLight },
+      },
       { type: 'rock', x: -1.82, z: 0.38, props: { scale: 0.94, color: AQUARIUM_PALETTE.rock } },
     ],
   },

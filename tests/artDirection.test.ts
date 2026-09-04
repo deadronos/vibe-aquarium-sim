@@ -60,7 +60,7 @@ describe('aquarium art direction', () => {
     expect(ART_DIRECTION_LIGHTING.keyIntensity).toBeGreaterThan(
       ART_DIRECTION_LIGHTING.hemisphereIntensity
     );
-    expect(WATER_MATERIAL.volumeOpacity).toBeLessThan(0.3);
+    expect(WATER_MATERIAL.volumeOpacity).toBeLessThan(0.5);
     expect(GLASS_MATERIAL.standardOpacity).toBeLessThan(0.25);
     expect(AQUARIUM_PALETTE.waterDeep).toBe(AQUARIUM_PALETTE.waterDeep.toLowerCase());
   });

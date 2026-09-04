@@ -46,6 +46,7 @@ The preview smoke must be run against the production build using the repositoryâ
 ### Task 1: Add test-first art direction contracts
 
 **Files:**
+
 - Create: `src/config/artDirection.ts`
 - Create: `tests/artDirection.test.ts`
 
@@ -73,7 +74,9 @@ describe('aquarium art direction', () => {
     const first = getDecorationSpawnDescriptors();
     const second = getDecorationSpawnDescriptors();
     expect(first).toEqual(second);
-    expect(first).toHaveLength(DECORATION_CLUSTERS.reduce((sum, cluster) => sum + cluster.items.length, 0));
+    expect(first).toHaveLength(
+      DECORATION_CLUSTERS.reduce((sum, cluster) => sum + cluster.items.length, 0)
+    );
     expect(first.every(({ x }) => Math.abs(x) >= 0.42)).toBe(true);
   });
 
@@ -113,6 +116,7 @@ git commit -m "feat: define cohesive aquarium art direction"
 ### Task 2: Make default composition deterministic and clustered
 
 **Files:**
+
 - Modify: `src/systems/Spawner.tsx:1-165`
 - Test: `tests/artDirection.test.ts`
 
@@ -148,6 +152,7 @@ git commit -m "feat: compose deterministic aquarium clusters"
 ### Task 3: Establish the shared low-poly decoration family
 
 **Files:**
+
 - Modify: `src/components/Decoration.tsx`
 - Modify: `src/config/artDirection.ts`
 - Test: `tests/artDirection.test.ts`
@@ -184,6 +189,7 @@ git commit -m "feat: unify aquarium decoration materials"
 ### Task 4: Rebalance room, tank, water, and lighting hierarchy
 
 **Files:**
+
 - Modify: `src/components/LivingRoom.tsx`
 - Modify: `src/components/Tank.tsx`
 - Modify: `src/components/Water.tsx`
@@ -233,6 +239,7 @@ git commit -m "feat: rebalance aquarium lighting and water palette"
 ### Task 5: Add runtime visual evidence and update project records
 
 **Files:**
+
 - Modify: `tests/e2e/smoke.spec.ts`
 - Modify: `memory/designs/_index.md`
 - Modify: `memory/tasks/_index.md`

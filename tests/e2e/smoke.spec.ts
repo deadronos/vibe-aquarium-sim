@@ -192,7 +192,9 @@ test('uses a non-isolated worker transport without overlapping jobs', async ({ p
   expect(failedResponses).toEqual([]);
 });
 
-test('captures cohesive visual review artifacts at desktop and phone sizes', async ({ page }, testInfo) => {
+test('captures cohesive visual review artifacts at desktop and phone sizes', async ({
+  page,
+}, testInfo) => {
   const desktop = await expectHealthyAquarium(page);
   await page.screenshot({ path: testInfo.outputPath('issue-146-desktop.png') });
 

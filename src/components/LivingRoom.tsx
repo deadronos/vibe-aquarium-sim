@@ -23,11 +23,7 @@ export const LivingRoom = () => {
         receiveShadow
         castShadow
       >
-        <meshStandardMaterial
-          color={AQUARIUM_PALETTE.stand}
-          roughness={0.7}
-          metalness={0.1}
-        />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.stand} roughness={0.7} metalness={0.1} />
       </Box>
 
       <Box
@@ -45,10 +41,7 @@ export const LivingRoom = () => {
         rotation={[0, 0, 0]}
         receiveShadow
       >
-        <meshStandardMaterial
-          color={AQUARIUM_PALETTE.roomWall}
-          roughness={0.9}
-        />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.roomWall} roughness={0.9} />
       </Plane>
 
       {/* Floor */}

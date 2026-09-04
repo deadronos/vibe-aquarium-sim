@@ -7,11 +7,7 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 import { useEffect, useMemo, useRef } from 'react';
 
 import { TANK_DIMENSIONS } from '../config/constants';
-import {
-  AQUARIUM_PALETTE,
-  CAUSTICS_MATERIAL,
-  GLASS_MATERIAL,
-} from '../config/artDirection';
+import { AQUARIUM_PALETTE, CAUSTICS_MATERIAL, GLASS_MATERIAL } from '../config/artDirection';
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 
@@ -74,6 +70,12 @@ export const Tank = () => {
     <group>
       <TankCausticsOverlay />
 
+      {/* Opaque inner backplate gives the water volume a stable deep-teal value. */}
+      <mesh position={[0, 0, -depth / 2 + wallThickness * 0.55]} renderOrder={-1}>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial color={AQUARIUM_PALETTE.waterDeep} roughness={0.92} />
+      </mesh>
+
       {/* Floor */}
       <RigidBody
         type="fixed"
@@ -123,9 +125,7 @@ export const Tank = () => {
             thickness={GLASS_MATERIAL.thickness}
             opacity={1}
             ior={GLASS_MATERIAL.ior}
-            chromaticAberration={
-              tankTransmissionDispersionEnabled ? GLASS_MATERIAL.dispersion : 0
-            }
+            chromaticAberration={tankTransmissionDispersionEnabled ? GLASS_MATERIAL.dispersion : 0}
           />
         ) : (
           <meshStandardMaterial
