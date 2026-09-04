@@ -1,6 +1,6 @@
 import { HUD } from './components/ui/HUD';
 import DebugHUD from './components/DebugHUD';
-import React, { Suspense, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { readBoolFromStorage, writeBoolToStorage } from './utils/storageUtils';
 import { SettingsModal } from './components/ui/SettingsModal';
 import { useQualityStore } from './performance/qualityStore';
@@ -13,6 +13,7 @@ const SimulationScene = React.lazy(() => import('./SimulationScene'));
 function App() {
   const [started, setStarted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     readBoolFromStorage('hud.debug.visible', false)
   );
@@ -21,7 +22,8 @@ function App() {
     setStarted(true);
   }, []);
 
-  const openSettings = useCallback(() => {
+  const openSettings = useCallback((trigger?: HTMLButtonElement) => {
+    settingsTriggerRef.current = trigger ?? null;
     setSettingsOpen(true);
   }, []);
 
@@ -89,32 +91,35 @@ function App() {
 
   return (
     <>
-      {/* HUD overlay outside Canvas */}
-      <HUD onOpenSettings={openSettings} />
-      {showDebugPanel && <DebugHUD />}
+      <div id="vibe-app-shell">
+        {/* HUD overlay outside Canvas */}
+        <HUD onOpenSettings={openSettings} shortcutsDisabled={settingsOpen} />
+        {showDebugPanel && <DebugHUD />}
+
+        {started ? (
+          <Suspense fallback={loadingOverlay}>
+            <SimulationScene />
+          </Suspense>
+        ) : (
+          <div className="vibe-start-overlay">
+            <div className="vibe-start-card">
+              <div className="vibe-start-title">Vibe Aquarium</div>
+              <div className="vibe-start-subtitle">Starting simulation…</div>
+              <button className="vibe-start-button" onClick={start} type="button">
+                Start Now
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <SettingsModal
         open={settingsOpen}
         onClose={closeSettings}
         showDebugPanel={showDebugPanel}
         setShowDebugPanel={setDebugVisible}
+        returnFocusRef={settingsTriggerRef}
       />
-
-      {started ? (
-        <Suspense fallback={loadingOverlay}>
-          <SimulationScene />
-        </Suspense>
-      ) : (
-        <div className="vibe-start-overlay">
-          <div className="vibe-start-card">
-            <div className="vibe-start-title">Vibe Aquarium</div>
-            <div className="vibe-start-subtitle">Starting simulation…</div>
-            <button className="vibe-start-button" onClick={start} type="button">
-              Start Now
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

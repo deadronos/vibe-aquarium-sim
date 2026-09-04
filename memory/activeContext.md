@@ -2,8 +2,8 @@
 
 ## Current focus
 
-- Branch: `codex/phase4-zero-copy-transport`
-- Phase 4 issue #142 is implemented on top of merged Phase 3 PR #153; transferable boids worker transport, explicit slot ownership, diagnostics, and benchmark/smoke coverage are ready for review.
+- Branch: `codex/phase6-mobile-ux`
+- Phase 6 issue #147 is implemented on top of merged Phase 5 PR #155; mobile action rail, tank-center keyboard feeding, and Settings focus accessibility are ready for full validation and review.
 
 ## Recent changes
 
@@ -25,9 +25,9 @@
 
 ## Next steps
 
-1. Review the Phase 4 zero-copy transport PR for #142.
-2. Continue with asset transfer reduction (#145).
-3. Revisit visual parity (#140) and refresh-rate evidence (#141) after the performance work has measurements.
+1. Run the complete Phase 6 validation matrix and open the PR for #147.
+2. After Phase 6 merges, continue with visual parity (#140) and refresh-rate evidence (#141).
+3. Keep the umbrella issue #150 synchronized with the phase status and acceptance evidence.
 
 ## Active decisions / considerations
 

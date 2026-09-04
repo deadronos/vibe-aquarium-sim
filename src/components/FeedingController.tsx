@@ -5,6 +5,7 @@ import { world } from '../store';
 import { useGameStore } from '../gameStore';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
 import { ClickRipple } from './effects/ClickRipple';
+import { feedAt } from '../game/feedingActions';
 
 interface RippleEffect {
   id: string;
@@ -13,8 +14,7 @@ interface RippleEffect {
 
 export const FeedingController = () => {
   const [ripples, setRipples] = useState<RippleEffect[]>([]);
-  const { isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, setLastFedTime } =
-    useGameStore();
+  const { isPlacingDecoration, selectedDecorationType, stopPlacingDecoration } = useGameStore();
 
   const removeRipple = useCallback((id: string) => {
     setRipples((prev) => prev.filter((r) => r.id !== id));
@@ -45,46 +45,10 @@ export const FeedingController = () => {
         const rippleId = `ripple-${Date.now()}-${Math.random()}`;
         setRipples((prev) => [...prev, { id: rippleId, position: point.clone() }]);
 
-        // Trigger fish excitement for nearby fish
-        const fishEntities = world.with('isFish', 'position');
-        for (const fish of fishEntities) {
-          if (!fish.position) continue;
-          // Using distanceToSquared to avoid expensive Math.sqrt in the loop
-          const distSq = fish.position.distanceToSquared(point);
-          if (distSq < 4.0) {
-            fish.excitementLevel = 1.0;
-            fish.excitementDecay = 1.0; // 1 second of excitement
-          }
-        }
-
-        // Clamp to simulation bounds so fish can reach it
-        const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
-        const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
-
-        // Seed bubble configuration for the food entity (generated in event handler)
-        const bubbleConfig = Array.from({ length: 8 }, () => ({
-          offset: new Vector3(
-            (Math.random() - 0.5) * 0.04,
-            Math.random() * 0.03,
-            (Math.random() - 0.5) * 0.04
-          ),
-          speed: 0.15 + Math.random() * 0.2,
-          phase: Math.random() * Math.PI * 2,
-          size: 0.004 + Math.random() * 0.006,
-          wobble: 0.01 + Math.random() * 0.015,
-        }));
-
-        world.add({
-          isFood: true,
-          position: new Vector3(x, point.y, z),
-          velocity: new Vector3((Math.random() - 0.5) * 0.05, -0.08, (Math.random() - 0.5) * 0.05), // Slow sink ~8cm/s
-          bubbleConfig,
-        });
-
-        setLastFedTime(new Date());
+        feedAt(point);
       }
     },
-    [isPlacingDecoration, selectedDecorationType, stopPlacingDecoration, setLastFedTime]
+    [isPlacingDecoration, selectedDecorationType, stopPlacingDecoration]
   );
 
   return (

@@ -4,10 +4,13 @@ import { useGameStore } from '../../gameStore';
 import type { DecorationType } from '../../gameStore';
 import { useQualityStore } from '../../performance/qualityStore';
 import { readBoolFromStorage, writeBoolToStorage } from '../../utils/storageUtils';
+import * as feedingActions from '../../game/feedingActions';
+import { MobileActionRail } from './MobileActionRail';
 import './HUD.css';
 
 type HUDProps = {
-  onOpenSettings?: () => void;
+  onOpenSettings?: (trigger?: HTMLButtonElement) => void;
+  shortcutsDisabled?: boolean;
 };
 
 const getDefaultPanelOpen = (): boolean => {
@@ -35,7 +38,7 @@ const formatTimeAgo = (date: Date | null): string => {
   return `${hours}h ago`;
 };
 
-export const HUD = ({ onOpenSettings }: HUDProps) => {
+export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => {
   const [fishCount, setFishCount] = useState(0);
   const [foodCount, setFoodCount] = useState(0);
   const [, forceUpdate] = useState(0);
@@ -69,6 +72,18 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
     ? 'Click tank floor to place • Esc to cancel'
     : 'Click tank to feed fish';
 
+  const handleFeed = useCallback(() => {
+    feedingActions.feedAt(feedingActions.TANK_CENTER);
+  }, []);
+
+  const handleToggleDecoration = useCallback(() => {
+    if (isPlacingDecoration) {
+      stopPlacingDecoration();
+    } else {
+      startPlacingDecoration(selectedDecorationType);
+    }
+  }, [isPlacingDecoration, selectedDecorationType, startPlacingDecoration, stopPlacingDecoration]);
+
   // Poll ECS for entity counts
   useEffect(() => {
     const interval = setInterval(() => {
@@ -99,11 +114,26 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
     ];
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (shortcutsDisabled) return;
 
-      switch (e.key) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or using a modified shortcut.
+      if (
+        e.defaultPrevented ||
+        e.altKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      )
+        return;
+
+      switch (e.key.toLowerCase()) {
+        case 'f':
+          e.preventDefault();
+          handleFeed();
+          break;
         case '1':
           handleDecorationClick('seaweed');
           break;
@@ -113,7 +143,7 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
         case '3':
           handleDecorationClick('rock');
           break;
-        case 'Escape':
+        case 'escape':
           if (isPlacingDecoration) {
             stopPlacingDecoration();
           }
@@ -129,6 +159,8 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
     startPlacingDecoration,
     stopPlacingDecoration,
     handleDecorationClick,
+    handleFeed,
+    shortcutsDisabled,
   ]);
 
   return (
@@ -138,7 +170,7 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
           <button
             type="button"
             className="hud-settings"
-            onClick={onOpenSettings}
+            onClick={(event) => onOpenSettings(event.currentTarget)}
             aria-label="Open settings"
             title="Settings"
           >
@@ -194,7 +226,9 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
 
                 <div className="hud-stat">
                   <span className="hud-stat-label">Last Fed</span>
-                  <span className="hud-stat-value">{formatTimeAgo(lastFedTime)}</span>
+                  <time className="hud-stat-value" dateTime={lastFedTime?.toISOString()}>
+                    {formatTimeAgo(lastFedTime)}
+                  </time>
                 </div>
               </div>
             </details>
@@ -269,6 +303,14 @@ export const HUD = ({ onOpenSettings }: HUDProps) => {
           </div>
         )}
       </div>
+      <MobileActionRail
+        onFeed={handleFeed}
+        onToggleDecor={handleToggleDecoration}
+        onOpenSettings={onOpenSettings}
+        isPlacingDecoration={isPlacingDecoration}
+        fishCount={fishCount}
+        placementHint={calloutText}
+      />
     </div>
   );
 };
