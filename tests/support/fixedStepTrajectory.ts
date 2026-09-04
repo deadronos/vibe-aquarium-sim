@@ -40,13 +40,13 @@ class DeterministicRigidBody {
     return this.velocity;
   }
 
-  setLinvel(next: { x: number; y: number; z: number }, _wakeUp?: boolean) {
+  setLinvel(next: { x: number; y: number; z: number }) {
     this.velocity.x = next.x;
     this.velocity.y = next.y;
     this.velocity.z = next.z;
   }
 
-  setTranslation(next: { x: number; y: number; z: number }, _wakeUp?: boolean) {
+  setTranslation(next: { x: number; y: number; z: number }) {
     this.position.x = next.x;
     this.position.y = next.y;
     this.position.z = next.z;

@@ -76,4 +76,3 @@ regression procedure.
   and fish physics helpers, then verify 30/60/120 equivalence.
 - Regression: run the full Vitest suite, format/lint/typecheck/build, bundle
   budgets, and browser smoke checks before handoff.
-

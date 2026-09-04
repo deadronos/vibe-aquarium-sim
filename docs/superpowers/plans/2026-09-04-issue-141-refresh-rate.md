@@ -196,4 +196,3 @@ Record the issue #141 branch, the deterministic 30/60/120 evidence, the toleranc
 - [ ] **Step 3: Request code review**
 
 Review the complete branch diff against `origin/main`, address any Critical or Important findings, then prepare a PR that links #141 and the design/plan/evidence documents.
-
