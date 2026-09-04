@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { world } from '../../store';
 import { useGameStore } from '../../gameStore';
-import type { DecorationType } from '../../gameStore';
+import type { DecorationType } from '../../domain/types';
 import { useQualityStore } from '../../performance/qualityStore';
 import { readBoolFromStorage, writeBoolToStorage } from '../../utils/storageUtils';
 import * as feedingActions from '../../game/feedingActions';
@@ -60,13 +60,11 @@ export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => 
     readBoolFromStorage('hud.section.decorations.open', true)
   );
 
-  const {
-    lastFedTime,
-    isPlacingDecoration,
-    selectedDecorationType,
-    startPlacingDecoration,
-    stopPlacingDecoration,
-  } = useGameStore();
+  const lastFedTime = useGameStore((state) => state.lastFedTime);
+  const isPlacingDecoration = useGameStore((state) => state.isPlacingDecoration);
+  const selectedDecorationType = useGameStore((state) => state.selectedDecorationType);
+  const startPlacingDecoration = useGameStore((state) => state.startPlacingDecoration);
+  const stopPlacingDecoration = useGameStore((state) => state.stopPlacingDecoration);
 
   const calloutText = isPlacingDecoration
     ? 'Click tank floor to place • Esc to cancel'

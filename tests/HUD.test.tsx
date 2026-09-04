@@ -1,4 +1,4 @@
-import React, { act } from 'react';
+import React, { act, Profiler } from 'react';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -112,5 +112,28 @@ describe('HUD', () => {
 
     expect(feedSpy).not.toHaveBeenCalled();
     expect(useGameStore.getState().isPlacingDecoration).toBe(false);
+  });
+
+  it('does not rerender for unrelated game-store state', () => {
+    const commits: string[] = [];
+    render(
+      <Profiler id="hud" onRender={() => commits.push('commit')}>
+        <HUD />
+      </Profiler>
+    );
+    const expandButton = screen.queryByRole('button', { name: 'Expand HUD' });
+    if (expandButton) fireEvent.click(expandButton);
+    const initialCommits = commits.length;
+
+    act(() =>
+      useGameStore.setState({
+        pendingEffects: [{ type: 'ripple', position: { x: 0, y: 0, z: 0 }, id: 'unrelated' }],
+      })
+    );
+    expect(commits).toHaveLength(initialCommits);
+
+    act(() => useGameStore.setState({ isPlacingDecoration: true }));
+    expect(commits.length).toBeGreaterThan(initialCommits);
+    expect(document.querySelector('.hud-callout')).toHaveTextContent('Click tank floor to place');
   });
 });
