@@ -141,6 +141,7 @@ describe('SchedulerSystem adaptive behaviors', () => {
     expect(setMaxSubStepsSpy).not.toHaveBeenCalled();
     expect(nowTick - beforeStepNow).toBe(20);
     expect(fixedScheduler.getMaxSubSteps()).toBe(5);
+    expect(window.__vibe_schedStatus?.lastDuration).toBe(10);
 
     unmount();
   });

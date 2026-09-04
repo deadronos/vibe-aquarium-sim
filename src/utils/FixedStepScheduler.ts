@@ -19,7 +19,7 @@ export class FixedStepScheduler {
     this.maxSubSteps = this.initialMaxSubSteps;
   }
 
-  // PoC: allow dynamic tuning of max sub-steps
+  // Retain dynamic max-sub-step tuning for callers that use update(delta).
   setMaxSubSteps(n: number) {
     this.maxSubSteps = Math.max(1, Math.floor(n));
   }

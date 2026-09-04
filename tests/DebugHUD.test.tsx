@@ -41,14 +41,14 @@ describe('DebugHUD telemetry opt-in', () => {
       activeEntities: 4,
       frameDuration: 1.25,
     };
-    window.__vibe_schedStatus = { ema: 0.75, currentMax: 5, lastDuration: 0.75 };
+    window.__vibe_schedStatus = { ema: 0.75, fixedStepHz: 60, lastDuration: 0.75 };
 
     act(() => {
       vi.advanceTimersByTime(500);
     });
 
     expect(screen.getByText(/EMA 1\.25ms • freq 2/)).toBeInTheDocument();
-    expect(screen.getByText(/EMA 0\.75ms • max 5/)).toBeInTheDocument();
+    expect(screen.getByText(/EMA 0\.75ms • step 60Hz/)).toBeInTheDocument();
 
     unmount();
   });

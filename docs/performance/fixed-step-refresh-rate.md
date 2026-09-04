@@ -39,6 +39,14 @@ final equivalence, full-trace equivalence, force consumption, replay, and
 validation checks). This is numerical fixed-step evidence; it does not claim
 WebGPU/WebGL visual parity, which remains tracked by issue #140.
 
+## Scope boundary
+
+The harness proves refresh-rate equivalence for identical deterministic
+pre-queued controls and verifies that production scheduling is invoked once at
+Rapier's fixed-step boundary. It does not emulate asynchronous worker result
+delivery or assert React sibling hook-registration order; browser-backed
+ECS/Rapier and worker-fallback coverage remains tracked by issue #148.
+
 ## Manual extension procedure
 
 When changing fixed-step scheduling or fish force lifecycle:

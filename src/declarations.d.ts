@@ -15,7 +15,7 @@ declare global {
 
   type VibeSchedStatus = {
     ema: number;
-    currentMax?: number;
+    fixedStepHz?: number;
     lastDuration?: number;
   } | null;
 

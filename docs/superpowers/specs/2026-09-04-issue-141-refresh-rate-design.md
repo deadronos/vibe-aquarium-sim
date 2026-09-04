@@ -77,6 +77,9 @@ changes have a repeatable regression procedure.
   unexpected boundary correction is included in the trace rather than hidden.
 - It does not claim to validate GPU interpolation or WebGPU visual parity;
   those remain tracked by issue #140.
+- It does not emulate asynchronous worker result delivery or React hook
+  registration order; browser-backed ECS/Rapier and worker-fallback coverage
+  remains tracked by issue #148.
 
 ## Validation strategy
 

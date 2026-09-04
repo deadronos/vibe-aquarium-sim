@@ -6,7 +6,7 @@ import { useVisualQuality } from '../performance/VisualQualityContext';
 
 export const SchedulerSystem = () => {
   const emaRef = useRef<number>(0);
-  const statusRef = useRef({ ema: 0, currentMax: 0, lastDuration: 0 });
+  const statusRef = useRef({ ema: 0, fixedStepHz: 60, lastDuration: 0 });
 
   const { adaptiveSchedulerEnabled } = useVisualQuality();
 
@@ -22,9 +22,10 @@ export const SchedulerSystem = () => {
     const pocEnabledFromWindow =
       typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
     const pocEnabled = adaptiveSchedulerEnabled && pocEnabledFromWindow;
-    // Timing is work for diagnostics or the adaptive scheduler policy only.
+    // Timing is work for diagnostics or opt-in scheduler telemetry only.
     // The ordinary fixed-step path should not read a clock every display frame.
-    const timingEnabled = Boolean(dbg) || pocEnabled;
+    const telemetryEnabled = Boolean(dbg) || pocEnabled;
+    const timingEnabled = telemetryEnabled;
     const t0 = timingEnabled ? performance.now() : 0;
     const subSteps = fixedScheduler.step();
     const dur = timingEnabled ? performance.now() - t0 : 0;
@@ -40,10 +41,12 @@ export const SchedulerSystem = () => {
       if (dbg) {
         const scheduler = (dbg.scheduler ||= []);
         scheduler.push({ duration: dur, subSteps, time: Date.now(), ema: emaRef.current });
+      }
 
+      if (typeof window !== 'undefined' && telemetryEnabled) {
         const status = statusRef.current;
         status.ema = emaRef.current;
-        status.currentMax = fixedScheduler.getMaxSubSteps();
+        status.fixedStepHz = 60;
         status.lastDuration = dur;
         window.__vibe_schedStatus = status;
       }
@@ -54,12 +57,16 @@ export const SchedulerSystem = () => {
 
   useFrame(() => {
     const dbg = typeof window !== 'undefined' ? window.__vibe_debug : undefined;
+    const pocEnabledFromWindow =
+      typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
+    const pocEnabled = adaptiveSchedulerEnabled && pocEnabledFromWindow;
+    const telemetryEnabled = Boolean(dbg) || pocEnabled;
 
     try {
-      if (dbg) {
+      if (typeof window !== 'undefined' && telemetryEnabled) {
         const status = statusRef.current;
         status.ema = emaRef.current;
-        status.currentMax = fixedScheduler.getMaxSubSteps();
+        status.fixedStepHz = 60;
         status.lastDuration = statusRef.current.lastDuration;
         window.__vibe_schedStatus = status;
       } else if (typeof window !== 'undefined' && window.__vibe_schedStatus) {
