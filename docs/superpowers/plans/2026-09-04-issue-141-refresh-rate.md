@@ -17,7 +17,7 @@
 - Create: `tests/fixedStepTrajectory.test.ts`
 - Create: `tests/support/fixedStepTrajectory.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create a Vitest suite that imports `runFixedStepTrajectory` from the not-yet-created support module and asserts the required behavior:
 
@@ -64,7 +64,7 @@ describe('fixed-step refresh-rate trajectory', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run:
 
@@ -74,7 +74,7 @@ NODE_OPTIONS='--localstorage-file=/tmp/vibe-aquarium-issue141-red.localstorage' 
 
 Expected: Vitest fails during module resolution because `tests/support/fixedStepTrajectory.ts` does not exist yet.
 
-- [ ] **Step 3: Commit the red test**
+- [x] **Step 3: Commit the red test**
 
 ```bash
 git add tests/fixedStepTrajectory.test.ts
@@ -87,7 +87,7 @@ git commit -m "test: define refresh-rate trajectory contract"
 
 - Create: `tests/support/fixedStepTrajectory.ts`
 
-- [ ] **Step 1: Implement the minimal rigid-body double and scenario runner**
+- [x] **Step 1: Implement the minimal rigid-body double and scenario runner**
 
 Implement `runFixedStepTrajectory` with these exact contracts:
 
@@ -119,11 +119,11 @@ the body, call `syncFishPhysicsState`, and copy one plain snapshot into the
 trace. Drive exactly `renderHz * durationSeconds` frames with delta
 `1 / renderHz`. Validate the rate and duration before constructing state.
 
-- [ ] **Step 2: Run the focused test to verify it passes**
+- [x] **Step 2: Run the focused test to verify it passes**
 
 Run the same command from Task 1. Expected: all four tests pass, with 60 fixed ticks at each display rate and identical deterministic traces.
 
-- [ ] **Step 3: Commit the harness**
+- [x] **Step 3: Commit the harness**
 
 ```bash
 git add tests/support/fixedStepTrajectory.ts tests/fixedStepTrajectory.test.ts
@@ -137,11 +137,11 @@ git commit -m "test: add fixed-step refresh-rate trajectory harness"
 - Create: `docs/performance/fixed-step-refresh-rate.md`
 - Modify: `docs/agents/architecture.md`
 
-- [ ] **Step 1: Write the regression procedure and measured result**
+- [x] **Step 1: Write the regression procedure and measured result**
 
 Document the focused command, the deterministic input scenario, the 1/60-second tick contract, the `1e-9` comparison tolerance, and the expected 30/60/120 result. State explicitly that the harness validates numerical fixed-step equivalence, not GPU/WebGPU visual parity.
 
-- [ ] **Step 2: Correct the architecture source-of-truth loop**
+- [x] **Step 2: Correct the architecture source-of-truth loop**
 
 Update the stale Fish lifecycle description so it states:
 
@@ -151,7 +151,7 @@ Update the stale Fish lifecycle description so it states:
 4. `useAfterPhysicsStep` mirrors authoritative position/velocity into ECS and applies the tank boundary safety net.
 5. `useFrame` is render-rate diagnostics/visual work only and never drives physics.
 
-- [ ] **Step 3: Run documentation-focused validation**
+- [x] **Step 3: Run documentation-focused validation**
 
 Run:
 
@@ -162,7 +162,7 @@ npm run typecheck
 git diff --check
 ```
 
-- [ ] **Step 4: Commit documentation**
+- [x] **Step 4: Commit documentation**
 
 ```bash
 git add docs/performance/fixed-step-refresh-rate.md docs/agents/architecture.md
@@ -176,7 +176,7 @@ git commit -m "docs: record fixed-step refresh-rate evidence"
 - Modify: `memory/activeContext.md`
 - Modify: `memory/progress.md`
 
-- [ ] **Step 1: Run the complete validation matrix**
+- [x] **Step 1: Run the complete validation matrix**
 
 ```bash
 npm run format:check
@@ -189,10 +189,17 @@ npm run test:smoke
 git diff --check
 ```
 
-- [ ] **Step 2: Update project memory**
+- [x] **Step 2: Update project memory**
 
 Record the issue #141 branch, the deterministic 30/60/120 evidence, the tolerance, and the remaining follow-ups (#140 visual parity and #148 browser-backed ECS/Rapier coverage).
 
 - [ ] **Step 3: Request code review**
 
 Review the complete branch diff against `origin/main`, address any Critical or Important findings, then prepare a PR that links #141 and the design/plan/evidence documents.
+
+### Execution record (2026-09-04)
+
+- Baseline: 50 test files passed, 1 skipped; 196 tests passed, 1 skipped.
+- Focused red check: missing `tests/support/fixedStepTrajectory` module failed as expected.
+- Focused green check: 6 trajectory assertions passed.
+- Full validation: format, lint, typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle budgets, 7 browser smoke tests, and `git diff --check` passed.

@@ -2,8 +2,8 @@
 
 ## Current focus
 
-- Branch: `codex/phase6-mobile-ux`
-- Phase 6 issue #147 is implemented on top of merged Phase 5 PR #155; mobile action rail, tank-center keyboard feeding, and Settings focus accessibility are ready for full validation and review.
+- Branch: `codex/issue-141-refresh-rate`
+- Issue #141 refresh-rate evidence is implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is ready for full validation and PR review.
 
 ## Recent changes
 
@@ -25,8 +25,8 @@
 
 ## Next steps
 
-1. Run the complete Phase 6 validation matrix and open the PR for #147.
-2. After Phase 6 merges, continue with visual parity (#140) and refresh-rate evidence (#141).
+1. Run the complete issue #141 validation matrix and open the PR.
+2. Continue visual parity work in #140 and browser-backed ECS/Rapier coverage in #148.
 3. Keep the umbrella issue #150 synchronized with the phase status and acceptance evidence.
 
 ## Active decisions / considerations

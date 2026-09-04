@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phases 1–5 merged; Phase 6 mobile UX is implemented on the review branch.
-- Branch: `codex/phase6-mobile-ux` (issue #147)
+- Phases 1–7 are merged; issue #141 refresh-rate evidence is implemented on the review branch.
+- Branch: `codex/issue-141-refresh-rate` (issue #141)
 
 ## Known issues / technical debt
 
@@ -104,3 +104,10 @@
 - **Interaction:** Unified pointer, rail, and `F`-key feeding through a renderer-independent `feedAt` action at the tank center; `F` ignores text-entry targets. Decor toggles existing placement mode with pressed semantics and Escape cancellation.
 - **Accessibility:** Settings now enters focus on open, traps Tab/Shift+Tab, closes on Escape/backdrop/close activation, marks the aquarium shell inert, and restores focus to the invoking trigger.
 - **Validation:** Added component tests and two production-preview Playwright flows for phone and short-landscape viewports, including reduced-motion and no-console-error checks. Focused tests, lint, typecheck, and build are green; full validation remains before PR handoff.
+
+### 2026-09-04 (Issue #141)
+
+- **Determinism evidence:** Added a test-only trajectory harness that drives the production `FixedStepScheduler`, `applyFishPhysicsStep`, and `syncFishPhysicsState` helpers at 30, 60, and 120 Hz render schedules.
+- **Acceptance:** Each schedule produces exactly 60 fixed ticks per simulated second; final position/velocity components match within `1e-9`; repeated runs produce identical traces; invalid rates and durations fail closed.
+- **Documentation:** Added `docs/performance/fixed-step-refresh-rate.md` and corrected `docs/agents/architecture.md` to describe Rapier before/after-step ownership and render-frame boundaries.
+- **Validation:** Focused trajectory tests pass (6 assertions); full format/lint/typecheck/test/build/bundle/smoke validation remains before PR handoff.
