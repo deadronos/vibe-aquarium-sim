@@ -15,7 +15,7 @@ const flushCursorA = { current: 0 };
 const flushCursorB = { current: 0 };
 const flushCursorC = { current: 0 };
 
-export type FishRenderMeshes = [InstancedMesh, InstancedMesh | null, InstancedMesh | null];
+export type FishRenderMeshes = [InstancedMesh | null, InstancedMesh | null, InstancedMesh | null];
 
 export type FishRenderInstanceContext = {
   state: FishRenderState;
@@ -96,6 +96,17 @@ export function updateFishInstances(context: FishRenderInstanceContext): FishRen
   state.elapsedTime += delta;
   const frameId = state.frameId;
   const primaryMesh = meshes[0];
+  const result = state.renderResult;
+  result.countA = 0;
+  result.countB = 0;
+  result.countC = 0;
+  result.activeEntities = 0;
+  result.wroteA = false;
+  result.wroteB = false;
+  result.wroteC = false;
+  result.flushed = 0;
+  if (!primaryMesh) return result;
+
   const variantOneMesh = meshes[1];
   const variantTwoMesh = meshes[2];
   const activeEntities = state.activeEntities;
@@ -187,7 +198,6 @@ export function updateFishInstances(context: FishRenderInstanceContext): FishRen
     if (wroteC && variantTwoMesh) variantTwoMesh.instanceMatrix.needsUpdate = true;
   }
 
-  const result = state.renderResult;
   result.countA = countA;
   result.countB = countB;
   result.countC = countC;
