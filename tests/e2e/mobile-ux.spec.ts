@@ -8,7 +8,7 @@ test.describe('mobile aquarium composition', () => {
     page.on('pageerror', (error) => pageErrors.push(error.message));
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('./', { waitUntil: 'networkidle' });
+    await page.goto('./index.html?quality=low&renderer=webgl', { waitUntil: 'networkidle' });
 
     const rail = page.getByRole('navigation', { name: 'Primary aquarium actions' });
     await expect(rail).toBeVisible({ timeout: 20_000 });
@@ -92,7 +92,7 @@ test.describe('mobile aquarium composition', () => {
   test('keeps the rail within a short landscape viewport with reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto('./', { waitUntil: 'networkidle' });
+    await page.goto('./index.html?quality=low&renderer=webgl', { waitUntil: 'networkidle' });
 
     const rail = page.getByRole('navigation', { name: 'Primary aquarium actions' });
     await expect(rail).toBeVisible({ timeout: 20_000 });
