@@ -26,7 +26,7 @@ Repository layout (high-level)
 
 - src/
   - components/: R3F components + physics wrappers (Fish, Tank, Water)
-  - systems/: ECS systems (Boids, WaterResistance, Scheduler)
+  - systems/: ECS systems (Boids, Excitement, FishRender, Scheduler, Spawner)
   - store.ts: ECS world and entity definitions
   - shaders/: custom water shader
   - config/: shared physics configuration
@@ -83,7 +83,8 @@ Important files / starting points
 - `src/store.ts` — ECS world + entity types
 - `src/components/Fish.tsx` — R3F + Rapier integration and ECS sync
 - `src/systems/BoidsSystem.tsx` — swarm-like behavior logic
-- `src/systems/WaterResistanceSystem.tsx` — simple fluid drag forces
+- `src/systems/FishRenderSystem.tsx` — instanced fish rendering and asset lifecycle
+- `src/config/waterPhysics.ts` — shared drag and current configuration
 - `src/utils/FixedStepScheduler.ts` — fixed-step simulation helper
 
 GitHub Actions / Deployment

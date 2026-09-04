@@ -1,8 +1,9 @@
 import createECS from 'miniplex-react';
 import { Vector3, Quaternion } from 'three';
 import { World } from 'miniplex';
+import type { DecorationType } from './domain/types';
 
-export type DecorationType = 'seaweed' | 'coral' | 'rock';
+export type { DecorationType } from './domain/types';
 
 export type Entity = {
   // Metadata
