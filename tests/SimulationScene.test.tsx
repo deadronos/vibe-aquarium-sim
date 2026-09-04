@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Spawner } from '../src/systems/Spawner';
@@ -6,6 +6,10 @@ import { SchedulerSystem } from '../src/systems/SchedulerSystem';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { world } from '../src/store';
 import { fixedScheduler } from '../src/utils/FixedStepScheduler';
+
+vi.mock('@react-three/rapier', () => ({
+  useBeforePhysicsStep: () => {},
+}));
 
 describe('SimulationScene integration', () => {
   beforeEach(() => {

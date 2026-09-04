@@ -4,7 +4,7 @@
 
 **Goal:** Add deterministic evidence that the production fixed-step fish control path produces equivalent trajectories at 30, 60, and 120 Hz render schedules.
 
-**Architecture:** A test-only harness will drive `FixedStepScheduler.update` with constant render deltas, queue deterministic forces for each fixed tick, call the production `applyFishPhysicsStep` and `syncFishPhysicsState` helpers, and integrate a minimal rigid-body double. The app bundle and runtime loop remain unchanged; documentation records the tolerance and procedure.
+**Architecture:** Rapier's before-step boundary drives `FixedStepScheduler.step()` exactly once per fixed physics tick. A deterministic harness will model that boundary with constant render deltas, queue deterministic forces for each fixed tick, call the production `applyFishPhysicsStep` and `syncFishPhysicsState` helpers, and integrate a minimal rigid-body double. Documentation records the tolerance and procedure.
 
 **Tech Stack:** TypeScript, Three.js `Vector3`, Vitest, `FixedStepScheduler`, fish physics helpers, Markdown documentation.
 
@@ -107,6 +107,8 @@ git commit -m "test: define refresh-rate trajectory contract"
 **Files:**
 
 - Create: `tests/support/fixedStepTrajectory.ts`
+- Modify: `src/utils/FixedStepScheduler.ts`
+- Modify: `src/systems/SchedulerSystem.tsx`
 
 - [x] **Step 1: Implement the minimal rigid-body double and scenario runner**
 
@@ -114,7 +116,7 @@ Implement `runFixedStepTrajectory` with these exact contracts:
 
 ```ts
 export interface TrajectoryRequest {
-  renderHz: number;
+  renderHz: 30 | 60 | 120;
   durationSeconds: number;
 }
 
@@ -127,6 +129,7 @@ export interface TrajectoryTrace {
   tickCount: number;
   final: TrajectorySnapshot;
   samples: TrajectorySnapshot[];
+  fixedDeltas: number[];
   forceQueuesCleared: boolean;
 }
 
@@ -138,12 +141,15 @@ initial position/velocity, and a rigid-body double whose `integrate(dt)`
 advances position from its current velocity. In each scheduler callback, queue
 the same steering and external force, call `applyFishPhysicsStep`, integrate
 the body, call `syncFishPhysicsState`, and copy one plain snapshot into the
-trace. Drive exactly `renderHz * durationSeconds` frames with delta
-`1 / renderHz`. Validate the rate and duration before constructing state.
+trace. Drive exactly `renderHz * durationSeconds` render frames with delta
+`1 / renderHz`; for each simulated Rapier fixed step, call
+`FixedStepScheduler.step()` once before the production fish helper pair.
+Record every callback delta and verify it is exactly `1 / 60`. Validate the
+rate and duration before constructing state.
 
 - [x] **Step 2: Run the focused test to verify it passes**
 
-Run the same command from Task 1. Expected: all four tests pass, with 60 fixed ticks at each display rate and identical deterministic traces.
+Run the same command from Task 1. Expected: all eight tests pass, with 60 fixed ticks at each display rate, an exact `1 / 60` callback delta, and identical deterministic traces.
 
 The final focused suite also compares every fixed-tick sample across rates and
 asserts that both queued force vectors are cleared on every callback.
@@ -187,6 +193,12 @@ npm run typecheck
 git diff --check
 ```
 
+The focused evidence also has a scoped TypeScript gate:
+
+```bash
+npm run typecheck:issue141
+```
+
 - [x] **Step 4: Commit documentation**
 
 ```bash
@@ -228,6 +240,10 @@ Review the complete branch diff against `origin/main`, address any Critical or I
 - Focused red check: missing `tests/support/fixedStepTrajectory` module failed as expected.
 - Focused green check: 8 trajectory tests passed, including full per-tick
   trajectory equivalence and force-queue consumption.
-- Full validation before the final evidence strengthening: format, lint,
-  typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle
-  budgets, 7 browser smoke tests, and `git diff --check` passed.
+- Scheduler-boundary regression: the production scheduler now advances once
+  from Rapier's before-step hook; focused scheduler/system/trajectory coverage
+  passes (14 tests).
+- Earlier full validation before the scheduler-boundary correction: format,
+  lint, typecheck, 51 test files / 202 tests passed (1 skipped), build, bundle
+  budgets, 7 browser smoke tests, and `git diff --check` passed. A fresh full
+  matrix is required after the correction.

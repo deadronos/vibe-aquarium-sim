@@ -4,7 +4,7 @@ import { applyFishPhysicsStep, syncFishPhysicsState } from '../../src/components
 import { FixedStepScheduler } from '../../src/utils/FixedStepScheduler';
 
 export interface TrajectoryRequest {
-  renderHz: number;
+  renderHz: 30 | 60 | 120;
   durationSeconds: number;
 }
 
@@ -17,6 +17,7 @@ export interface TrajectoryTrace {
   tickCount: number;
   final: TrajectorySnapshot;
   samples: TrajectorySnapshot[];
+  fixedDeltas: number[];
   forceQueuesCleared: boolean;
 }
 
@@ -103,13 +104,21 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
   const rigidBody = new DeterministicRigidBody(initialPosition, initialVelocity);
   const scheduler = new FixedStepScheduler(1 / 60, 5);
   const samples: TrajectorySnapshot[] = [];
+  const fixedDeltas: number[] = [];
   let forceQueuesCleared = true;
   const steering = new Vector3(0.008, 0.004, -0.006);
   const externalForce = new Vector3(0.002, -0.001, 0.0015);
 
   scheduler.add((fixedDt) => {
+    fixedDeltas.push(fixedDt);
     entity.steeringForce?.copy(steering);
     entity.externalForce?.copy(externalForce);
+  });
+
+  let physicsAccumulator = 0;
+  const advancePhysics = () => {
+    scheduler.step();
+    const fixedDt = 1 / 60;
     applyFishPhysicsStep(rigidBody, entity, fixedDt);
     if (
       (entity.steeringForce?.lengthSq() ?? 0) !== 0 ||
@@ -120,11 +129,15 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
     rigidBody.integrate(fixedDt);
     syncFishPhysicsState(rigidBody, entity);
     samples.push(snapshot(rigidBody));
-  });
+  };
 
   const renderDelta = 1 / renderHz;
   for (let frame = 0; frame < frameCount; frame++) {
-    scheduler.update(renderDelta);
+    physicsAccumulator += renderDelta;
+    while (physicsAccumulator >= 1 / 60) {
+      advancePhysics();
+      physicsAccumulator -= 1 / 60;
+    }
   }
 
   const final = samples.at(-1);
@@ -132,5 +145,5 @@ export function runFixedStepTrajectory(request: TrajectoryRequest): TrajectoryTr
     throw new Error('trajectory produced no fixed-step samples');
   }
 
-  return { tickCount: samples.length, final, samples, forceQueuesCleared };
+  return { tickCount: samples.length, final, samples, fixedDeltas, forceQueuesCleared };
 }

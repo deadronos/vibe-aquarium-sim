@@ -35,6 +35,18 @@ export class FixedStepScheduler {
     };
   }
 
+  /**
+   * Run exactly one fixed step when an external fixed-step owner (Rapier)
+   * invokes us immediately before advancing its world.
+   */
+  step() {
+    this.accumulator = 0;
+    for (const cb of this.callbacks) {
+      cb(this.fixedStep);
+    }
+    return 1;
+  }
+
   update(delta: number) {
     this.accumulator += delta;
     let subSteps = 0;

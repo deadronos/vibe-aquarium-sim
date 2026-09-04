@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["vitest", "vite/client", "node"]
+  },
+  "include": [
+    "src/declarations.d.ts",
+    "src/vite-env.d.ts",
+    "tests/fixedStepTrajectory.test.ts",
+    "tests/support/fixedStepTrajectory.ts"
+  ]
+}

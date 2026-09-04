@@ -2,18 +2,18 @@
 
 Issue #141 requires fish trajectories to remain equivalent when the browser
 renders at 30 Hz, 60 Hz, or 120 Hz. The production path uses Rapier's fixed
-`1/60`-second timestep; render frames only determine how many fixed ticks are
-requested by the scheduler.
+`1/60`-second timestep; render frames provide elapsed time to Rapier's
+accumulator, which owns the fixed-step count.
 
 ## Deterministic harness
 
-The test-only harness in `tests/support/fixedStepTrajectory.ts` drives the
-production `FixedStepScheduler`, `applyFishPhysicsStep`, and
-`syncFishPhysicsState` helpers. It uses the same initial position/velocity and
-queues the same steering and external force on every fixed tick. A minimal
-rigid-body double integrates position after the production velocity update so
-the harness can compare complete position and velocity traces without adding
-runtime code or GPU timing noise.
+The test-only harness in `tests/support/fixedStepTrajectory.ts` models Rapier's
+fixed-step accumulator and drives the production `FixedStepScheduler`,
+`applyFishPhysicsStep`, and `syncFishPhysicsState` helpers at each before-step
+boundary. It uses the same initial position/velocity and queues the same
+steering and external force on every fixed tick. A minimal rigid-body double
+integrates position after the production velocity update so the harness can
+compare complete position and velocity traces without GPU timing noise.
 
 Run the focused evidence suite with:
 
@@ -26,6 +26,8 @@ The suite verifies:
 
 - 30, 60, and 120 render frames per second each produce exactly 60 fixed
   control ticks per simulated second.
+- Every scheduler callback receives the exact production `1 / 60` fixed-step
+  delta.
 - Every fixed-tick position and velocity component matches across rates within
   `1e-9`, including the final sample.
 - Queued steering and external-force vectors are consumed on every fixed tick.

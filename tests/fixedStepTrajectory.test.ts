@@ -8,6 +8,8 @@ describe('fixed-step refresh-rate trajectory', () => {
     const trace = runFixedStepTrajectory({ renderHz, durationSeconds: 1 });
 
     expect(trace.tickCount).toBe(60);
+    expect(trace.fixedDeltas).toHaveLength(trace.tickCount);
+    expect(trace.fixedDeltas.every((fixedDt) => fixedDt === 1 / 60)).toBe(true);
   });
 
   it('keeps final position and velocity equivalent across display rates', () => {

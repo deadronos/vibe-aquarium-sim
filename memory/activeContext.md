@@ -3,7 +3,7 @@
 ## Current focus
 
 - Branch: `codex/issue-141-refresh-rate`
-- Issue #141 refresh-rate evidence is implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is fully validated and ready for PR review.
+- Issue #141 refresh-rate evidence and the fixed-step ownership correction are implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is fully validated and ready for PR review.
 
 ## Recent changes
 
@@ -25,7 +25,7 @@
 
 ## Next steps
 
-1. Run the complete issue #141 validation matrix and open the PR.
+1. Open the reviewed Issue #141 PR.
 2. Continue visual parity work in #140 and browser-backed ECS/Rapier coverage in #148.
 3. Keep the umbrella issue #150 synchronized with the phase status and acceptance evidence.
 

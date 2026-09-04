@@ -13,7 +13,7 @@ allocations to the aquarium.
 1. WHEN a deterministic fish input is simulated for the same elapsed time, THE
    SYSTEM SHALL execute the same number of 1/60-second control ticks at 30,
    60, and 120 render frames. Acceptance: each schedule records 60 ticks per
-   simulated second.
+   simulated second and every callback receives exactly `1 / 60` seconds.
 2. WHEN the same initial position, velocity, and per-tick queued forces are
    used, THE SYSTEM SHALL produce matching position and velocity trajectories
    across 30/60/120 Hz schedules. Acceptance: every fixed-tick component
@@ -26,15 +26,21 @@ allocations to the aquarium.
    ECS state is synchronized after integration. Acceptance: the harness calls
    the production helper pair and verifies queued forces are consumed on every
    tick.
+5. WHEN Rapier begins a fixed step, THE SYSTEM SHALL advance the ECS fixed-step
+   callbacks exactly once before fish controls are applied. Acceptance:
+   `SchedulerSystem` invokes `FixedStepScheduler.step()` from
+   `useBeforePhysicsStep`, and the integration test observes the production
+   `1 / 60` callback delta.
 
 ## Chosen approach
 
-Use a test-only deterministic trajectory harness rather than browser frame
-emulation. Browser timing and GPU availability make a Playwright-only test
-too noisy for numerical equivalence, while a second Rapier implementation
-would duplicate engine behavior. The harness uses a minimal rigid-body double
-only for deterministic position integration; all control, clamping, force
-consumption, and ECS synchronization logic remains production code.
+Use a deterministic trajectory harness rather than browser frame emulation.
+Browser timing and GPU availability make a Playwright-only test too noisy for
+numerical equivalence, while a second Rapier implementation would duplicate
+engine behavior. The harness models Rapier's fixed-step accumulator and calls
+the production `FixedStepScheduler.step()` once at each before-step boundary;
+the minimal rigid-body double is limited to deterministic position
+integration. Production scheduling now uses that same before-step boundary.
 
 ## Architecture and data flow
 
@@ -42,9 +48,12 @@ consumption, and ECS synchronization logic remains production code.
 render-rate schedule (30/60/120 Hz)
              |
              v
-     FixedStepScheduler.update(delta)
+   Rapier fixed-step accumulator
              |
-             v  (exactly 1/60 s per callback)
+             v  (exactly 1/60 s per physics step)
+ useBeforePhysicsStep -> FixedStepScheduler.step()
+             |
+             v
  queue deterministic forces -> applyFishPhysicsStep
              |
              v
@@ -55,10 +64,10 @@ render-rate schedule (30/60/120 Hz)
 ```
 
 The harness lives under `tests/support/` and is never imported by the app
-bundle. A focused Vitest suite compares tick counts, final state, and full
-traces. `docs/performance/fixed-step-refresh-rate.md` records the command,
-scenario, tolerance, and measured result so future changes have a repeatable
-regression procedure.
+bundle. A focused Vitest suite compares tick counts, fixed callback deltas,
+final state, and full traces. `docs/performance/fixed-step-refresh-rate.md`
+records the command, scenario, tolerance, and measured result so future
+changes have a repeatable regression procedure.
 
 ## Error handling and boundaries
 

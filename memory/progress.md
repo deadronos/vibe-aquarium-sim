@@ -107,7 +107,7 @@
 
 ### 2026-09-04 (Issue #141)
 
-- **Determinism evidence:** Added a test-only trajectory harness that drives the production `FixedStepScheduler`, `applyFishPhysicsStep`, and `syncFishPhysicsState` helpers at 30, 60, and 120 Hz render schedules.
+- **Determinism evidence:** Added a test-only trajectory harness that models Rapier's render-time accumulator, drives the production `FixedStepScheduler.step()` before each fixed physics tick, and exercises `applyFishPhysicsStep` and `syncFishPhysicsState` at 30, 60, and 120 Hz render schedules.
 - **Acceptance:** Each schedule produces exactly 60 fixed ticks per simulated second; every position/velocity sample matches across rates within `1e-9`; queued force vectors are consumed on every tick; repeated runs produce identical traces; invalid rates and durations fail closed.
 - **Documentation:** Added `docs/performance/fixed-step-refresh-rate.md` and corrected `docs/agents/architecture.md` to describe Rapier before/after-step ownership and render-frame boundaries.
 - **Validation:** Focused trajectory tests pass (8 tests); full format/lint/typecheck/test/build/bundle/smoke validation is green and the branch is ready for PR handoff.

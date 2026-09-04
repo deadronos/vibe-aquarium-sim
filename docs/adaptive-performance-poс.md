@@ -6,7 +6,10 @@ What it does
 
 - Adaptive instance updates: throttles `InstancedMesh.instanceMatrix.needsUpdate` frequency based on a lightweight EMA of `FishRenderSystem` frame time. This reduces GL buffer update bursts when frame time increases.
 
-- Adaptive scheduler tuning: temporarily reduces FixedStepScheduler's max sub-steps when scheduler update time EMA becomes large, to avoid amplifying work into the main frame.
+- Adaptive scheduler telemetry: measures fixed-step callback time and retains
+  the legacy max-sub-step policy for callers that use `FixedStepScheduler.update`.
+  Production Rapier pacing now owns the fixed-step boundary and invokes
+  `FixedStepScheduler.step()` once per physics step.
 
 How to enable
 
