@@ -120,7 +120,7 @@ describe('SchedulerSystem adaptive behaviors', () => {
     unmount();
   });
 
-  it('reduces max sub-steps when the adaptive PoC triggers', () => {
+  it('measures fixed-step cost in adaptive mode without claiming throttling', () => {
     useGameStore.setState({ visualQualityOverrides: { adaptiveSchedulerEnabled: true } });
     window.__vibe_poc_enabled = true;
 
@@ -129,6 +129,7 @@ describe('SchedulerSystem adaptive behaviors', () => {
     vi.spyOn(performance, 'now').mockImplementation(() => (nowTick += 10));
 
     const { unmount } = renderSystem();
+    const beforeStepNow = nowTick;
 
     expect(frameCallbacks).toHaveLength(1);
 
@@ -137,7 +138,9 @@ describe('SchedulerSystem adaptive behaviors', () => {
       frameCallbacks.forEach((cb) => cb({}, 1 / 60));
     });
 
-    expect(setMaxSubStepsSpy).toHaveBeenCalledWith(1);
+    expect(setMaxSubStepsSpy).not.toHaveBeenCalled();
+    expect(nowTick - beforeStepNow).toBe(20);
+    expect(fixedScheduler.getMaxSubSteps()).toBe(5);
 
     unmount();
   });

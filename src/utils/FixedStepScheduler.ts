@@ -37,7 +37,8 @@ export class FixedStepScheduler {
 
   /**
    * Run exactly one fixed step when an external fixed-step owner (Rapier)
-   * invokes us immediately before advancing its world.
+   * invokes us immediately before advancing its world. `maxSubSteps` only
+   * applies to the legacy render-driven `update` method.
    */
   step() {
     this.accumulator = 0;

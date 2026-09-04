@@ -6,22 +6,13 @@ import { useVisualQuality } from '../performance/VisualQualityContext';
 
 export const SchedulerSystem = () => {
   const emaRef = useRef<number>(0);
-  const cooldownRef = useRef<number>(0);
-  const originalMaxRef = useRef<number | null>(null);
   const statusRef = useRef({ ema: 0, currentMax: 0, lastDuration: 0 });
-  const SCHED_EMA_THRESHOLD = 2.5;
-  const COOLDOWN_FRAMES = 120;
 
   const { adaptiveSchedulerEnabled } = useVisualQuality();
 
   useEffect(() => {
-    try {
-      originalMaxRef.current = fixedScheduler.getMaxSubSteps();
-    } catch {
-      originalMaxRef.current = null;
-    }
     return () => {
-      // Ensure scheduler drops active throttling / accumulator states across unmounts
+      // Ensure scheduler drops any accumulated state across unmounts.
       fixedScheduler.reset();
     };
   }, []);
@@ -63,9 +54,6 @@ export const SchedulerSystem = () => {
 
   useFrame(() => {
     const dbg = typeof window !== 'undefined' ? window.__vibe_debug : undefined;
-    const pocEnabledFromWindow =
-      typeof window !== 'undefined' ? window.__vibe_poc_enabled !== false : true;
-    const pocEnabled = adaptiveSchedulerEnabled && pocEnabledFromWindow;
 
     try {
       if (dbg) {
@@ -77,56 +65,6 @@ export const SchedulerSystem = () => {
       } else if (typeof window !== 'undefined' && window.__vibe_schedStatus) {
         // A HUD can be hidden while the simulation remains mounted.
         delete window.__vibe_schedStatus;
-      }
-    } catch {
-      /* ignore */
-    }
-
-    // If EMA exceeds threshold and we have more than 1 substep allowed, reduce to 1 temporarily
-    try {
-      const currentMax = pocEnabled ? fixedScheduler.getMaxSubSteps() : 0;
-
-      if (
-        pocEnabled &&
-        emaRef.current > SCHED_EMA_THRESHOLD &&
-        currentMax > 1 &&
-        cooldownRef.current === 0
-      ) {
-        // reduce
-        if (originalMaxRef.current === null) originalMaxRef.current = currentMax;
-        fixedScheduler.setMaxSubSteps(1);
-        cooldownRef.current = COOLDOWN_FRAMES;
-        // record
-        try {
-          const dbg = window.__vibe_debug;
-          if (dbg)
-            (dbg.schedulerTuning = dbg.schedulerTuning || []).push({
-              time: Date.now(),
-              action: 'reduce',
-              from: currentMax,
-              to: 1,
-            });
-        } catch {
-          /* ignore */
-        }
-      }
-
-      if (cooldownRef.current > 0) {
-        cooldownRef.current -= 1;
-        if (cooldownRef.current === 0 && originalMaxRef.current !== null) {
-          fixedScheduler.setMaxSubSteps(originalMaxRef.current);
-          try {
-            const dbg = window.__vibe_debug;
-            if (dbg)
-              (dbg.schedulerTuning = dbg.schedulerTuning || []).push({
-                time: Date.now(),
-                action: 'restore',
-                to: originalMaxRef.current,
-              });
-          } catch {
-            /* ignore */
-          }
-        }
       }
     } catch {
       /* ignore */
