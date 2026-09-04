@@ -4,6 +4,7 @@ import {
   publishFishRenderStatus,
   recordFishRenderTiming,
 } from '../src/systems/fishRender/fishRenderDiagnostics';
+import type { FishRenderDebugCollector } from '../src/systems/fishRender/fishRenderDiagnostics';
 
 const sample = {
   frame: 12,
@@ -26,7 +27,7 @@ describe('fish render diagnostics', () => {
 
   it('publishes status and an opt-in debug sample', () => {
     const status = { updateFreq: 1, ema: 0, activeEntities: 0, frameDuration: 0 };
-    const debug = { fishRender: [] } as unknown as VibeDebugCollector;
+    const debug = { fishRender: [] } as FishRenderDebugCollector;
 
     publishFishRenderStatus(status, debug, sample);
 
@@ -43,7 +44,7 @@ describe('fish render diagnostics', () => {
           throw new Error('collector failed');
         },
       },
-    } as unknown as VibeDebugCollector;
+    } as FishRenderDebugCollector;
 
     expect(() => publishFishRenderStatus(status, debug, sample)).not.toThrow();
   });

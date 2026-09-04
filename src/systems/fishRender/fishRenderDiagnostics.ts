@@ -7,6 +7,17 @@ export type FishRenderDebugSample = {
   flushed?: number;
 };
 
+export type FishRenderDebugCollector = {
+  fishRender: Array<{
+    frame?: number;
+    duration: number;
+    counts?: { countA: number; countB: number; countC: number };
+    activeEntities?: number;
+    ema?: number;
+    flushed?: number;
+  }>;
+};
+
 const DEFAULT_EMA_ALPHA = 0.06;
 
 export function recordFishRenderTiming(
@@ -24,7 +35,7 @@ export function publishFishRenderStatus(
     activeEntities: number;
     frameDuration: number;
   },
-  debug: VibeDebugCollector | undefined,
+  debug: FishRenderDebugCollector | undefined,
   sample?: FishRenderDebugSample
 ): void {
   try {
