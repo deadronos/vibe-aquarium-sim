@@ -56,7 +56,7 @@ describe('SettingsModal', () => {
     opener.remove();
   });
 
-  it('marks the application shell inert while open', () => {
+  it('hides the application shell from assistive technology while open', () => {
     const shell = document.createElement('div');
     const shellRef = createRef<HTMLDivElement>();
     shellRef.current = shell;
@@ -72,7 +72,7 @@ describe('SettingsModal', () => {
       />
     );
 
-    expect((shell as HTMLDivElement & { inert?: boolean }).inert).toBe(true);
+    expect(shell).toHaveAttribute('aria-hidden', 'true');
 
     rerender(
       <SettingsModal
@@ -83,7 +83,7 @@ describe('SettingsModal', () => {
         backgroundRef={shellRef}
       />
     );
-    expect((shell as HTMLDivElement & { inert?: boolean }).inert).toBe(false);
+    expect(shell).not.toHaveAttribute('aria-hidden');
     shell.remove();
   });
 });

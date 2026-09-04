@@ -37,10 +37,9 @@ export function SettingsModal({
     const activeElement = explicitOpener ?? document.activeElement;
     openerRef.current = activeElement instanceof HTMLElement ? activeElement : null;
 
-    const shell = backgroundRef?.current;
-    const inertShell = shell as (HTMLDivElement & { inert?: boolean }) | null | undefined;
-    const wasInert = inertShell?.inert ?? false;
-    if (inertShell) inertShell.inert = true;
+    const background = backgroundRef?.current;
+    const previousAriaHidden = background ? background.getAttribute('aria-hidden') : null;
+    if (background) background.setAttribute('aria-hidden', 'true');
 
     closeButtonRef.current?.focus();
 
@@ -77,7 +76,10 @@ export function SettingsModal({
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      if (inertShell) inertShell.inert = wasInert;
+      if (background) {
+        if (previousAriaHidden === null) background.removeAttribute('aria-hidden');
+        else background.setAttribute('aria-hidden', previousAriaHidden);
+      }
 
       const opener = openerRef.current;
       if (opener?.isConnected) opener.focus();

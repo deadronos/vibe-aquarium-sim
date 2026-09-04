@@ -30,7 +30,8 @@ test.describe('mobile aquarium composition', () => {
       .locator('.hud-stat-value');
 
     const decorButton = rail.getByRole('button', { name: 'Place decoration' });
-    const settingsButton = rail.getByRole('button', { name: 'Open settings' });
+    const hiddenDecorButton = page.locator('.mobile-action-button[aria-label="Place decoration"]');
+    const settingsButton = page.locator('.mobile-action-button[aria-label="Open settings"]');
     const dialog = page.getByRole('dialog', { name: 'Settings' });
 
     await expect(lastFed).toHaveText('Never');
@@ -47,14 +48,15 @@ test.describe('mobile aquarium composition', () => {
 
     await settingsButton.click();
     await expect(dialog).toBeVisible();
+    await expect(page.locator('#vibe-app-shell')).toHaveAttribute('aria-hidden', 'true');
     await page.keyboard.press('f');
     await page.keyboard.press('1');
     await expect(lastFed).toHaveText('Never');
-    await expect(decorButton).toHaveAttribute('aria-pressed', 'false');
+    await expect(hiddenDecorButton).toHaveAttribute('aria-pressed', 'false');
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(settingsButton).toBeFocused();
-    await expect(page.locator('#vibe-app-shell')).not.toHaveJSProperty('inert', true);
+    await expect(page.locator('#vibe-app-shell')).not.toHaveAttribute('aria-hidden');
 
     await settingsButton.click();
     await expect(dialog).toBeVisible();
