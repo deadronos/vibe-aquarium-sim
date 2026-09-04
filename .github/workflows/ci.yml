@@ -37,6 +37,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Typecheck Issue 141 evidence
+        run: npm run typecheck:issue141
+
       - name: Unit and integration tests
         run: npm run test -- --run
 

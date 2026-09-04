@@ -29,4 +29,14 @@ describe('FixedStepScheduler', () => {
     scheduler.update(10 / 60); // 10 steps worth
     expect(callback).toHaveBeenCalledTimes(5);
   });
+
+  it('should advance exactly one fixed step for physics hooks', () => {
+    const scheduler = new FixedStepScheduler(1 / 60);
+    const callback = vi.fn();
+    scheduler.add(callback);
+
+    expect(scheduler.step()).toBe(1);
+    expect(callback).toHaveBeenCalledWith(1 / 60);
+    expect(scheduler.alpha).toBe(0);
+  });
 });

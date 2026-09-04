@@ -44,7 +44,7 @@
 
 - [x] **Step 2: Preserve adaptive behavior**
 
-  Ensure `adaptiveSchedulerEnabled` still measures and applies its max-substep policy even without the HUD. Ensure adaptive instance flushing still runs without requiring telemetry.
+  Ensure `adaptiveSchedulerEnabled` still measures scheduler cost without the HUD. Rapier owns production fixed-step pacing, so max-substep tuning remains limited to legacy `update(delta)` callers. Ensure adaptive instance flushing still runs without requiring telemetry.
 
 - [x] **Step 3: Make the Debug HUD an explicit opt-in**
 

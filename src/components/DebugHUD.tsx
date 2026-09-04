@@ -10,7 +10,7 @@ type RenderStatus = {
   activeEntities?: number;
   frameDuration?: number;
 } | null;
-type SchedStatus = { ema: number; currentMax?: number; lastDuration?: number } | null;
+type SchedStatus = { ema: number; fixedStepHz?: number; lastDuration?: number } | null;
 type TransportStatus = VibeTransportStatus | null;
 type Counts = { simulate: number; render: number; fishUse: number; scheduler: number } | null;
 
@@ -164,7 +164,9 @@ export const DebugHUD: React.FC = () => {
       </div>
       <div className="line">
         Scheduler:{' '}
-        {schedStatus ? `EMA ${schedStatus.ema.toFixed(2)}ms • max ${schedStatus.currentMax}` : '—'}
+        {schedStatus
+          ? `EMA ${schedStatus.ema.toFixed(2)}ms • step ${schedStatus.fixedStepHz}Hz`
+          : '—'}
       </div>
       <div className="line">
         Counts:{' '}

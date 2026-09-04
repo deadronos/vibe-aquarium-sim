@@ -16,6 +16,7 @@
     "test:watch": "vitest --watch",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:issue141": "tsc -p tsconfig.issue141.json --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview"

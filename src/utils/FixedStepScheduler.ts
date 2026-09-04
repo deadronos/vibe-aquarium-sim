@@ -19,7 +19,7 @@ export class FixedStepScheduler {
     this.maxSubSteps = this.initialMaxSubSteps;
   }
 
-  // PoC: allow dynamic tuning of max sub-steps
+  // Retain dynamic max-sub-step tuning for callers that use update(delta).
   setMaxSubSteps(n: number) {
     this.maxSubSteps = Math.max(1, Math.floor(n));
   }
@@ -33,6 +33,19 @@ export class FixedStepScheduler {
     return () => {
       this.callbacks.delete(callback);
     };
+  }
+
+  /**
+   * Run exactly one fixed step when an external fixed-step owner (Rapier)
+   * invokes us immediately before advancing its world. `maxSubSteps` only
+   * applies to the legacy render-driven `update` method.
+   */
+  step() {
+    this.accumulator = 0;
+    for (const cb of this.callbacks) {
+      cb(this.fixedStep);
+    }
+    return 1;
   }
 
   update(delta: number) {

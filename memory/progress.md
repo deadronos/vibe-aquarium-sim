@@ -16,8 +16,8 @@
 
 ## Current status
 
-- Phase: Phases 1–5 merged; Phase 6 mobile UX is implemented on the review branch.
-- Branch: `codex/phase6-mobile-ux` (issue #147)
+- Phases 1–7 are merged; issue #141 refresh-rate evidence is implemented on the review branch.
+- Branch: `codex/issue-141-refresh-rate` (issue #141)
 
 ## Known issues / technical debt
 
@@ -104,3 +104,12 @@
 - **Interaction:** Unified pointer, rail, and `F`-key feeding through a renderer-independent `feedAt` action at the tank center; `F` ignores text-entry targets. Decor toggles existing placement mode with pressed semantics and Escape cancellation.
 - **Accessibility:** Settings now enters focus on open, traps Tab/Shift+Tab, closes on Escape/backdrop/close activation, marks the aquarium shell inert, and restores focus to the invoking trigger.
 - **Validation:** Added component tests and two production-preview Playwright flows for phone and short-landscape viewports, including reduced-motion and no-console-error checks. Focused tests, lint, typecheck, and build are green; full validation remains before PR handoff.
+
+### 2026-09-04 (Issue #141)
+
+- **Determinism evidence:** Added a test-only trajectory harness that models Rapier's render-time accumulator, drives the production `FixedStepScheduler.step()` before each fixed physics tick, and exercises `applyFishPhysicsStep` and `syncFishPhysicsState` at 30, 60, and 120 Hz render schedules.
+- **Acceptance:** Each schedule produces exactly 60 fixed ticks per simulated second; every position/velocity sample matches across rates within `1e-9`; queued force vectors are consumed on every tick; repeated runs produce identical traces; invalid rates and durations fail closed.
+- **Documentation:** Added `docs/performance/fixed-step-refresh-rate.md` and corrected `docs/agents/architecture.md` to describe Rapier before/after-step ownership and render-frame boundaries.
+- **Validation:** Focused trajectory tests pass (8 tests); the scheduler/system regression suite passes (14 tests); final full format/lint/application-and-scoped-typecheck/test/build/bundle/smoke validation is green with 205 tests passed and 1 skipped.
+- **Adaptive telemetry:** Removed the stale max-sub-step throttle after Rapier became the fixed-step owner; adaptive mode now measures callback cost without reporting ineffective pacing changes.
+- **Scope:** Documented that async worker delivery and React hook-registration ordering remain browser-backed follow-ups under #148; this issue proves identical pre-queued-control trajectories and fixed-step ownership.
