@@ -36,9 +36,7 @@ describe('fixed-step refresh-rate trajectory', () => {
   it('rejects unsupported rates and non-positive durations', () => {
     expect(() =>
       runFixedStepTrajectory({ renderHz: 59 as unknown as 30, durationSeconds: 1 })
-    ).toThrow(
-      'renderHz must be 30, 60, or 120'
-    );
+    ).toThrow('renderHz must be 30, 60, or 120');
     expect(() => runFixedStepTrajectory({ renderHz: 60, durationSeconds: 0 })).toThrow(
       'durationSeconds must be positive'
     );
