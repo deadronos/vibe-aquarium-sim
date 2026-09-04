@@ -14,7 +14,6 @@ function App() {
   const [started, setStarted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const appShellRef = useRef<HTMLDivElement | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     readBoolFromStorage('hud.debug.visible', false)
   );
@@ -92,7 +91,7 @@ function App() {
 
   return (
     <>
-      <div ref={appShellRef} id="vibe-app-shell">
+      <div id="vibe-app-shell">
         {/* HUD overlay outside Canvas */}
         <HUD onOpenSettings={openSettings} shortcutsDisabled={settingsOpen} />
         {showDebugPanel && <DebugHUD />}
@@ -120,7 +119,6 @@ function App() {
         showDebugPanel={showDebugPanel}
         setShowDebugPanel={setDebugVisible}
         returnFocusRef={settingsTriggerRef}
-        backgroundRef={appShellRef}
       />
     </>
   );

@@ -7,7 +7,6 @@ type SettingsModalProps = {
   showDebugPanel: boolean;
   setShowDebugPanel: (next: boolean) => void;
   returnFocusRef?: React.RefObject<HTMLButtonElement | null>;
-  backgroundRef?: React.RefObject<HTMLDivElement | null>;
 };
 
 const FOCUSABLE_SELECTOR =
@@ -19,7 +18,6 @@ export function SettingsModal({
   showDebugPanel,
   setShowDebugPanel,
   returnFocusRef,
-  backgroundRef,
 }: SettingsModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -36,10 +34,6 @@ export function SettingsModal({
     const explicitOpener = returnFocusRef?.current;
     const activeElement = explicitOpener ?? document.activeElement;
     openerRef.current = activeElement instanceof HTMLElement ? activeElement : null;
-
-    const background = backgroundRef?.current;
-    const previousAriaHidden = background ? background.getAttribute('aria-hidden') : null;
-    if (background) background.setAttribute('aria-hidden', 'true');
 
     closeButtonRef.current?.focus();
 
@@ -76,16 +70,12 @@ export function SettingsModal({
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      if (background) {
-        if (previousAriaHidden === null) background.removeAttribute('aria-hidden');
-        else background.setAttribute('aria-hidden', previousAriaHidden);
-      }
 
       const opener = openerRef.current;
       if (opener?.isConnected) opener.focus();
       openerRef.current = null;
     };
-  }, [backgroundRef, open, returnFocusRef]);
+  }, [open, returnFocusRef]);
 
   if (!open) return null;
 

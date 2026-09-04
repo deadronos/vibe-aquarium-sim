@@ -56,34 +56,11 @@ describe('SettingsModal', () => {
     opener.remove();
   });
 
-  it('hides the application shell from assistive technology while open', () => {
-    const shell = document.createElement('div');
-    const shellRef = createRef<HTMLDivElement>();
-    shellRef.current = shell;
-    document.body.appendChild(shell);
-
-    const { rerender } = render(
-      <SettingsModal
-        open
-        onClose={vi.fn()}
-        showDebugPanel={false}
-        setShowDebugPanel={vi.fn()}
-        backgroundRef={shellRef}
-      />
+  it('exposes modal semantics while open', () => {
+    render(
+      <SettingsModal open onClose={vi.fn()} showDebugPanel={false} setShowDebugPanel={vi.fn()} />
     );
 
-    expect(shell).toHaveAttribute('aria-hidden', 'true');
-
-    rerender(
-      <SettingsModal
-        open={false}
-        onClose={vi.fn()}
-        showDebugPanel={false}
-        setShowDebugPanel={vi.fn()}
-        backgroundRef={shellRef}
-      />
-    );
-    expect(shell).not.toHaveAttribute('aria-hidden');
-    shell.remove();
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toHaveAttribute('aria-modal', 'true');
   });
 });
