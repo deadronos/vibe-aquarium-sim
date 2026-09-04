@@ -3,7 +3,7 @@
 ## Current focus
 
 - Branch: `codex/issue-141-refresh-rate`
-- Issue #141 refresh-rate evidence is implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is ready for full validation and PR review.
+- Issue #141 refresh-rate evidence is implemented on top of merged Phase 7 PR #157; deterministic 30/60/120 Hz trajectory coverage is fully validated and ready for PR review.
 
 ## Recent changes
 
