@@ -25,3 +25,4 @@
 - [DES013] Decoration System - Completed (2025-12-16)
 - [DES014] Worker offload for boids + water forces - Completed (2025-12-21)
 - [DES015] Tank visual materials & caustics - Completed (2026-01-13)
+- [DES016] Cohesive aquarium art direction - Completed (2026-09-04)
