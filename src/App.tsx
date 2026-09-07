@@ -40,6 +40,9 @@ function App() {
     const requestedQuality = resolveQualityLevel(window.location.search);
     if (requestedQuality !== null) {
       useQualityStore.getState().setLevel(requestedQuality);
+      // An explicit preset is an override, including during visual review.
+      // Normal visits retain adaptive quality.
+      useQualityStore.getState().setAdaptiveEnabled(false);
     }
   }, []);
 

@@ -8,8 +8,32 @@ import {
   getDecorationSpawnDescriptors,
   getInitialFishSpawn,
 } from '../src/config/artDirection';
+import { SIMULATION_BOUNDS } from '../src/config/constants';
 
 describe('aquarium art direction', () => {
+  test.each([1, 30, 300])(
+    'separates all %i initial fish colliders inside the swim bounds',
+    (total) => {
+      const fish = Array.from({ length: total }, (_, index) => getInitialFishSpawn(index, total));
+      expect(fish).toEqual(
+        Array.from({ length: total }, (_, index) => getInitialFishSpawn(index, total))
+      );
+      for (let i = 0; i < fish.length; i++) {
+        const a = fish[i]!;
+        expect(Math.abs(a.x)).toBeLessThanOrEqual(SIMULATION_BOUNDS.x);
+        expect(Math.abs(a.y)).toBeLessThanOrEqual(SIMULATION_BOUNDS.y);
+        expect(Math.abs(a.z)).toBeLessThanOrEqual(SIMULATION_BOUNDS.z);
+        for (let j = 0; j < i; j++) {
+          const b = fish[j]!;
+          // Fish.tsx uses a radius-0.06 BallCollider.
+          expect(Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z), `fish ${i} and ${j}`).toBeGreaterThan(
+            0.12
+          );
+        }
+      }
+    }
+  );
+
   test('exposes a dark teal water palette and a restrained warm accent', () => {
     expect(AQUARIUM_PALETTE.waterDeep).toBe('#123b43');
     expect(AQUARIUM_PALETTE.waterSurface).toBe('#1d5960');

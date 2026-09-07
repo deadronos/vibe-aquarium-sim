@@ -40,6 +40,7 @@ import { getQualityProfile } from './performance/qualityProfile';
 import { useQualityStore } from './performance/qualityStore';
 import { Spawner } from './systems/Spawner';
 import { AQUARIUM_PALETTE, ART_DIRECTION_LIGHTING } from './config/artDirection';
+import { AquariumCamera } from './components/AquariumCamera';
 
 function SceneLights({
   directionalLightRef,
@@ -239,6 +240,7 @@ export default function SimulationScene() {
         }}
       >
         <color attach="background" args={[AQUARIUM_PALETTE.sceneBackground]} />
+        <AquariumCamera />
 
         <Physics gravity={[0, -9.81, 0]}>
           <AdaptiveQualityManager
@@ -296,7 +298,7 @@ export default function SimulationScene() {
         <AmbientParticles />
         <PostProcessing isWebGPU={rendererConfig.type === 'webgpu'} />
 
-        <OrbitControls target={[0, 0, 0]} />
+        <OrbitControls makeDefault target={[0, 0, 0]} />
       </Canvas>
     </VisualQualityProvider>
   );

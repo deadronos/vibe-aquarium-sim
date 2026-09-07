@@ -6,6 +6,7 @@ import { useGameStore } from '../src/gameStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { getQualitySettings } from '../src/performance/qualityPresets';
 import { useQualityStore } from '../src/performance/qualityStore';
+import { TANK_DIMENSIONS } from '../src/config/constants';
 
 const { useFrameSpy } = vi.hoisted(() => {
   const spy = vi.fn(() => {});
@@ -47,6 +48,64 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 describe('Tank material defaults', () => {
+  it('uses thin clear glass on the transmissive WebGPU path', async () => {
+    act(() => {
+      useQualityStore.setState({ level: 'high', settings: getQualitySettings('high', 2) });
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
+    });
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider isWebGPU>
+        <Tank />
+      </VisualQualityProvider>
+    );
+    try {
+      const materials: THREE.MeshPhysicalMaterial[] = [];
+      renderer.scene.instance.traverse((object) => {
+        const material = (object as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined;
+        if (material?.type === 'MeshPhysicalMaterial') materials.push(material);
+      });
+      expect(materials).toHaveLength(1);
+      expect(materials[0]!.thickness).toBeCloseTo(TANK_DIMENSIONS.wallThickness);
+      expect(materials[0]!.roughness).toBeLessThanOrEqual(0.05);
+    } finally {
+      await renderer.unmount();
+    }
+  });
+
+  it('places the depth-tested rear caustics in front of the opaque backplate', async () => {
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: true } });
+    });
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <Tank />
+      </VisualQualityProvider>
+    );
+    try {
+      const meshes: THREE.Mesh[] = [];
+      renderer.scene.instance.traverse((object) => {
+        if ((object as THREE.Mesh).isMesh) meshes.push(object as THREE.Mesh);
+      });
+      const backplate = meshes.find((mesh) => mesh.geometry.type === 'PlaneGeometry')!;
+      const overlay = meshes.find(
+        (mesh) => (mesh.material as THREE.Material).type === 'ShaderMaterial'
+      )!;
+      expect(backplate).toBeDefined();
+      expect(overlay).toBeDefined();
+      expect((overlay.material as THREE.Material).depthTest).toBe(true);
+      const positions = overlay.geometry.getAttribute('position');
+      const normals = overlay.geometry.getAttribute('normal');
+      const rearZ: number[] = [];
+      for (let i = 0; i < positions.count; i++) {
+        if (normals.getZ(i) > 0.99) rearZ.push(positions.getZ(i));
+      }
+      expect(rearZ).toHaveLength(4);
+      for (const z of rearZ) expect(z).toBeGreaterThan(backplate.position.z);
+    } finally {
+      await renderer.unmount();
+    }
+  });
+
   beforeEach(() => {
     // deterministic defaults
     act(() => {

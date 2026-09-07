@@ -21,6 +21,8 @@ import { logShaderOnce } from '../utils/shaderDebug';
 import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
 import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 
+const BACKPLATE_Z = -TANK_DIMENSIONS.depth / 2 + TANK_DIMENSIONS.wallThickness * 0.55;
+
 export const Tank = () => {
   const { width, height, depth, wallThickness, floorThickness } = TANK_DIMENSIONS;
   const { isWebGPU, tankTransmissionEnabled, tankTransmissionDispersionEnabled } =
@@ -71,7 +73,7 @@ export const Tank = () => {
       <TankCausticsOverlay />
 
       {/* Opaque inner backplate gives the water volume a stable deep-teal value. */}
-      <mesh position={[0, 0, -depth / 2 + wallThickness * 0.55]} renderOrder={-1}>
+      <mesh position={[0, 0, BACKPLATE_Z]} renderOrder={-1}>
         <planeGeometry args={[width, height]} />
         <meshStandardMaterial color={AQUARIUM_PALETTE.waterDeep} roughness={0.92} />
       </mesh>
@@ -120,7 +122,7 @@ export const Tank = () => {
         {useTransmissiveGlass ? (
           <GlassNodeMaterial
             color={AQUARIUM_PALETTE.glassTint}
-            roughness={GLASS_MATERIAL.roughness}
+            roughness={GLASS_MATERIAL.transmissionRoughness}
             transmission={GLASS_MATERIAL.transmission}
             thickness={GLASS_MATERIAL.thickness}
             opacity={1}
@@ -188,7 +190,8 @@ const TankCausticsOverlayEnabled = () => {
     floor.translate(0, -height / 2 + CAUSTICS_OVERLAY_INSET, 0);
 
     const back = new PlaneGeometry(width, height);
-    back.translate(0, 0, -depth / 2 + CAUSTICS_OVERLAY_INSET);
+    // Keep the depth-tested overlay on the visible face of the opaque backing.
+    back.translate(0, 0, BACKPLATE_Z + CAUSTICS_OVERLAY_INSET);
 
     const front = new PlaneGeometry(width, height);
     front.rotateY(Math.PI);

@@ -1,4 +1,5 @@
 import type { DecorationType } from '../domain/types';
+import { TANK_DIMENSIONS } from './constants';
 
 export const AQUARIUM_PALETTE = {
   sceneBackground: '#071c21',
@@ -46,8 +47,9 @@ export const WATER_MATERIAL = {
 export const GLASS_MATERIAL = {
   standardOpacity: 0.18,
   roughness: 0.16,
+  transmissionRoughness: 0.03,
   transmission: 0.92,
-  thickness: 0.9,
+  thickness: TANK_DIMENSIONS.wallThickness,
   ior: 1.46,
   dispersion: 0.025,
 } as const;
@@ -145,12 +147,18 @@ export type InitialFishSpawn = {
 };
 
 export const getInitialFishSpawn = (index: number, total: number): InitialFishSpawn => {
-  const columns = Math.max(5, Math.min(12, Math.ceil(Math.sqrt(Math.max(total, 1)))));
-  const row = Math.floor(index / columns);
+  // Size all three axes from the school size instead of wrapping a fixed grid.
+  // The 300-fish stress school must not reuse positions or overlap colliders.
+  const count = Math.max(1, total);
+  const columns = Math.min(count, Math.ceil(Math.cbrt(count * 4)));
+  const rows = Math.ceil(Math.sqrt(count / columns));
+  const layers = Math.ceil(count / (columns * rows));
+  const row = Math.floor(index / columns) % rows;
   const column = index % columns;
+  const layer = Math.floor(index / (columns * rows));
   const x = columns === 1 ? 0 : -1.48 + (column / (columns - 1)) * 2.96;
-  const y = -0.62 + (row % 5) * 0.3 + ((column + row) % 2) * 0.04;
-  const z = -0.55 + ((column * 3 + row * 2) % 8) * 0.15;
+  const y = rows === 1 ? 0 : -0.62 + (row / (rows - 1)) * 1.24;
+  const z = layers === 1 ? 0 : -0.55 + (layer / (layers - 1)) * 1.1;
   const angle = ((index * 37) % 360) * (Math.PI / 180);
 
   return {
