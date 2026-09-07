@@ -24,6 +24,8 @@ CI runs the same full Chromium graphics stack for interaction and visual tests. 
 
 The previous run failed the mobile interaction flow at keyboard navigation and retried a failed screenshot. No consistent functional failure reproduced locally: the original mobile flow passed twice in 36–43 seconds. With the updated scene it still took 37 seconds in the separate Chromium headless shell; running the same flow in full headless Chromium took 2.6 seconds. The suite now consistently uses full Chromium. This identifies a local browser-runtime bottleneck; it does not establish the historical Linux runner's exact root cause. Retained traces make future failures diagnosable.
 
+The first review-revision CI run passed all eleven WebGL/mobile checks but exposed Linux WebGPU device loss immediately after initialization (`Instance dropped in popErrorScope`, followed by buffer-allocation errors). ANGLE's `--use-angle=swiftshader` selects the WebGL adapter, not Dawn's WebGPU adapter. Linux tests now also explicitly select `--use-webgpu-adapter=swiftshader`, the adapter-selection flag documented by [Dawn's test harness](https://dawn.googlesource.com/dawn.git/+/refs/heads/chromium/7690/webgpu-cts/). Adapter details are attached to the report and duplicate errors are collapsed without ignoring failures.
+
 ## Review evidence
 
 Local verification on 2026-09-07: 223 unit/integration tests passed, one existing placeholder skipped; all 15 browser tests passed (31.9 seconds), including the eight real-backend visual cases. Formatting, lint, both typechecks, production build, and bundle budgets passed (JavaScript 1,416,432 gzip bytes / 1,700,000 allowed).

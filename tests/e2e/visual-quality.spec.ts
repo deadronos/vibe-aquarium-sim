@@ -28,13 +28,13 @@ for (const backend of ['webgl', 'webgpu'] as const) {
 
     for (const level of levels) {
       test(`${level} has ready desktop and phone artifacts`, async ({ page }, testInfo) => {
-        const errors: string[] = [];
-        page.on('pageerror', (error) => errors.push(error.message));
+        const errors = new Set<string>();
+        page.on('pageerror', (error) => errors.add(error.message));
         page.on('console', (message) => {
-          if (message.type() === 'error') errors.push(message.text());
+          if (message.type() === 'error') errors.add(message.text());
         });
         page.on('response', (response) => {
-          if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`);
+          if (response.status() >= 400) errors.add(`${response.status()} ${response.url()}`);
         });
         await page.addInitScript(() => {
           window.__vibe_debug = { simulateStep: [], fishRender: [], fishUseFrame: [] };
@@ -49,6 +49,21 @@ for (const backend of ['webgl', 'webgpu'] as const) {
           })
           .toBe(backend);
         expect(await page.evaluate(() => window.__vibe_rendererStatus?.fallback)).toBe(false);
+        if (backend === 'webgpu') {
+          await testInfo.attach('webgpu-adapter', {
+            body: JSON.stringify(
+              await page.evaluate(async () => {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) return null;
+                const { vendor, architecture, device, description } = adapter.info;
+                return { vendor, architecture, device, description };
+              }),
+              null,
+              2
+            ),
+            contentType: 'application/json',
+          });
+        }
         await waitForRenderedFish(page);
 
         for (const viewport of [
@@ -78,7 +93,7 @@ for (const backend of ['webgl', 'webgpu'] as const) {
             contentType: 'application/json',
           });
         }
-        expect(errors).toEqual([]);
+        expect([...errors]).toEqual([]);
       });
     }
   });

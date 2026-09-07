@@ -23,7 +23,11 @@ export default defineConfig({
       args: [
         '--enable-unsafe-webgpu',
         ...(process.platform === 'linux'
-          ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+          ? [
+              '--use-angle=swiftshader',
+              '--enable-unsafe-swiftshader',
+              '--use-webgpu-adapter=swiftshader',
+            ]
           : []),
       ],
     },
