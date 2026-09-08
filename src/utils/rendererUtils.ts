@@ -1,16 +1,39 @@
+export interface WebGPUCapabilities {
+  available: boolean;
+  softwareAdapter: boolean;
+}
+
 /**
- * Checks if WebGPU is supported and enabled in the current environment.
+ * Detect WebGPU and identify software adapters that need a conservative effect profile.
  */
-export async function supportsWebGPU(): Promise<boolean> {
+export async function getWebGPUCapabilities(): Promise<WebGPUCapabilities> {
   if (typeof navigator === 'undefined' || !navigator.gpu) {
-    return false;
+    return { available: false, softwareAdapter: false };
   }
 
   try {
     const adapter = await navigator.gpu.requestAdapter();
-    return !!adapter;
+    if (!adapter) return { available: false, softwareAdapter: false };
+
+    const info = (
+      adapter as {
+        info?: { vendor?: string; architecture?: string; device?: string; description?: string };
+      }
+    ).info;
+    const identity = [info?.vendor, info?.architecture, info?.device, info?.description]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return { available: true, softwareAdapter: /swiftshader|llvmpipe|software/.test(identity) };
   } catch (e) {
     console.warn('WebGPU check failed:', e);
-    return false;
+    return { available: false, softwareAdapter: false };
   }
+}
+
+/**
+ * Checks if WebGPU is supported and enabled in the current environment.
+ */
+export async function supportsWebGPU(): Promise<boolean> {
+  return (await getWebGPUCapabilities()).available;
 }

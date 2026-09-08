@@ -6,7 +6,6 @@ import { useGameStore } from '../src/gameStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { getQualitySettings } from '../src/performance/qualityPresets';
 import { useQualityStore } from '../src/performance/qualityStore';
-import { TANK_DIMENSIONS } from '../src/config/constants';
 
 const { useFrameSpy } = vi.hoisted(() => {
   const spy = vi.fn(() => {});
@@ -48,7 +47,7 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 describe('Tank material defaults', () => {
-  it('uses thin clear glass on the transmissive WebGPU path', async () => {
+  it('uses readable standard glass on the WebGPU path', async () => {
     act(() => {
       useQualityStore.setState({ level: 'high', settings: getQualitySettings('high', 2) });
       useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
@@ -59,14 +58,16 @@ describe('Tank material defaults', () => {
       </VisualQualityProvider>
     );
     try {
-      const materials: THREE.MeshPhysicalMaterial[] = [];
+      const materials: THREE.MeshStandardMaterial[] = [];
       renderer.scene.instance.traverse((object) => {
-        const material = (object as THREE.Mesh).material as THREE.MeshPhysicalMaterial | undefined;
-        if (material?.type === 'MeshPhysicalMaterial') materials.push(material);
+        const material = (object as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+        if (material?.type === 'MeshStandardMaterial') materials.push(material);
       });
-      expect(materials).toHaveLength(1);
-      expect(materials[0]!.thickness).toBeCloseTo(TANK_DIMENSIONS.wallThickness);
-      expect(materials[0]!.roughness).toBeLessThanOrEqual(0.05);
+      const glass = materials.find((material) => material.opacity <= 0.2);
+      expect(glass).toBeDefined();
+      expect(glass!.opacity).toBeLessThanOrEqual(0.1);
+      expect(glass!.roughness).toBeGreaterThanOrEqual(0.1);
+      expect(glass!.side).toBe(THREE.FrontSide);
     } finally {
       await renderer.unmount();
     }

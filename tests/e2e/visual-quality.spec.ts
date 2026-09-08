@@ -75,6 +75,11 @@ for (const backend of ['webgl', 'webgpu'] as const) {
           await expect
             .poll(() => page.evaluate(() => window.__vibe_qualityStatus?.level))
             .toBe(level);
+          const qualityStatus = await page.evaluate(() => window.__vibe_qualityStatus);
+          expect(qualityStatus?.tankTransmissionEnabled).toBe(false);
+          if (backend === 'webgpu') {
+            expect(typeof qualityStatus?.softwareWebGPU).toBe('boolean');
+          }
           const name = `${backend}-${level}-${viewport.name}`;
           const path = testInfo.outputPath(`${name}.png`);
           await page.screenshot({ path, timeout: 30_000 });

@@ -136,7 +136,8 @@ export const Tank = () => {
             metalness={0.1}
             transparent
             opacity={GLASS_MATERIAL.standardOpacity}
-            side={THREE.DoubleSide}
+            depthWrite={false}
+            side={THREE.FrontSide}
           />
         )}
       </mesh>

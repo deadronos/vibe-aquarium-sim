@@ -5,7 +5,8 @@
 - **Rear caustics:** the opaque backing was at `z=-0.9934`, ahead of the rear overlay at `z=-0.997`. The overlay now derives its position from the backing plus a small visible-side inset. A component test checks the real mesh vertices with depth testing retained.
 - **Stress school:** the old 300-fish layout repeated 60 positions after index 239. A three-dimensional grid now scales with the initial school size. Pairwise tests for 1, 30, and 300 fish assert deterministic, in-bounds positions separated by more than the 0.12 collider diameter. Dynamic add-fish behavior is unchanged.
 - **Phone framing:** camera fitting accounts for the whole tank and reserves space for the right action rail. Resize scales the current orbit distance around the controls target, preserving user zoom and pan. Tests project every tank corner at desktop, phone, narrow phone, and landscape sizes, plus a zoomed portrait/landscape round trip.
-- **WebGPU clarity:** real screenshots exposed blurred/refracted fish with optical glass thickness 0.9 versus a modeled wall thickness of 0.012. Transmission now uses the modeled thickness and roughness 0.03; the non-transmissive material retains its existing roughness. A component test protects these values.
+- **WebGPU clarity:** real screenshots exposed a dark right-pane wedge and washed-out fish from transmissive rendering across the merged four-pane shell. The tank now uses thin, front-face-only standard glass at opacity 0.08 with depth writes disabled, and water volume opacity is 0.28. Native and software WebGPU therefore keep fish silhouettes readable while the shell remains visibly glass-like. Component and art-direction tests protect the contrast-sensitive values.
+- **Software WebGPU:** adapter metadata is inspected at startup. SwiftShader, llvmpipe, and explicitly software-labelled adapters use a conservative profile: optional effects are disabled, DPR is capped at 1, and WebGPU shadows use a 256px map. This keeps CI's software renderer within a predictable capture budget without falling back to WebGL.
 
 ## Browser verification
 
@@ -30,9 +31,9 @@ Selecting the adapter alone did not fix the second run. Linux CI now installs th
 
 ## Review evidence
 
-Local verification on 2026-09-07: 223 unit/integration tests passed, one existing placeholder skipped; all 15 browser tests passed (31.9 seconds), including the eight real-backend visual cases. Formatting, lint, both typechecks, production build, and bundle budgets passed (JavaScript 1,416,432 gzip bytes / 1,700,000 allowed).
+Local verification on 2026-09-08: 227 unit/integration tests passed, one existing placeholder skipped; all 15 browser tests passed, including the eight real-backend visual cases. The fresh native WebGPU ultra capture has no right-pane wedge and readable fish at desktop and phone sizes. Formatting, lint, both typechecks, production build, and bundle budgets passed locally.
 
-The full tank and both decoration clusters now fit beside the phone rail. WebGPU no longer has the large refraction offsets caused by oversized glass thickness. Backend differences remain visible: transmission/reflections soften WebGPU, while WebGL ultra enables its existing depth-of-field postprocessing. These are not pixel-parity assertions.
+The full tank and both decoration clusters now fit beside the phone rail. Backend differences remain visible, but the glass treatment no longer obscures the school or introduces pane-scale refraction artifacts. Native WebGPU ultra retains optional effects; software WebGPU intentionally uses the conservative profile described above. These are not pixel-parity assertions.
 
 The CI HTML report contains all sixteen captures and their diagnostics. Representative screenshots are retained alongside this document for review without access to the originating workstation.
 

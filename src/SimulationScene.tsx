@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 
 import * as THREE from 'three';
-import { supportsWebGPU } from './utils/rendererUtils';
+import { getWebGPUCapabilities } from './utils/rendererUtils';
 import {
   isWebGPURendererBackend,
   resolveRendererPreference,
@@ -37,6 +37,7 @@ import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
 import { VisualQualityProvider } from './performance/VisualQualityProvider';
 import { useVisualQuality } from './performance/VisualQualityContext';
 import { getQualityProfile } from './performance/qualityProfile';
+import { getDeviceMaxDpr } from './performance/qualityPresets';
 import { useQualityStore } from './performance/qualityStore';
 import { Spawner } from './systems/Spawner';
 import { AQUARIUM_PALETTE, ART_DIRECTION_LIGHTING } from './config/artDirection';
@@ -88,6 +89,7 @@ export default function SimulationScene() {
     ctor: new (...args: any[]) => any;
     type: RendererKind;
     initialShadowMapSize: number;
+    softwareWebGPU: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -95,8 +97,11 @@ export default function SimulationScene() {
     const requested = resolveRendererPreference(window.location.search);
 
     const initializeRenderer = async () => {
-      const webgpuAvailable = requested === 'webgpu' ? await supportsWebGPU() : false;
-      const selected = selectRenderer(requested, webgpuAvailable);
+      const webgpuCapabilities =
+        requested === 'webgpu'
+          ? await getWebGPUCapabilities()
+          : { available: false, softwareAdapter: false };
+      const selected = selectRenderer(requested, webgpuCapabilities.available);
 
       if (selected === 'webgpu') {
         try {
@@ -107,8 +112,13 @@ export default function SimulationScene() {
           setRendererConfig({
             ctor: WebGPURenderer,
             type: 'webgpu',
-            initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgpu')
-              .shadowMapSize,
+            initialShadowMapSize: getQualityProfile(
+              useQualityStore.getState().level,
+              'webgpu',
+              getDeviceMaxDpr(),
+              webgpuCapabilities.softwareAdapter
+            ).shadowMapSize,
+            softwareWebGPU: webgpuCapabilities.softwareAdapter,
           });
           return;
         } catch (error) {
@@ -126,6 +136,7 @@ export default function SimulationScene() {
         type: 'webgl',
         initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
           .shadowMapSize,
+        softwareWebGPU: false,
       });
       window.__vibe_rendererStatus = {
         requested,
@@ -146,7 +157,10 @@ export default function SimulationScene() {
   if (!rendererConfig) return null;
 
   return (
-    <VisualQualityProvider isWebGPU={rendererConfig.type === 'webgpu'}>
+    <VisualQualityProvider
+      isWebGPU={rendererConfig.type === 'webgpu'}
+      softwareWebGPU={rendererConfig.softwareWebGPU}
+    >
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows="percentage"
@@ -175,6 +189,7 @@ export default function SimulationScene() {
               type: 'webgl',
               initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
                 .shadowMapSize,
+              softwareWebGPU: false,
             });
             window.__vibe_rendererStatus = {
               requested: 'webgpu',

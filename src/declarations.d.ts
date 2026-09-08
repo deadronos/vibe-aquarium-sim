@@ -96,6 +96,7 @@ declare global {
     __vibe_rendererStatus?: VibeRendererStatus;
     __vibe_qualityStatus?: {
       backend: 'webgl' | 'webgpu';
+      softwareWebGPU?: boolean;
       level: 'low' | 'medium' | 'high' | 'ultra';
       shadowMapSize: number;
       causticsEnabled: boolean;

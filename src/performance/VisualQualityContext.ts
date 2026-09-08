@@ -4,6 +4,7 @@ import type { QualityProfile } from './qualityProfile';
 
 export interface VisualQualityContextValue extends VisualQualityFlags {
   isWebGPU: boolean;
+  softwareWebGPU: boolean;
   spotLightShadowsEnabled: boolean;
   tankTransmissionEnabled: boolean;
   tankTransmissionDispersionEnabled: boolean;

@@ -34,7 +34,7 @@ export const ART_DIRECTION_LIGHTING = {
 } as const;
 
 export const WATER_MATERIAL = {
-  volumeOpacity: 0.38,
+  volumeOpacity: 0.28,
   causticsIntensity: 0.18,
   volumeSpecularStrength: 0.1,
   volumeShimmerStrength: 0.07,
@@ -45,7 +45,7 @@ export const WATER_MATERIAL = {
 } as const;
 
 export const GLASS_MATERIAL = {
-  standardOpacity: 0.18,
+  standardOpacity: 0.08,
   roughness: 0.16,
   transmissionRoughness: 0.03,
   transmission: 0.92,
