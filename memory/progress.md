@@ -3,6 +3,7 @@
 ## What works
 
 - Project scaffold and core components exist in `src/` (Fish, Tank, BoidsSystem, store)
+- Issue #146 visual direction is implemented: shared palette, deterministic opening composition, clustered decor, water backplate, tuned glass/caustics, and warm/cool lighting hierarchy.
 - Basic unit test harness and linting configuration present (Vitest, ESLint, Prettier)
 - Boids + water drag/current calculations are offloaded to a multithreaded worker and applied back to ECS each fixed step.
 - Documentation: `AGENTS.md` and `.github/copilot-instructions.md` updated to reference `.github/instructions/memory-bank.instructions.md` and `.github/instructions/spec-driven-workflow-v1.instructions.md` and recorded in memory (2025-12-09)
@@ -23,6 +24,7 @@
 
 - No persistent tasks or design docs were present in `memory/` before this update — memory bank must be maintained as work continues.
 - Full fluid simulation is out of scope for current milestone and should be tracked separately as a design item.
+- Future visual polish can explore authored assets only if loading and quality budgets remain intact; current Issue #146 implementation intentionally uses procedural low-poly forms.
 
 ### 2025-12-15
 

@@ -47,6 +47,66 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 describe('Tank material defaults', () => {
+  it('uses readable standard glass on the WebGPU path', async () => {
+    act(() => {
+      useQualityStore.setState({ level: 'high', settings: getQualitySettings('high', 2) });
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: false } });
+    });
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider isWebGPU>
+        <Tank />
+      </VisualQualityProvider>
+    );
+    try {
+      const materials: THREE.MeshStandardMaterial[] = [];
+      renderer.scene.instance.traverse((object) => {
+        const material = (object as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+        if (material?.type === 'MeshStandardMaterial') materials.push(material);
+      });
+      const glass = materials.find((material) => material.opacity <= 0.2);
+      expect(glass).toBeDefined();
+      expect(glass!.opacity).toBeLessThanOrEqual(0.1);
+      expect(glass!.roughness).toBeGreaterThanOrEqual(0.1);
+      expect(glass!.side).toBe(THREE.FrontSide);
+    } finally {
+      await renderer.unmount();
+    }
+  });
+
+  it('places the depth-tested rear caustics in front of the opaque backplate', async () => {
+    act(() => {
+      useGameStore.setState({ visualQualityOverrides: { causticsEnabled: true } });
+    });
+    const renderer = await ReactThreeTestRenderer.create(
+      <VisualQualityProvider>
+        <Tank />
+      </VisualQualityProvider>
+    );
+    try {
+      const meshes: THREE.Mesh[] = [];
+      renderer.scene.instance.traverse((object) => {
+        if ((object as THREE.Mesh).isMesh) meshes.push(object as THREE.Mesh);
+      });
+      const backplate = meshes.find((mesh) => mesh.geometry.type === 'PlaneGeometry')!;
+      const overlay = meshes.find(
+        (mesh) => (mesh.material as THREE.Material).type === 'ShaderMaterial'
+      )!;
+      expect(backplate).toBeDefined();
+      expect(overlay).toBeDefined();
+      expect((overlay.material as THREE.Material).depthTest).toBe(true);
+      const positions = overlay.geometry.getAttribute('position');
+      const normals = overlay.geometry.getAttribute('normal');
+      const rearZ: number[] = [];
+      for (let i = 0; i < positions.count; i++) {
+        if (normals.getZ(i) > 0.99) rearZ.push(positions.getZ(i));
+      }
+      expect(rearZ).toHaveLength(4);
+      for (const z of rearZ) expect(z).toBeGreaterThan(backplate.position.z);
+    } finally {
+      await renderer.unmount();
+    }
+  });
+
   beforeEach(() => {
     // deterministic defaults
     act(() => {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Vector3 } from 'three';
-import * as THREE from 'three';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
+import { getDecorationSpawnDescriptors, getInitialFishSpawn } from '../config/artDirection';
 import { world } from '../store';
 import type { Entity } from '../store';
 
@@ -21,76 +21,33 @@ export const Spawner = () => {
     // Keep normal startup light; the explicit quality stress query exercises a
     // bounded larger school without changing the production default.
     for (let i = 0; i < initialFishCount; i++) {
+      const spawn = getInitialFishSpawn(i, initialFishCount);
       const entity = world.add({
         isFish: true,
         isBoid: true,
-        position: new Vector3(
-          (Math.random() - 0.5) * (SIMULATION_BOUNDS.x * 2),
-          (Math.random() - 0.5) * (SIMULATION_BOUNDS.y * 2),
-          (Math.random() - 0.5) * (SIMULATION_BOUNDS.z * 2)
-        ),
-        velocity: new Vector3(
-          (Math.random() - 0.5) * 1,
-          (Math.random() - 0.5) * 1,
-          (Math.random() - 0.5) * 1
-        ),
+        position: new Vector3(spawn.x, spawn.y, spawn.z),
+        velocity: new Vector3(spawn.vx, spawn.vy, spawn.vz),
         steeringForce: new Vector3(),
         externalForce: new Vector3(),
         targetVelocity: new Vector3(),
         excitementLevel: 0,
-        modelIndex: Math.floor(Math.random() * 3) as 0 | 1 | 2,
+        modelIndex: spawn.modelIndex,
         excitementDecay: 0,
       });
       spawnedEntities.push(entity);
     }
 
-    // Spawn Decorations (Tasteful Scatter)
-    const spawnDecoration = (type: 'seaweed' | 'coral' | 'rock', count: number) => {
-      for (let i = 0; i < count; i++) {
-        const x = (Math.random() - 0.5) * (TANK_DIMENSIONS.width - 0.4); // Margin from walls
-        const z = (Math.random() - 0.5) * (TANK_DIMENSIONS.depth - 0.4);
-        const y = -TANK_DIMENSIONS.height / 2; // On the floor
-
-        // Seed decoration properties at spawn time (pure, non-render code)
-        let decorationProps: Record<string, unknown> = {};
-        if (type === 'seaweed') {
-          decorationProps = {
-            blades: [
-              { height: 0.4 + Math.random() * 0.2, offset: 0, phase: Math.random() * Math.PI * 2 },
-              {
-                height: 0.3 + Math.random() * 0.15,
-                offset: 0.05,
-                phase: Math.random() * Math.PI * 2,
-              },
-              {
-                height: 0.35 + Math.random() * 0.15,
-                offset: -0.04,
-                phase: Math.random() * Math.PI * 2,
-              },
-            ],
-          };
-        } else if (type === 'coral') {
-          const colors = ['#ff6b6b', '#ff8e72', '#ffa07a', '#e056fd'];
-          decorationProps = { color: colors[Math.floor(Math.random() * colors.length)] };
-        } else if (type === 'rock') {
-          const s = 0.8 + Math.random() * 0.4;
-          const gray = 0.3 + Math.random() * 0.2;
-          decorationProps = { scale: s, color: new THREE.Color(gray, gray * 0.95, gray * 0.9) };
-        }
-
-        const entity = world.add({
-          isDecoration: true,
-          decorationType: type,
-          position: new Vector3(x, y, z),
-          decorationProps,
-        });
-        spawnedEntities.push(entity);
-      }
-    };
-
-    spawnDecoration('seaweed', 5);
-    spawnDecoration('coral', 5);
-    spawnDecoration('rock', 5);
+    // Keep the opening composition stable and clustered so the tank retains a
+    // clear center lane for the school. Props are seeded outside the render loop.
+    for (const descriptor of getDecorationSpawnDescriptors()) {
+      const entity = world.add({
+        isDecoration: true,
+        decorationType: descriptor.type,
+        position: new Vector3(descriptor.x, -TANK_DIMENSIONS.height / 2, descriptor.z),
+        decorationProps: descriptor.props,
+      });
+      spawnedEntities.push(entity);
+    }
 
     if (typeof window !== 'undefined') {
       if (window.__vibe_qualityStatus) {

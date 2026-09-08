@@ -18,7 +18,7 @@ describe('getQualityProfile', () => {
     }
   });
 
-  it('retains optional effects for medium and higher WebGPU tiers', () => {
+  it('retains optional effects for medium and higher native WebGPU tiers', () => {
     for (const level of ['medium', 'high', 'ultra'] as const) {
       const profile = getQualityProfile(level, 'webgpu');
 
@@ -26,9 +26,26 @@ describe('getQualityProfile', () => {
       expect(profile.fishRimLightingEnabled).toBe(true);
       expect(profile.fishSubsurfaceScatteringEnabled).toBe(true);
       expect(profile.spotLightShadowsEnabled).toBe(true);
-      expect(profile.tankTransmissionEnabled).toBe(true);
-      expect(profile.tankTransmissionDispersionEnabled).toBe(true);
+      expect(profile.tankTransmissionEnabled).toBe(false);
+      expect(profile.tankTransmissionDispersionEnabled).toBe(false);
     }
+  });
+
+  it('disables optional WebGPU effects for software adapters', () => {
+    const profile = getQualityProfile('ultra', 'webgpu', 2, true);
+
+    expect(profile).toMatchObject({
+      causticsEnabled: false,
+      fishRimLightingEnabled: false,
+      fishSubsurfaceScatteringEnabled: false,
+      waterSurfaceUpgradeEnabled: false,
+      waterVolumeUpgradeEnabled: false,
+      ambientParticlesEnabled: false,
+      depthOfFieldEnabled: false,
+      spotLightShadowsEnabled: false,
+      tankTransmissionEnabled: false,
+      tankTransmissionDispersionEnabled: false,
+    });
   });
 
   it('keeps WebGL preset shadow sizes and uses smaller WebGPU values', () => {

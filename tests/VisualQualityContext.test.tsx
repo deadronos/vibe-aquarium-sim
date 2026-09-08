@@ -160,6 +160,33 @@ describe('useVisualQuality', () => {
     expect(screen.getByTestId('adaptiveSched')).toHaveTextContent('true');
   });
 
+  it('keeps software WebGPU on the conservative profile despite overrides', () => {
+    act(() => {
+      useQualityStore.setState({
+        level: 'ultra',
+        settings: getQualitySettings('ultra', 2),
+      });
+      useGameStore.setState({
+        visualQualityOverrides: {
+          causticsEnabled: true,
+          fishRimLightingEnabled: true,
+          depthOfFieldEnabled: true,
+        },
+      });
+    });
+
+    render(
+      <VisualQualityProvider isWebGPU softwareWebGPU>
+        <VisualQualityReader />
+      </VisualQualityProvider>
+    );
+
+    expect(screen.getByTestId('caustics')).toHaveTextContent('false');
+    expect(screen.getByTestId('fishRim')).toHaveTextContent('false');
+    expect(screen.getByTestId('dof')).toHaveTextContent('false');
+    expect(screen.getByTestId('profileShadow')).toHaveTextContent('256');
+  });
+
   it('throws when used outside VisualQualityProvider', () => {
     expect(() => render(<VisualQualityReader />)).toThrow(/useVisualQuality/i);
   });

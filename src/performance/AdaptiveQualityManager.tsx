@@ -39,7 +39,7 @@ export const AdaptiveQualityManager = ({
   // On WebGPU, shadow map resizing triggers a Three.js internal dispose of the
   // old depth texture, which causes "Destroyed texture used in a submit".
   // Shadow map size is fixed at the initial JSX-configured value on WebGPU.
-  const { isWebGPU } = useVisualQuality();
+  const { isWebGPU, softwareWebGPU, qualityProfile } = useVisualQuality();
 
   const deviceMaxDprRef = useRef(getDeviceMaxDpr());
 
@@ -60,7 +60,7 @@ export const AdaptiveQualityManager = ({
 
   useEffect(() => {
     const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
-    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const profile = qualityProfile;
     const nextDpr = profile.dpr;
 
     if (
@@ -90,16 +90,17 @@ export const AdaptiveQualityManager = ({
     }
 
     lastAppliedShadowSizeRef.current = profile.shadowMapSize;
-  }, [directionalLightRef, isWebGPU, level, setDpr, spotLightRef]);
+  }, [directionalLightRef, isWebGPU, level, qualityProfile, setDpr, spotLightRef]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
-    const profile = getQualityProfile(level, backend, deviceMaxDprRef.current);
+    const profile = qualityProfile;
     const current = window.__vibe_qualityStatus;
     window.__vibe_qualityStatus = {
       backend,
+      softwareWebGPU,
       level,
       shadowMapSize: profile.shadowMapSize,
       causticsEnabled: profile.causticsEnabled,
@@ -111,7 +112,7 @@ export const AdaptiveQualityManager = ({
       stressMode: current?.stressMode,
       fishCount: current?.fishCount,
     };
-  }, [isWebGPU, level]);
+  }, [isWebGPU, level, qualityProfile, softwareWebGPU]);
 
   useEffect(() => {
     return () => {
@@ -182,8 +183,8 @@ export const AdaptiveQualityManager = ({
         // Avoid upgrading beyond what the device DPR makes meaningful.
         const deviceMaxDpr = deviceMaxDprRef.current;
         const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
-        const nextProfile = getQualityProfile(next, backend, deviceMaxDpr);
-        const currentProfile = getQualityProfile(level, backend, deviceMaxDpr);
+        const nextProfile = getQualityProfile(next, backend, deviceMaxDpr, softwareWebGPU);
+        const currentProfile = qualityProfile;
         const dprDelta = nextProfile.dpr - currentProfile.dpr;
 
         if (dprDelta > 0.05 || nextProfile.shadowMapSize !== currentProfile.shadowMapSize) {

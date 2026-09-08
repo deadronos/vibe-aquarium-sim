@@ -13,6 +13,7 @@ import {
 } from 'three/tsl';
 import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
+import { AQUARIUM_PALETTE, CAUSTICS_MATERIAL } from '../../config/artDirection';
 
 // Extend so we can use <meshBasicNodeMaterial /> in JSX
 extend({ MeshBasicNodeMaterial });
@@ -31,10 +32,10 @@ interface TankCausticsNodeMaterialProps {
 }
 
 export const TankCausticsNodeMaterial = ({
-  color: colorProp = '#aaddff',
-  intensity = 0.85,
-  scale = 1.35,
-  speed = 0.45,
+  color: colorProp = AQUARIUM_PALETTE.waterHighlight,
+  intensity = CAUSTICS_MATERIAL.intensity,
+  scale = CAUSTICS_MATERIAL.scale,
+  speed = CAUSTICS_MATERIAL.speed,
 }: TankCausticsNodeMaterialProps) => {
   const t = time;
 

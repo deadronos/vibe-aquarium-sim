@@ -5,7 +5,11 @@ import { expect, test, type Page } from '@playwright/test';
 // treating a healthy but delayed startup as a flaky test.
 test.setTimeout(60_000);
 
-async function expectHealthyAquarium(page: Page, path = './') {
+async function expectHealthyAquarium(
+  page: Page,
+  path = './',
+  options: { expectDesktopHud?: boolean } = {}
+) {
   const pageErrors: string[] = [];
   const failedResponses: string[] = [];
 
@@ -15,7 +19,9 @@ async function expectHealthyAquarium(page: Page, path = './') {
   });
 
   await page.goto(path, { waitUntil: 'networkidle' });
-  await expect(page.getByText('Fish', { exact: true })).toBeVisible();
+  if (options.expectDesktopHud !== false) {
+    await expect(page.getByText('Fish', { exact: true })).toBeVisible();
+  }
   await expect(page.locator('canvas')).toBeVisible({ timeout: 20_000 });
 
   return { pageErrors, failedResponses };

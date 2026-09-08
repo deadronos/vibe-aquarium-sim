@@ -30,23 +30,37 @@ const WEBGPU_SHADOW_MAP_SIZES: Record<QualityLevel, number> = {
 export const getQualityProfile = (
   level: QualityLevel,
   backend: RendererBackend,
-  deviceMaxDpr = getDeviceMaxDpr()
+  deviceMaxDpr = getDeviceMaxDpr(),
+  softwareWebGPU = false
 ): QualityProfile => {
   const settings = getQualitySettings(level, deviceMaxDpr);
   const isLow = level === 'low';
-  const optionalEffectsEnabled = !isLow;
+  const softwareLimited = backend === 'webgpu' && softwareWebGPU;
+  const optionalEffectsEnabled = !isLow && !softwareLimited;
 
   return {
     ...settings,
+    dpr: softwareLimited ? Math.min(settings.dpr, 1) : settings.dpr,
     backend,
     causticsEnabled: optionalEffectsEnabled,
     fishRimLightingEnabled: optionalEffectsEnabled,
     fishSubsurfaceScatteringEnabled: optionalEffectsEnabled,
+    waterSurfaceUpgradeEnabled: settings.waterSurfaceUpgradeEnabled && optionalEffectsEnabled,
+    waterVolumeUpgradeEnabled: settings.waterVolumeUpgradeEnabled && optionalEffectsEnabled,
+    ambientParticlesEnabled: settings.ambientParticlesEnabled && optionalEffectsEnabled,
+    depthOfFieldEnabled: settings.depthOfFieldEnabled && optionalEffectsEnabled,
     spotLightShadowsEnabled: optionalEffectsEnabled,
-    tankTransmissionEnabled: backend === 'webgpu' && optionalEffectsEnabled,
-    tankTransmissionDispersionEnabled: backend === 'webgpu' && optionalEffectsEnabled,
+    // The tank is a four-pane shell. Thin tinted transparency keeps fish
+    // silhouettes stable across WebGL, native WebGPU, and software WebGPU;
+    // transmission on the merged shell produces pane-scale refraction artifacts.
+    tankTransmissionEnabled: false,
+    tankTransmissionDispersionEnabled: false,
     shadowMapSize: clampShadowMapSize(
-      backend === 'webgpu' ? WEBGPU_SHADOW_MAP_SIZES[level] : settings.shadowMapSize
+      backend === 'webgpu'
+        ? softwareLimited
+          ? WEBGPU_SHADOW_MAP_SIZES.low
+          : WEBGPU_SHADOW_MAP_SIZES[level]
+        : settings.shadowMapSize
     ),
   };
 };

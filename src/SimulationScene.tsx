@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 
 import * as THREE from 'three';
-import { supportsWebGPU } from './utils/rendererUtils';
+import { getWebGPUCapabilities } from './utils/rendererUtils';
 import {
   isWebGPURendererBackend,
   resolveRendererPreference,
@@ -37,8 +37,11 @@ import { AdaptiveQualityManager } from './performance/AdaptiveQualityManager';
 import { VisualQualityProvider } from './performance/VisualQualityProvider';
 import { useVisualQuality } from './performance/VisualQualityContext';
 import { getQualityProfile } from './performance/qualityProfile';
+import { getDeviceMaxDpr } from './performance/qualityPresets';
 import { useQualityStore } from './performance/qualityStore';
 import { Spawner } from './systems/Spawner';
+import { AQUARIUM_PALETTE, ART_DIRECTION_LIGHTING } from './config/artDirection';
+import { AquariumCamera } from './components/AquariumCamera';
 
 function SceneLights({
   directionalLightRef,
@@ -56,8 +59,9 @@ function SceneLights({
       {/* Directional key light to give stronger highlights */}
       <directionalLight
         ref={directionalLightRef}
-        position={[1.5, 3, 1]}
-        intensity={1.2}
+        position={[1.8, 3.4, 2.6]}
+        color={ART_DIRECTION_LIGHTING.keyColor}
+        intensity={ART_DIRECTION_LIGHTING.keyIntensity}
         castShadow
         shadow-mapSize-width={initialShadowMapSize}
         shadow-mapSize-height={initialShadowMapSize}
@@ -65,10 +69,11 @@ function SceneLights({
       {/* Soft spot to add depth & visible speculars */}
       <spotLight
         ref={spotLightRef}
-        position={[2, 4, 2]}
-        angle={0.6}
-        penumbra={0.6}
-        intensity={1.2}
+        position={[-2.4, 2.6, 1.8]}
+        angle={0.72}
+        penumbra={0.82}
+        intensity={0.42}
+        color="#d8c6a7"
         castShadow={spotLightShadowsEnabled}
         shadow-mapSize-width={initialShadowMapSize}
         shadow-mapSize-height={initialShadowMapSize}
@@ -84,6 +89,7 @@ export default function SimulationScene() {
     ctor: new (...args: any[]) => any;
     type: RendererKind;
     initialShadowMapSize: number;
+    softwareWebGPU: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -91,8 +97,11 @@ export default function SimulationScene() {
     const requested = resolveRendererPreference(window.location.search);
 
     const initializeRenderer = async () => {
-      const webgpuAvailable = requested === 'webgpu' ? await supportsWebGPU() : false;
-      const selected = selectRenderer(requested, webgpuAvailable);
+      const webgpuCapabilities =
+        requested === 'webgpu'
+          ? await getWebGPUCapabilities()
+          : { available: false, softwareAdapter: false };
+      const selected = selectRenderer(requested, webgpuCapabilities.available);
 
       if (selected === 'webgpu') {
         try {
@@ -103,8 +112,13 @@ export default function SimulationScene() {
           setRendererConfig({
             ctor: WebGPURenderer,
             type: 'webgpu',
-            initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgpu')
-              .shadowMapSize,
+            initialShadowMapSize: getQualityProfile(
+              useQualityStore.getState().level,
+              'webgpu',
+              getDeviceMaxDpr(),
+              webgpuCapabilities.softwareAdapter
+            ).shadowMapSize,
+            softwareWebGPU: webgpuCapabilities.softwareAdapter,
           });
           return;
         } catch (error) {
@@ -122,6 +136,7 @@ export default function SimulationScene() {
         type: 'webgl',
         initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
           .shadowMapSize,
+        softwareWebGPU: false,
       });
       window.__vibe_rendererStatus = {
         requested,
@@ -142,7 +157,10 @@ export default function SimulationScene() {
   if (!rendererConfig) return null;
 
   return (
-    <VisualQualityProvider isWebGPU={rendererConfig.type === 'webgpu'}>
+    <VisualQualityProvider
+      isWebGPU={rendererConfig.type === 'webgpu'}
+      softwareWebGPU={rendererConfig.softwareWebGPU}
+    >
       <Canvas
         camera={{ position: [0, 0, 4.5], fov: 50 }}
         shadows="percentage"
@@ -171,6 +189,7 @@ export default function SimulationScene() {
               type: 'webgl',
               initialShadowMapSize: getQualityProfile(useQualityStore.getState().level, 'webgl')
                 .shadowMapSize,
+              softwareWebGPU: false,
             });
             window.__vibe_rendererStatus = {
               requested: 'webgpu',
@@ -211,7 +230,7 @@ export default function SimulationScene() {
 
           // Apply common configurations
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.0;
+          renderer.toneMappingExposure = ART_DIRECTION_LIGHTING.exposure;
           renderer.outputColorSpace = THREE.SRGBColorSpace;
 
           // If using WebGL renderer, detect whether the context is WebGL2 and log it
@@ -235,7 +254,8 @@ export default function SimulationScene() {
           return renderer;
         }}
       >
-        <color attach="background" args={['#0a0a0a']} />
+        <color attach="background" args={[AQUARIUM_PALETTE.sceneBackground]} />
+        <AquariumCamera />
 
         <Physics gravity={[0, -9.81, 0]}>
           <AdaptiveQualityManager
@@ -243,15 +263,23 @@ export default function SimulationScene() {
             spotLightRef={spotLightRef}
           />
           <LivingRoom />
-          {/* Gentle indoor ambient */}
-          <hemisphereLight color={0xdcdce0} groundColor={0x8a7c6f} intensity={0.5} />
+          {/* Broad room light stays quiet so the tank remains the focal plane. */}
+          <hemisphereLight
+            color={ART_DIRECTION_LIGHTING.hemisphereSky}
+            groundColor={ART_DIRECTION_LIGHTING.hemisphereGround}
+            intensity={ART_DIRECTION_LIGHTING.hemisphereIntensity}
+          />
           <SceneLights
             directionalLightRef={directionalLightRef}
             spotLightRef={spotLightRef}
             initialShadowMapSize={rendererConfig.initialShadowMapSize}
           />
-          {/* Cool fill from back */}
-          <pointLight position={[-2, -2, -2]} intensity={0.5} color="#004488" />
+          {/* Cool fill from the tank side keeps fish readable without a neon rim. */}
+          <pointLight
+            position={[-2, -1.5, -2]}
+            intensity={ART_DIRECTION_LIGHTING.waterFillIntensity}
+            color={ART_DIRECTION_LIGHTING.waterFillColor}
+          />
           {/* Environment map for realistic PBR reflections */}
           {/* Environment map for realistic PBR reflections */}
           {/* Use manual loader to avoid deprecated RGBELoader in drei preset */}
@@ -285,7 +313,7 @@ export default function SimulationScene() {
         <AmbientParticles />
         <PostProcessing isWebGPU={rendererConfig.type === 'webgpu'} />
 
-        <OrbitControls target={[0, 0, 0]} />
+        <OrbitControls makeDefault target={[0, 0, 0]} />
       </Canvas>
     </VisualQualityProvider>
   );

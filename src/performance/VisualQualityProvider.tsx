@@ -8,30 +8,52 @@ import { VisualQualityContext, type VisualQualityContextValue } from './VisualQu
 export const VisualQualityProvider = ({
   children,
   isWebGPU = false,
+  softwareWebGPU = false,
 }: {
   children: ReactNode;
   isWebGPU?: boolean;
+  softwareWebGPU?: boolean;
 }) => {
   const settings = useQualityStore((s) => s.settings);
 
   const overrides = useGameStore((s) => s.visualQualityOverrides ?? {});
 
   const value = useMemo<VisualQualityContextValue>(() => {
-    const qualityProfile = getQualityProfile(settings.level, isWebGPU ? 'webgpu' : 'webgl');
+    const qualityProfile = getQualityProfile(
+      settings.level,
+      isWebGPU ? 'webgpu' : 'webgl',
+      undefined,
+      softwareWebGPU
+    );
+    const optionalOverride = (value: boolean, override: boolean | undefined) =>
+      softwareWebGPU ? false : (override ?? value);
     const mergedProfile = {
       ...qualityProfile,
-      causticsEnabled: overrides.causticsEnabled ?? qualityProfile.causticsEnabled,
-      fishRimLightingEnabled:
-        overrides.fishRimLightingEnabled ?? qualityProfile.fishRimLightingEnabled,
-      fishSubsurfaceScatteringEnabled:
-        overrides.fishSubsurfaceScatteringEnabled ?? qualityProfile.fishSubsurfaceScatteringEnabled,
-      waterSurfaceUpgradeEnabled:
-        overrides.waterSurfaceUpgradeEnabled ?? qualityProfile.waterSurfaceUpgradeEnabled,
-      waterVolumeUpgradeEnabled:
-        overrides.waterVolumeUpgradeEnabled ?? qualityProfile.waterVolumeUpgradeEnabled,
-      ambientParticlesEnabled:
-        overrides.ambientParticlesEnabled ?? qualityProfile.ambientParticlesEnabled,
-      depthOfFieldEnabled: overrides.depthOfFieldEnabled ?? qualityProfile.depthOfFieldEnabled,
+      causticsEnabled: optionalOverride(qualityProfile.causticsEnabled, overrides.causticsEnabled),
+      fishRimLightingEnabled: optionalOverride(
+        qualityProfile.fishRimLightingEnabled,
+        overrides.fishRimLightingEnabled
+      ),
+      fishSubsurfaceScatteringEnabled: optionalOverride(
+        qualityProfile.fishSubsurfaceScatteringEnabled,
+        overrides.fishSubsurfaceScatteringEnabled
+      ),
+      waterSurfaceUpgradeEnabled: optionalOverride(
+        qualityProfile.waterSurfaceUpgradeEnabled,
+        overrides.waterSurfaceUpgradeEnabled
+      ),
+      waterVolumeUpgradeEnabled: optionalOverride(
+        qualityProfile.waterVolumeUpgradeEnabled,
+        overrides.waterVolumeUpgradeEnabled
+      ),
+      ambientParticlesEnabled: optionalOverride(
+        qualityProfile.ambientParticlesEnabled,
+        overrides.ambientParticlesEnabled
+      ),
+      depthOfFieldEnabled: optionalOverride(
+        qualityProfile.depthOfFieldEnabled,
+        overrides.depthOfFieldEnabled
+      ),
       adaptiveInstanceUpdatesEnabled:
         overrides.adaptiveInstanceUpdatesEnabled ?? qualityProfile.adaptiveInstanceUpdatesEnabled,
       adaptiveSchedulerEnabled:
@@ -41,10 +63,12 @@ export const VisualQualityProvider = ({
     return {
       ...mergedProfile,
       isWebGPU,
+      softwareWebGPU,
       qualityProfile: mergedProfile,
     };
   }, [
     isWebGPU,
+    softwareWebGPU,
     settings.level,
     overrides.ambientParticlesEnabled,
     overrides.causticsEnabled,

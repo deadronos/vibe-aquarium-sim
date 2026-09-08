@@ -55,5 +55,20 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      - name: Install software Vulkan and virtual display
+        run: sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb xauth
+
       - name: Browser smoke test
-        run: npm run test:smoke
+        # Linux WebGPU screenshots need the presenting compositor, not the
+        # headless capture path. Xvfb provides a display without a physical GPU.
+        run: xvfb-run --auto-servernum npm run test:smoke -- --headed
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14

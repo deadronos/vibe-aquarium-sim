@@ -25,3 +25,4 @@
 - [TASK013] Record tank material values & create design doc (DES015) - Completed (2026-01-13)
 - [TASK015] Fix build + code-splitting + lazy-load Rapier - Completed (2026-01-14)
 - [TASK016] Fix InstancedMesh matrix update bug (single fish rendered) - Completed (2026-01-14)
+- [TASK018] Establish cohesive aquarium visuals - Completed (2026-09-04)
