@@ -24,9 +24,11 @@ export default defineConfig({
         '--enable-unsafe-webgpu',
         ...(process.platform === 'linux'
           ? [
-              '--use-angle=swiftshader',
-              '--enable-unsafe-swiftshader',
+              '--enable-features=Vulkan',
+              '--use-angle=vulkan',
+              '--use-vulkan=swiftshader',
               '--use-webgpu-adapter=swiftshader',
+              '--disable-vulkan-surface',
             ]
           : []),
       ],

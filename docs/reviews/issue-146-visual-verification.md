@@ -26,6 +26,8 @@ The previous run failed the mobile interaction flow at keyboard navigation and r
 
 The first review-revision CI run passed all eleven WebGL/mobile checks but exposed Linux WebGPU device loss immediately after initialization (`Instance dropped in popErrorScope`, followed by buffer-allocation errors). ANGLE's `--use-angle=swiftshader` selects the WebGL adapter, not Dawn's WebGPU adapter. Linux tests now also explicitly select `--use-webgpu-adapter=swiftshader`, the adapter-selection flag documented by [Dawn's test harness](https://dawn.googlesource.com/dawn.git/+/refs/heads/chromium/7690/webgpu-cts/). Adapter details are attached to the report and duplicate errors are collapsed without ignoring failures.
 
+Selecting the adapter alone did not fix the second run. Linux CI now installs the Vulkan loader/Mesa drivers and runs headed Chromium under Xvfb with the complete software-Vulkan configuration (`Vulkan`, `use-angle=vulkan`, `use-vulkan=swiftshader`, `use-webgpu-adapter=swiftshader`, `disable-vulkan-surface`). This follows the [documented Linux render/capture setup](https://github.com/vercel-labs/agent-browser/blob/main/skill-data/core/references/webgpu.md): Linux's headless WebGPU presentation path is not suitable for screenshot verification. Local macOS checks continue using native Metal in headless Chromium.
+
 ## Review evidence
 
 Local verification on 2026-09-07: 223 unit/integration tests passed, one existing placeholder skipped; all 15 browser tests passed (31.9 seconds), including the eight real-backend visual cases. Formatting, lint, both typechecks, production build, and bundle budgets passed (JavaScript 1,416,432 gzip bytes / 1,700,000 allowed).
