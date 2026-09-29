@@ -1,3 +1,13 @@
+export type {
+  VibeDebugCollector,
+  VibeRenderEntry,
+  VibeRenderStatus,
+  VibeSchedEntry,
+  VibeSchedStatus,
+  VibeSchedulerTuningEntry,
+  VibeSimEntry,
+} from '../declarations';
+
 export function ensurePerfDebug() {
   if (typeof window === 'undefined') return null;
   const w = window;

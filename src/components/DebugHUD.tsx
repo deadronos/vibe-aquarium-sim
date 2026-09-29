@@ -1,68 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useQualityStore } from '../performance/qualityStore';
 import { ensurePerfDebug } from '../utils/perfDebug';
+import type { VibeRenderStatus, VibeSchedStatus } from '../utils/perfDebug';
 
 import './DebugHUD.css';
 
-type RenderStatus = {
-  ema: number;
-  updateFreq?: number;
-  activeEntities?: number;
-  frameDuration?: number;
-} | null;
-type SchedStatus = { ema: number; fixedStepHz?: number; lastDuration?: number } | null;
 type TransportStatus = VibeTransportStatus | null;
 type Counts = { simulate: number; render: number; fishUse: number; scheduler: number } | null;
 
-declare global {
-  interface SimEntry {
-    duration: number;
-    time?: number;
-    fishCount?: number;
-  }
-  interface RenderEntry {
-    frame?: number;
-    duration: number;
-    counts?: { countA: number; countB: number; countC: number };
-    activeEntities?: number;
-    updateFreq?: number;
-    ema?: number;
-    flushed?: number;
-  }
-  interface SchedEntry {
-    duration: number;
-    subSteps?: number;
-    time?: number;
-    ema?: number;
-  }
-  interface SchedulerTuningEntry {
-    time: number;
-    action: 'reduce' | 'restore';
-    from?: number;
-    to: number;
-  }
-
-  interface Window {
-    __vibe_renderStatus?: RenderStatus;
-    __vibe_schedStatus?: SchedStatus;
-    __vibe_debug?: {
-      simulateStep: SimEntry[];
-      fishRender: RenderEntry[];
-      fishUseFrame: Array<{ duration: number; modelIndex: number | null }>;
-      scheduler?: SchedEntry[];
-      schedulerTuning?: SchedulerTuningEntry[];
-      qualityTransitions?: VibeQualityTransitionEntry[];
-      transport?: TransportStatus;
-      reset?: () => void;
-      download?: () => boolean;
-    };
-    __vibe_addFish?: (n: number) => number;
-  }
-}
-
 export const DebugHUD: React.FC = () => {
-  const [renderStatus, setRenderStatus] = useState<RenderStatus>(null);
-  const [schedStatus, setSchedStatus] = useState<SchedStatus>(null);
+  const [renderStatus, setRenderStatus] = useState<VibeRenderStatus>(null);
+  const [schedStatus, setSchedStatus] = useState<VibeSchedStatus>(null);
   const [transportStatus, setTransportStatus] = useState<TransportStatus>(null);
   const [counts, setCounts] = useState<Counts>(null);
 
