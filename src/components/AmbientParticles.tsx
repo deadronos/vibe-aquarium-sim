@@ -6,6 +6,7 @@ import { useVisualQuality } from '../performance/VisualQualityContext';
 import { TANK_DIMENSIONS } from '../config/constants';
 import { useQualityStore } from '../performance/qualityStore';
 import { logShaderOnce } from '../utils/shaderDebug';
+import { TONEMAP_COLORSPACE_INCLUDES } from '../shaders/glsl/common';
 import { ParticleNodeMaterial } from './materials/ParticleNodeMaterial';
 
 type ParticleUniforms = {
@@ -98,8 +99,7 @@ const particleFragmentShader = /* glsl */ `
     gl_FragColor = vec4(color, opacity * alpha * twinkle);
 
     // Managed output parity with built-in and WebGPU node materials.
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
+    ${TONEMAP_COLORSPACE_INCLUDES}
   }
 `;
 
