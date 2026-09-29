@@ -45,12 +45,17 @@ describe('single debug/perf type source', () => {
     expect(decls).toMatch(/export type VibeSchedulerTuningEntry =/);
   });
 
-  it('does not redeclare debug types inside DebugHUD', () => {
+  it('does not redeclare debug types inside the debug HUD modules', () => {
     const hud = read('src/components/DebugHUD.tsx');
-    expect(hud).not.toMatch(/declare global/);
-    expect(hud).not.toMatch(/interface Window/);
-    expect(hud).not.toMatch(/interface (SimEntry|RenderEntry|SchedEntry|SchedulerTuningEntry)\b/);
-    expect(hud).toMatch(/from '\.\.\/utils\/perfDebug'/);
+    const snapshot = read('src/components/debug/useVibeDebugSnapshot.ts');
+    for (const source of [hud, snapshot]) {
+      expect(source).not.toMatch(/declare global/);
+      expect(source).not.toMatch(/interface Window/);
+      expect(source).not.toMatch(
+        /interface (SimEntry|RenderEntry|SchedEntry|SchedulerTuningEntry)\b/
+      );
+    }
+    expect(snapshot).toMatch(/from '\.\.\/\.\.\/utils\/perfDebug'/);
   });
 
   it('keeps a single Window augmentation across src', () => {
