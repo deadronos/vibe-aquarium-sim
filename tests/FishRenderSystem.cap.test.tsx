@@ -10,7 +10,7 @@ import { resetInstanceCapWarnings } from '../src/systems/instanceCapWarning';
 import { world } from '../src/store';
 import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
-import { makeScene } from './support/fishScenes';
+import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
 
 // Capture frame callbacks so tests can invoke them deterministically
@@ -50,7 +50,11 @@ describe('FishRenderSystem instance cap warning', () => {
     resetUseGLTFMock();
     resetInstanceCapWarnings();
 
-    setUseGLTFScenes([makeScene(0xff0000), makeScene(0x00ff00), makeScene(0x0000ff)]);
+    setUseGLTFScenes([
+      makeScene(0xff0000, FISH_SCENE_DIMENSIONS),
+      makeScene(0x00ff00, FISH_SCENE_DIMENSIONS),
+      makeScene(0x0000ff, FISH_SCENE_DIMENSIONS),
+    ]);
 
     act(() => {
       useGameStore.setState({ visualQualityOverrides: {} });

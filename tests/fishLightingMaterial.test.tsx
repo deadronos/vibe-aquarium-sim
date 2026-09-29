@@ -58,7 +58,11 @@ describe('fish lighting material injection', () => {
     });
 
     // Ensure the mocked GLTF loader returns stable, Three-backed scenes.
-    setUseGLTFScenes([makeScene(0xff0000), makeScene(0x00ff00), makeScene(0x0000ff)]);
+    const matA = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const matB = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const matC = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+
+    setUseGLTFScenes([makeScene(matA), makeScene(matB), makeScene(matC)]);
   });
 
   afterEach(() => {
