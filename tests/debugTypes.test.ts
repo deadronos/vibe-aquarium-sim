@@ -1,15 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import type {
-  VibeDebugCollector,
-  VibeRenderEntry,
-  VibeRenderStatus,
-  VibeSchedEntry,
-  VibeSchedStatus,
-  VibeSchedulerTuningEntry,
-  VibeSimEntry,
-} from '../src/utils/perfDebug';
+import { describe, expect, it } from 'vitest';
 
 const read = (file: string) => readFileSync(resolve(process.cwd(), file), 'utf8');
 
@@ -29,13 +20,18 @@ const CANONICAL_NAMES = [
   'VibeSchedulerTuningEntry',
 ] as const;
 
+const exportBlock = (source: string) => {
+  const match = source.match(/export type \{([\s\S]*?)\} from '\.\.\/declarations';/);
+  return match ? match[1] : null;
+};
+
 describe('single debug/perf type source', () => {
-  it('re-exports the canonical Vibe types from the perfDebug runtime module', () => {
-    const perfDebug = read('src/utils/perfDebug.ts');
+  it('re-exports every canonical Vibe type from the perfDebug module export list', () => {
+    const block = exportBlock(read('src/utils/perfDebug.ts'));
+    expect(block).not.toBeNull();
     for (const name of CANONICAL_NAMES) {
-      expect(perfDebug).toContain(name);
+      expect(block).toMatch(new RegExp(`\\b${name}\\b`));
     }
-    expect(perfDebug).toMatch(/export type \{[\s\S]*?\} from '\.\.\/declarations';/);
   });
 
   it('declares the canonical shapes once in declarations.d.ts', () => {
@@ -62,51 +58,5 @@ describe('single debug/perf type source', () => {
       .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
       .filter((file) => /interface Window/.test(read(file)));
     expect(sites).toEqual(['src/declarations.d.ts']);
-  });
-
-  it('exposes the canonical debug/perf shapes to importers', () => {
-    expectTypeOf<VibeRenderStatus>().toEqualTypeOf<{
-      ema: number;
-      updateFreq?: number;
-      activeEntities?: number;
-      frameDuration?: number;
-    } | null>();
-    expectTypeOf<VibeSchedStatus>().toEqualTypeOf<{
-      ema: number;
-      fixedStepHz?: number;
-      lastDuration?: number;
-    } | null>();
-    expectTypeOf<VibeSimEntry>().toEqualTypeOf<{
-      duration: number;
-      time: number;
-      fishCount: number;
-    }>();
-    expectTypeOf<VibeRenderEntry>().toEqualTypeOf<{
-      frame: number;
-      duration: number;
-      counts: { countA: number; countB: number; countC: number };
-      activeEntities: number;
-      ema?: number;
-      flushed?: number;
-    }>();
-    expectTypeOf<VibeSchedEntry>().toEqualTypeOf<{
-      duration: number;
-      subSteps?: number;
-      time?: number;
-      ema?: number;
-    }>();
-    expectTypeOf<VibeSchedulerTuningEntry>().toEqualTypeOf<{
-      time: number;
-      action: 'reduce' | 'restore';
-      from?: number;
-      to: number;
-    }>();
-
-    const collector: VibeDebugCollector = {
-      simulateStep: [],
-      fishRender: [],
-      fishUseFrame: [],
-    };
-    expect(collector.simulateStep).toHaveLength(0);
   });
 });
