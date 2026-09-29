@@ -58,5 +58,9 @@ void main() {
 
   float alpha = surfaceOpacity * (0.2 + 0.8 * fresnel) + glint * 0.35;
   gl_FragColor = vec4(color, clamp(alpha, 0.0, 0.9));
+
+  // Managed output parity with built-in and WebGPU node materials.
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;

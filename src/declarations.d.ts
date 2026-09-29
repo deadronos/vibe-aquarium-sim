@@ -90,6 +90,7 @@ declare global {
   interface Window {
     __vibe_addFish?: (n: number) => number;
     __vibe_poc_enabled?: boolean;
+    __vibe_test?: import('./utils/testHarness').VibeTestHarness;
     __vibe_debug?: VibeDebugCollector;
     __vibe_renderStatus?: VibeRenderStatus;
     __vibe_schedStatus?: VibeSchedStatus;

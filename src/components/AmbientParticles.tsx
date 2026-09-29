@@ -96,6 +96,10 @@ const particleFragmentShader = /* glsl */ `
     float twinkle = 0.6 + 0.4 * sin(vSeed * 99.0 + color.r); 
 
     gl_FragColor = vec4(color, opacity * alpha * twinkle);
+
+    // Managed output parity with built-in and WebGPU node materials.
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }
 `;
 
