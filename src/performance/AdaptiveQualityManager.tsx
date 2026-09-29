@@ -77,10 +77,7 @@ export const AdaptiveQualityManager = ({
       size: number
     ): void => {
       if (!ref?.current || isWebGPU) return;
-      if (
-        lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== size
-      ) {
+      if (lastAppliedShadowSizeRef.current === null || lastAppliedShadowSizeRef.current !== size) {
         applyQualityShadowMap(ref.current, size, backend);
       }
     };

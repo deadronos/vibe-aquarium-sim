@@ -19,12 +19,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three';
 import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../../config/artDirection';
-import {
-  AXIS_Y,
-  registerNodeMaterial,
-  resolveThreeColor,
-  tslSafeNormalize,
-} from './materialUtils';
+import { AXIS_Y, registerNodeMaterial, resolveThreeColor, tslSafeNormalize } from './materialUtils';
 
 registerNodeMaterial('MeshBasicNodeMaterial', MeshBasicNodeMaterial);
 

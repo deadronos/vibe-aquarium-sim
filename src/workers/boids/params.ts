@@ -1,9 +1,6 @@
 import type { SpeciesParams } from './types';
 
-export function deriveCellSize(
-  species: SpeciesParams[],
-  boids: { neighborDist: number }
-): number {
+export function deriveCellSize(species: SpeciesParams[], boids: { neighborDist: number }): number {
   // We use neighborDist for the grid to keep it efficient.
   // Using the largest neighborDist among species or a sensible default.
   let maxNeighborDist = 0;

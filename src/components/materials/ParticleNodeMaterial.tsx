@@ -64,9 +64,7 @@ export const ParticleNodeMaterial = ({
     .add(cos(flutterTime.mul(1.5)).mul(0.03));
 
   // Construction of vec3 from nodes needs to be careful
-  const flutterVec = AXIS_X.mul(flutterX)
-    .add(AXIS_Y.mul(flutterY))
-    .add(AXIS_Z.mul(flutterZ));
+  const flutterVec = AXIS_X.mul(flutterX).add(AXIS_Y.mul(flutterY)).add(AXIS_Z.mul(flutterZ));
 
   const finalP = wrappedP.add(flutterVec);
 

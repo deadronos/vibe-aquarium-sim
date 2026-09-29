@@ -1,8 +1,6 @@
 import type { SimulationInput } from '../../src/workers/boids/types';
 
-export function createSimulationInput(
-  overrides: Partial<SimulationInput> = {}
-): SimulationInput {
+export function createSimulationInput(overrides: Partial<SimulationInput> = {}): SimulationInput {
   const fishCount = overrides.fishCount ?? 2;
   const foodCount = overrides.foodCount ?? 1;
 

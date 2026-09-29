@@ -3,19 +3,11 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 
 import { TANK_DIMENSIONS } from '../../config/constants';
 
-export const BACKPLATE_Z =
-  -TANK_DIMENSIONS.depth / 2 + TANK_DIMENSIONS.wallThickness * 0.55;
+export const BACKPLATE_Z = -TANK_DIMENSIONS.depth / 2 + TANK_DIMENSIONS.wallThickness * 0.55;
 
 export const CAUSTICS_OVERLAY_INSET = 0.003;
 
-export const createWall = (
-  w: number,
-  h: number,
-  d: number,
-  x: number,
-  y: number,
-  z: number
-) => {
+export const createWall = (w: number, h: number, d: number, x: number, y: number, z: number) => {
   const geo = new BoxGeometry(w, h, d);
   geo.translate(x, y, z);
   return geo;

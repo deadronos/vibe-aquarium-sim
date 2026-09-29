@@ -16,17 +16,14 @@ import { bootstrapRenderer, type RendererConfig } from './systems/renderer/rende
 export default function SimulationScene() {
   const directionalLightRef: MutableRefObject<THREE.DirectionalLight | null> =
     useRef<THREE.DirectionalLight | null>(null);
-  const spotLightRef: MutableRefObject<THREE.SpotLight | null> =
-    useRef<THREE.SpotLight | null>(null);
+  const spotLightRef: MutableRefObject<THREE.SpotLight | null> = useRef<THREE.SpotLight | null>(
+    null
+  );
   const [rendererConfig, setRendererConfig] = useState<RendererConfig | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void bootstrapRenderer(
-      window.location.search,
-      () => cancelled,
-      setRendererConfig
-    );
+    void bootstrapRenderer(window.location.search, () => cancelled, setRendererConfig);
     return () => {
       cancelled = true;
     };

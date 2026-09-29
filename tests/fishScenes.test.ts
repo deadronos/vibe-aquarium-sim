@@ -27,7 +27,8 @@ describe('makeScene fixture', () => {
   });
 
   it('defaults to a 1x1x1 box', () => {
-    const geometry = firstMesh(makeScene(new THREE.MeshStandardMaterial())).geometry as THREE.BoxGeometry;
+    const geometry = firstMesh(makeScene(new THREE.MeshStandardMaterial()))
+      .geometry as THREE.BoxGeometry;
 
     expect(geometry.parameters.width).toBe(1);
     expect(geometry.parameters.height).toBe(1);
@@ -35,7 +36,8 @@ describe('makeScene fixture', () => {
   });
 
   it('honours explicitly requested dimensions', () => {
-    const geometry = firstMesh(makeScene(0x0000ff, FISH_SCENE_DIMENSIONS)).geometry as THREE.BoxGeometry;
+    const geometry = firstMesh(makeScene(0x0000ff, FISH_SCENE_DIMENSIONS))
+      .geometry as THREE.BoxGeometry;
 
     expect(geometry.parameters.width).toBe(0.2);
     expect(geometry.parameters.height).toBe(0.1);

@@ -3,7 +3,11 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
 import React, { act } from 'react';
 
-const { useFrame: useFrameSpy, getFrameCallback, resetUseFrameMock } = await vi.hoisted(async () => {
+const {
+  useFrame: useFrameSpy,
+  getFrameCallback,
+  resetUseFrameMock,
+} = await vi.hoisted(async () => {
   const { createUseFrameMock } = await import('./support/r3fMocks');
   return createUseFrameMock('replace');
 });

@@ -7,7 +7,11 @@ import { useGameStore } from '../src/gameStore';
 import { TankCausticsOverlay } from '../src/components/Tank';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
 
-const { useFrame: useFrameSpy, getFrameCallback, resetUseFrameMock } = await vi.hoisted(async () => {
+const {
+  useFrame: useFrameSpy,
+  getFrameCallback,
+  resetUseFrameMock,
+} = await vi.hoisted(async () => {
   const { createUseFrameMock } = await import('./support/r3fMocks');
   return createUseFrameMock('replace');
 });

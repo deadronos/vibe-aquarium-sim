@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  causticsFragmentShader,
-  causticsVertexShader,
-} from '../src/shaders/causticsShader';
+import { causticsFragmentShader, causticsVertexShader } from '../src/shaders/causticsShader';
 import { waterFragmentShader, waterVertexShader } from '../src/shaders/waterShader';
 import {
   waterSurfaceFragmentShader,
@@ -115,7 +112,11 @@ describe('shared glsl chunks', () => {
       expect(source, `${name} should declare EPS=1e-6`).toContain('const float EPS = 1e-6;');
     }
 
-    for (const name of ['causticsVertexShader', 'waterVertexShader', 'waterFragmentShader'] as const) {
+    for (const name of [
+      'causticsVertexShader',
+      'waterVertexShader',
+      'waterFragmentShader',
+    ] as const) {
       expect(safeNormalizeShaders[name], `${name} should use EPS guard`).toContain(
         'max(dot(v, v), EPS)'
       );

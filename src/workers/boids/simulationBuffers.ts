@@ -1,8 +1,4 @@
-import type {
-  SimulationInput,
-  SimulationOutput,
-  SimulationOutputTarget,
-} from './types';
+import type { SimulationInput, SimulationOutput, SimulationOutputTarget } from './types';
 
 export type SimulationInputStorage = {
   positions: Float32Array<ArrayBufferLike>;

@@ -29,9 +29,7 @@ describe('clampToSimulationBounds', () => {
 
   it('passes through values inside the bounds', () => {
     expect(clampToSimulationBounds(0)).toBe(0);
-    expect(clampToSimulationBounds(SIMULATION_BOUNDS.x - 0.1)).toBe(
-      SIMULATION_BOUNDS.x - 0.1
-    );
+    expect(clampToSimulationBounds(SIMULATION_BOUNDS.x - 0.1)).toBe(SIMULATION_BOUNDS.x - 0.1);
   });
 
   it('uses the axis bound supplied by the caller', () => {

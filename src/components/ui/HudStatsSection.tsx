@@ -16,12 +16,7 @@ export const HudStatsSection = ({
   open,
   onToggle,
 }: HudStatsSectionProps) => (
-  <HudSection
-    title="Aquarium Stats"
-    open={open}
-    onToggle={onToggle}
-    titleClassName="hud-title"
-  >
+  <HudSection title="Aquarium Stats" open={open} onToggle={onToggle} titleClassName="hud-title">
     <div className="hud-stat">
       <span className="hud-stat-label">Fish</span>
       <span className="hud-stat-value">{fishCount}</span>
