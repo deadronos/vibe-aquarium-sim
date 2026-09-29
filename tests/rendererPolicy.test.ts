@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  createWebGLRendererConfig,
+  createRendererOptions,
   isWebGPURendererBackend,
   resolveRendererPreference,
   selectRenderer,
@@ -43,7 +43,7 @@ describe('renderer policy', () => {
   });
 
   it('builds renderer options that preserve incoming props', () => {
-    expect(createWebGLRendererConfig({ canvas: 'ctx' })).toEqual({
+    expect(createRendererOptions({ canvas: 'ctx' })).toEqual({
       canvas: 'ctx',
       powerPreference: 'high-performance',
       antialias: true,

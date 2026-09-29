@@ -3,7 +3,7 @@ import type { CanvasProps } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import {
-  createWebGLRendererConfig,
+  createRendererOptions,
   isWebGPURendererBackend,
   setRendererStatus,
   toRendererBackend,
@@ -25,12 +25,12 @@ function createRendererGl(
   return async (props: any) => {
     const Renderer = rendererConfig.ctor;
     let activeRendererType = rendererConfig.type;
-    let renderer = new Renderer(createWebGLRendererConfig(props));
+    let renderer = new Renderer(createRendererOptions(props));
 
     const fallbackToWebGL = async () => {
       renderer.dispose?.();
       const { WebGLRenderer } = await import('three');
-      renderer = new WebGLRenderer(createWebGLRendererConfig(props));
+      renderer = new WebGLRenderer(createRendererOptions(props));
       activeRendererType = 'webgl';
       setRendererConfig({
         ctor: WebGLRenderer,

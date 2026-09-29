@@ -42,8 +42,11 @@ export function setRendererStatus(status: VibeRendererStatus): void {
   window.__vibe_rendererStatus = status;
 }
 
-/** Builds the shared renderer options applied to WebGL renderer instances. */
-export function createWebGLRendererConfig<T extends object>(props: T) {
+/**
+ * Builds the shared renderer options applied to every renderer we construct —
+ * both the WebGL renderer and the WebGPU wrapper receive this same shape.
+ */
+export function createRendererOptions<T extends object>(props: T) {
   return {
     ...props,
     powerPreference: 'high-performance' as const,

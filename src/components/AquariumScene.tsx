@@ -60,9 +60,8 @@ export function AquariumScene({
         intensity={ART_DIRECTION_LIGHTING.waterFillIntensity}
         color={ART_DIRECTION_LIGHTING.waterFillColor}
       />
-      {/* Environment map for realistic PBR reflections */}
-      {/* Environment map for realistic PBR reflections */}
-      {/* Use manual loader to avoid deprecated RGBELoader in drei preset */}
+      {/* Environment map for realistic PBR reflections.
+          Use manual loader to avoid deprecated RGBELoader in drei preset. */}
       <EnvironmentMap />
 
       <Tank />
