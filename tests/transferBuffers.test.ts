@@ -14,43 +14,20 @@ import {
   type TransferableSimulationJobMessage,
 } from '../src/workers/boids/transferBuffers';
 import type { SimulationInput } from '../src/workers/boids/types';
+import { createSimulationInput } from './support/simulationInput';
 
 describe('transferable boids buffers', () => {
-  const createInput = (overrides: Partial<SimulationInput> = {}): SimulationInput => {
-    const fishCount = overrides.fishCount ?? 2;
-    const foodCount = overrides.foodCount ?? 1;
-
-    return {
+  const createInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
+    createSimulationInput({
       snapshotRevision: 7,
-      fishCount,
       positions: new Float32Array([1, 2, 3, 4, 5, 6]),
       velocities: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
       speciesIndices: new Int32Array([2, 1]),
-      species: [
-        {
-          maxSpeed: 5,
-          maxForce: 0.1,
-          neighborDist: 10,
-          separationDist: 5,
-          weights: { separation: 2, alignment: 1, cohesion: 1 },
-        },
-      ],
-      foodCount,
       foodPositions: new Float32Array([9, 8, 7]),
       time: 1.5,
-      boids: { neighborDist: 10, separationDist: 5, maxSpeed: 5, maxForce: 0.1 },
       bounds: { x: 100, y: 50, z: 100 },
-      water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 },
-      current: {
-        strength: 0.03,
-        frequency1: 0.2,
-        frequency2: 0.13,
-        spatialScale1: 0.5,
-        spatialScale2: 0.3,
-      },
       ...overrides,
-    };
-  };
+    });
 
   it('copies a reusable simulation snapshot into owned transfer buffers', () => {
     const input = createInput();

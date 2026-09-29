@@ -18,37 +18,19 @@ import {
   type BoidsWorkerResponse,
 } from '../src/workers/boids/sharedBuffers';
 import type { SimulationInput } from '../src/workers/boids/types';
+import { createSimulationInput } from './support/simulationInput';
 
 describe('transferable boids worker protocol', () => {
-  const createInput = (): SimulationInput => ({
-    snapshotRevision: 12,
-    fishCount: 1,
-    positions: new Float32Array([0, 0, 0]),
-    velocities: new Float32Array([10, 0, 0]),
-    speciesIndices: new Int32Array([0]),
-    species: [
-      {
-        maxSpeed: 5,
-        maxForce: 0.1,
-        neighborDist: 10,
-        separationDist: 5,
-        weights: { separation: 2, alignment: 1, cohesion: 1 },
-      },
-    ],
-    foodCount: 1,
-    foodPositions: new Float32Array([0.05, 0, 0]),
-    time: 0,
-    boids: { neighborDist: 10, separationDist: 5, maxSpeed: 5, maxForce: 0.1 },
-    bounds: { x: 100, y: 100, z: 100 },
-    water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 },
-    current: {
-      strength: 0.03,
-      frequency1: 0.2,
-      frequency2: 0.13,
-      spatialScale1: 0.5,
-      spatialScale2: 0.3,
-    },
-  });
+  const createInput = (): SimulationInput =>
+    createSimulationInput({
+      snapshotRevision: 12,
+      fishCount: 1,
+      positions: new Float32Array([0, 0, 0]),
+      velocities: new Float32Array([10, 0, 0]),
+      speciesIndices: new Int32Array([0]),
+      foodCount: 1,
+      foodPositions: new Float32Array([0.05, 0, 0]),
+    });
 
   it('runs a transfer job against returned output views without cloning', () => {
     const input = createInput();

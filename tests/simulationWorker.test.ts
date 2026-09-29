@@ -1,51 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { simulateStep } from '../src/workers/boids/index';
 import type { SimulationInput } from '../src/workers/boids/types';
+import { createSimulationInput } from './support/simulationInput';
 
 describe('simulationWorker', () => {
-  const createInput = (overrides: Partial<SimulationInput> = {}): SimulationInput => {
-    const fishCount = overrides.fishCount ?? 1;
-    const positions = overrides.positions ?? new Float32Array(fishCount * 3);
-    const velocities = overrides.velocities ?? new Float32Array(fishCount * 3);
-    const speciesIndices = overrides.speciesIndices ?? new Int32Array(fishCount);
-    const foodCount = overrides.foodCount ?? 0;
-    const foodPositions = overrides.foodPositions ?? new Float32Array(foodCount * 3);
-
-    return {
-      fishCount,
-      positions,
-      velocities,
-      speciesIndices,
-      species: [
-        {
-          maxSpeed: 5,
-          maxForce: 0.1,
-          neighborDist: 10,
-          separationDist: 5,
-          weights: { separation: 2.0, alignment: 1.0, cohesion: 1.0 },
-        },
-      ],
-      foodCount,
-      foodPositions,
-      time: 0,
-      boids: {
-        neighborDist: 10,
-        separationDist: 5,
-        maxSpeed: 5,
-        maxForce: 0.1,
-      },
-      bounds: { x: 100, y: 100, z: 100 },
-      water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 },
-      current: {
-        strength: 0.03,
-        frequency1: 0.2,
-        frequency2: 0.13,
-        spatialScale1: 0.5,
-        spatialScale2: 0.3,
-      },
-      ...overrides,
-    } as SimulationInput;
-  };
+  const createInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
+    createSimulationInput({ fishCount: 1, foodCount: 0, ...overrides });
 
   it('should produce consistent results across multiple calls (state reset check)', () => {
     const input = createInput({
