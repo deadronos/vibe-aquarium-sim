@@ -136,28 +136,6 @@ export const Tank = () => {
           />
         )}
       </mesh>
-
-      {/* <Text ... > commented out due to missing export */}
-      {/*
-      <Text
-        position={[0, -height / 2 + 0.2, -depth / 2 + 0.1]}
-        fontSize={0.3}
-        color="white"
-        anchorY="bottom"
-      >
-        Vibe Aquarium
-      </Text>
-
-      <Text
-        position={[0, height / 2 - 0.5, -depth / 2 + 0.1]}
-        fontSize={0.15}
-        color="#aaddff"
-        anchorY="top"
-        fillOpacity={0.7}
-      >
-        Click tank to feed fish
-      </Text>
-      */}
     </group>
   );
 };

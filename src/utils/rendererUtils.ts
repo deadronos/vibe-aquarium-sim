@@ -30,10 +30,3 @@ export async function getWebGPUCapabilities(): Promise<WebGPUCapabilities> {
     return { available: false, softwareAdapter: false };
   }
 }
-
-/**
- * Checks if WebGPU is supported and enabled in the current environment.
- */
-export async function supportsWebGPU(): Promise<boolean> {
-  return (await getWebGPUCapabilities()).available;
-}
