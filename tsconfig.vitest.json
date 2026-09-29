@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["vitest", "vite/client"]
   },
-  "include": ["tests/**/*.{ts,tsx}"]
+  "include": ["tests/**/*.ts", "tests/**/*.tsx", "src/declarations.d.ts"]
 }
