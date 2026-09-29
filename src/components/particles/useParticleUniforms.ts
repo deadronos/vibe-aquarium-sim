@@ -22,6 +22,7 @@ export interface UseParticleUniformsOptions {
   volume: { x: number; y: number; z: number };
   drift: [number, number, number];
   label: string;
+  count: number;
 }
 
 export const useParticleUniforms = ({
@@ -32,9 +33,15 @@ export const useParticleUniforms = ({
   volume,
   drift,
   label,
+  count,
 }: UseParticleUniformsOptions): ShaderMaterial | null => {
   const timeUniformRef = useRef<{ value: number } | null>(null);
 
+  // `volume`, `isWebGPU`, and `count` mirror the original component's material
+  // `useMemo` dependencies so material identity/lifecycle (and the `time`
+  // uniform reset to 0) matches the pre-refactor behavior when the particle
+  // count changes. `count` is a recreation key only; the material itself does
+  // not consume it.
   const material = useMemo(() => {
     if (isWebGPU) return null;
 
@@ -60,7 +67,7 @@ export const useParticleUniforms = ({
     shaderMaterial.onBeforeCompile = (shader: any) => logShaderOnce(label, shader);
 
     return shaderMaterial;
-  }, [color, drift, isWebGPU, label, opacity, pointSize, volume]);
+  }, [color, count, drift, isWebGPU, label, opacity, pointSize, volume]); // eslint-disable-line react-hooks/exhaustive-deps -- count is an intentional recreation key
 
   useFrame((state: any) => {
     // No time update needed for standard PointsMaterial

@@ -51,6 +51,7 @@ const AmbientParticlesEnabled = () => {
         drift={PARTICLE_DRIFT}
         isWebGPU={isWebGPU}
         label="Particles/Far"
+        count={farCount}
       />
       <ParticleLayer
         geometry={nearGeometry}
@@ -61,6 +62,7 @@ const AmbientParticlesEnabled = () => {
         drift={PARTICLE_DRIFT}
         isWebGPU={isWebGPU}
         label="Particles/Near"
+        count={nearCount}
       />
     </group>
   );

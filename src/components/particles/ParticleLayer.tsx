@@ -12,6 +12,7 @@ export interface ParticleLayerProps {
   drift: [number, number, number];
   isWebGPU: boolean;
   label: string;
+  count: number;
 }
 
 export const ParticleLayer = ({
@@ -23,6 +24,7 @@ export const ParticleLayer = ({
   drift,
   isWebGPU,
   label,
+  count,
 }: ParticleLayerProps) => {
   const shaderMaterial = useParticleUniforms({
     isWebGPU,
@@ -32,6 +34,7 @@ export const ParticleLayer = ({
     volume,
     drift,
     label,
+    count,
   });
 
   return (
