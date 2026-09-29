@@ -288,5 +288,14 @@ Executed via subagent-driven development on branch `refactor/duplication-and-mod
   - `npm run build`
   - `npm run check:bundle` — JS 1,417,513 / 1,700,000 gzip bytes
   - `npm run test:smoke` — 16 passed
-- Deferred minors and the pre-existing `typecheck` gate gap are recorded in the
-  SDD ledger at `.superpowers/sdd/2026-09-29-refactor-duplication-module-split/progress.md`.
+- Final whole-branch review: With fixes. Two Important findings fixed:
+  - `tests/flocking.test.ts` was circular; now pins a hard-coded expected
+    vector captured from base `b8304d2`.
+  - No gate type-checked `tests/**` and `tsconfig.vitest.json`'s brace glob
+    matched zero inputs; explicit globs + a `typecheck:tests` script were added.
+    That script surfaces a pre-existing 103-error legacy backlog (26 files);
+    branch-added test modules are clean. Clearing that backlog is a follow-up.
+- Deferred (non-blocking) refinements: Task 11 workerOrchestrator split is
+  nominal (optional shared/transfer extraction not done); `weights || {}`
+  loop allocation preserved; cosmetic type-ergonomics nits in RendererCanvas
+  and the material helpers.
