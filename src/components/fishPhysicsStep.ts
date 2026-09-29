@@ -1,6 +1,6 @@
 import { applyQueuedForcesToRigidBody } from '../utils/physicsHelpers';
 import { clampPositionToTank, type Vec3Like } from '../utils/boundaryUtils';
-import { BOIDS_CONFIG, SPECIES_CONFIG } from '../config/constants';
+import { paramsForSpecies } from '../domain/species';
 import type { Entity } from '../store';
 
 export interface FishRigidBodyLike {
@@ -40,7 +40,7 @@ export function applyFishPhysicsStep(
 
   applyQueuedForcesToRigidBody(targetVelocity, entity, fixedDt);
 
-  const speciesMaxSpeed = SPECIES_CONFIG[entity.modelIndex ?? 0]?.maxSpeed ?? BOIDS_CONFIG.maxSpeed;
+  const speciesMaxSpeed = paramsForSpecies(entity.speciesId).maxSpeed;
 
   if (entity.excitementLevel && entity.excitementLevel > 0.1) {
     const speedSq = targetVelocity.lengthSq();

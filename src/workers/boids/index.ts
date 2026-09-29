@@ -14,7 +14,7 @@ export function simulateStep(
     fishCount,
     positions,
     velocities,
-    modelIndices,
+    speciesIndices,
     species = [],
     foodCount,
     foodPositions,
@@ -66,8 +66,8 @@ export function simulateStep(
     const vy = velocities[base + 1];
     const vz = velocities[base + 2];
 
-    const modelIdx = modelIndices ? modelIndices[i] : 0;
-    const params = (species && species[modelIdx]) || boids;
+    const speciesIdx = speciesIndices ? speciesIndices[i] : 0;
+    const params = (species && species[speciesIdx]) || boids;
     const { maxSpeed, maxForce, neighborDist, separationDist, weights } = params;
     const neighborDistSq = neighborDist * neighborDist;
     const separationDistSq = separationDist * separationDist;

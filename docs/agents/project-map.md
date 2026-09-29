@@ -7,6 +7,7 @@
 - `src/components/materials/`: WebGPU-compatible node materials (`GlassNodeMaterial`, `WaterNodeMaterial`, etc.) using Three.js TSL. These are the WebGPU counterparts to the GLSL `shaderMaterial` variants used on WebGL.
 - `src/performance/`: Adaptive quality management (`AdaptiveQualityManager`, `qualityPresets`, `qualityStore`, `VisualQualityContext`). Controls DPR scaling, shadow map sizing, and feature toggles based on FPS and device capability.
 - `src/store.ts`: The "Source of Truth" for the ECS. Defines the `world` and `Entity` types.
+- `src/domain/`: Shared domain types and registries. `src/domain/species/` defines per-species flocking configs (`tetra`, `goldfish`, `betta`) and the ordered `SPECIES_REGISTRY`; a fish's `speciesId` (flocking identity) is independent of its `modelIndex` (render model).
 - `src/shaders/`: Custom GLSL shaders (e.g., the water surface, caustics). Used only on WebGL; WebGPU uses TSL node materials instead.
 - `src/utils/`: Shared utilities and simulation helpers like `FixedStepScheduler`, `rendererUtils`.
 

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Vector3 } from 'three';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
 import { getDecorationSpawnDescriptors, getInitialFishSpawn } from '../config/artDirection';
+import { weightedSpeciesForIndex } from '../domain/species';
 import { world } from '../store';
 import type { Entity } from '../store';
 
@@ -32,6 +33,7 @@ export const Spawner = () => {
         targetVelocity: new Vector3(),
         excitementLevel: 0,
         modelIndex: spawn.modelIndex,
+        speciesId: spawn.speciesId,
         excitementDecay: 0,
       });
       spawnedEntities.push(entity);
@@ -76,6 +78,7 @@ export const Spawner = () => {
 
         let added = 0;
         for (let i = 0; i < toAdd; i++) {
+          const species = weightedSpeciesForIndex(currentFishCount + i);
           const entity = world.add({
             isFish: true,
             isBoid: true,
@@ -93,7 +96,8 @@ export const Spawner = () => {
             externalForce: new Vector3(),
             targetVelocity: new Vector3(),
             excitementLevel: 0,
-            modelIndex: Math.floor(Math.random() * 3) as 0 | 1 | 2,
+            modelIndex: species.preferredModel,
+            speciesId: species.id,
             excitementDecay: 0,
           });
           spawnedEntities.push(entity);

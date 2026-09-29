@@ -26,6 +26,13 @@ There is a critical bidirectional data flow between the ECS (Miniplex) and the P
 - **Systems**: Implemented as React components. Fixed-step simulation systems (for example, `BoidsSystem`) register callbacks with `fixedScheduler`; `SchedulerSystem` advances those callbacks from Rapier's before-step boundary. Render-only systems use `useFrame`.
 - **Queries**: Use `world.with('tag', ...)` to query entities in loops.
 
+## 🐟 Fish Species
+
+- Species identity lives in `src/domain/species/`. Each species exports a `SpeciesDefinition` (id, name, preferred render model, spawn weight, and `SpeciesParams`). `SPECIES_REGISTRY` fixes the species order.
+- A fish carries `speciesId` (flocking identity) and `modelIndex` (render model) as **independent** fields. `getInitialFishSpawn` uses a deterministic weighted mix for species and defaults the model to that species' `preferredModel`, but either can change without touching the other.
+- The worker receives a per-fish `speciesIndices` buffer plus the ordered `species` params array; `simulateStep` selects params by species index. `SPECIES_CONFIG` in `src/config/constants.ts` is derived from the registry for compatibility.
+- Adding a species means adding a config module and appending it to `SPECIES_REGISTRY`; existing indices stay stable.
+
 ## 🖥️ UI State
 
 We plan to use **Zustand** for UI state management. For now, keep UI state separate from the ECS simulation state where possible.

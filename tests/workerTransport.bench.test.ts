@@ -12,7 +12,7 @@ describe('boids worker transport benchmark', () => {
     fishCount,
     positions: Float32Array.from({ length: fishCount * 3 }, (_, index) => index % 17),
     velocities: Float32Array.from({ length: fishCount * 3 }, (_, index) => (index % 11) / 10),
-    modelIndices: Int32Array.from({ length: fishCount }, (_, index) => index % 3),
+    speciesIndices: Int32Array.from({ length: fishCount }, (_, index) => index % 3),
     species: [
       {
         maxSpeed: 5,

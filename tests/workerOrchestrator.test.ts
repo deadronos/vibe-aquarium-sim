@@ -44,7 +44,7 @@ describe('WorkerOrchestrator transport lifecycle', () => {
       fishCount,
       positions: new Float32Array(fishCount * 3),
       velocities: new Float32Array(fishCount * 3),
-      modelIndices: new Int32Array(fishCount),
+      speciesIndices: new Int32Array(fishCount),
       species: [
         {
           maxSpeed: 5,

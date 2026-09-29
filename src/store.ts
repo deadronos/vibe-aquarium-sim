@@ -2,6 +2,7 @@ import createECS from 'miniplex-react';
 import { Vector3, Quaternion } from 'three';
 import { World } from 'miniplex';
 import type { DecorationType } from './domain/types';
+import type { SpeciesId } from './domain/species';
 
 export type { DecorationType } from './domain/types';
 
@@ -43,6 +44,9 @@ export type Entity = {
 
   // Render / spawn properties
   modelIndex?: 0 | 1 | 2; // which fish GLB model to use (assigned at spawn time)
+  // Flocking identity. Independent of `modelIndex`; drives species-specific
+  // steering params in the worker and the main-thread speed clamp.
+  speciesId?: SpeciesId;
 
   // FishRenderSystem bookkeeping (avoid Map allocations in useFrame hot path)
   __vibeFishQuatIndex?: number; // >=0 index into pool; -1 for fallback

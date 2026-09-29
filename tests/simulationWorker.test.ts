@@ -7,7 +7,7 @@ describe('simulationWorker', () => {
     const fishCount = overrides.fishCount ?? 1;
     const positions = overrides.positions ?? new Float32Array(fishCount * 3);
     const velocities = overrides.velocities ?? new Float32Array(fishCount * 3);
-    const modelIndices = overrides.modelIndices ?? new Int32Array(fishCount);
+    const speciesIndices = overrides.speciesIndices ?? new Int32Array(fishCount);
     const foodCount = overrides.foodCount ?? 0;
     const foodPositions = overrides.foodPositions ?? new Float32Array(foodCount * 3);
 
@@ -15,7 +15,7 @@ describe('simulationWorker', () => {
       fishCount,
       positions,
       velocities,
-      modelIndices,
+      speciesIndices,
       species: [
         {
           maxSpeed: 5,
@@ -110,7 +110,7 @@ describe('simulationWorker', () => {
       fishCount: largeCount,
       positions: new Float32Array(largeCount * 3),
       velocities: new Float32Array(largeCount * 3),
-      modelIndices: new Int32Array(largeCount),
+      speciesIndices: new Int32Array(largeCount),
     });
 
     const result = simulateStep(input);

@@ -22,7 +22,7 @@ export type SharedSimulationBuffers = {
   foodCapacity: number;
   positions: Float32Array<SharedArrayBuffer>;
   velocities: Float32Array<SharedArrayBuffer>;
-  modelIndices: Int32Array<SharedArrayBuffer>;
+  speciesIndices: Int32Array<SharedArrayBuffer>;
   foodPositions: Float32Array<SharedArrayBuffer>;
   steering: Float32Array<SharedArrayBuffer>;
   externalForces: Float32Array<SharedArrayBuffer>;
@@ -35,7 +35,7 @@ export type SharedSimulationBufferPayload = {
   foodCapacity: number;
   positions: SharedArrayBuffer;
   velocities: SharedArrayBuffer;
-  modelIndices: SharedArrayBuffer;
+  speciesIndices: SharedArrayBuffer;
   foodPositions: SharedArrayBuffer;
   steering: SharedArrayBuffer;
   externalForces: SharedArrayBuffer;
@@ -118,7 +118,7 @@ export function createSharedSimulationBuffers(
     foodCapacity: safeFoodCapacity,
     positions: createSharedFloat32(safeFishCapacity * 3),
     velocities: createSharedFloat32(safeFishCapacity * 3),
-    modelIndices: createSharedInt32(safeFishCapacity),
+    speciesIndices: createSharedInt32(safeFishCapacity),
     foodPositions: createSharedFloat32(safeFoodCapacity * 3),
     steering: createSharedFloat32(safeFishCapacity * 3),
     externalForces: createSharedFloat32(safeFishCapacity * 3),
@@ -147,7 +147,7 @@ export function serializeSharedSimulationBuffers(
     foodCapacity: buffers.foodCapacity,
     positions: buffers.positions.buffer,
     velocities: buffers.velocities.buffer,
-    modelIndices: buffers.modelIndices.buffer,
+    speciesIndices: buffers.speciesIndices.buffer,
     foodPositions: buffers.foodPositions.buffer,
     steering: buffers.steering.buffer,
     externalForces: buffers.externalForces.buffer,
@@ -164,7 +164,7 @@ export function hydrateSharedSimulationBuffers(
     foodCapacity: payload.foodCapacity,
     positions: new Float32Array(payload.positions),
     velocities: new Float32Array(payload.velocities),
-    modelIndices: new Int32Array(payload.modelIndices),
+    speciesIndices: new Int32Array(payload.speciesIndices),
     foodPositions: new Float32Array(payload.foodPositions),
     steering: new Float32Array(payload.steering),
     externalForces: new Float32Array(payload.externalForces),
@@ -183,7 +183,7 @@ export function copySimulationInputToShared(
 
   buffers.positions.set(input.positions.subarray(0, input.fishCount * 3), 0);
   buffers.velocities.set(input.velocities.subarray(0, input.fishCount * 3), 0);
-  buffers.modelIndices.set(input.modelIndices.subarray(0, input.fishCount), 0);
+  buffers.speciesIndices.set(input.speciesIndices.subarray(0, input.fishCount), 0);
   buffers.foodPositions.set(input.foodPositions.subarray(0, input.foodCount * 3), 0);
   buffers.eatenFoodCount[0] = 0;
 }
@@ -197,7 +197,7 @@ export function createSharedSimulationInput(
     fishCount: message.fishCount,
     positions: buffers.positions.subarray(0, message.fishCount * 3),
     velocities: buffers.velocities.subarray(0, message.fishCount * 3),
-    modelIndices: buffers.modelIndices.subarray(0, message.fishCount),
+    speciesIndices: buffers.speciesIndices.subarray(0, message.fishCount),
     species: message.species,
     foodCount: message.foodCount,
     foodPositions: buffers.foodPositions.subarray(0, message.foodCount * 3),
