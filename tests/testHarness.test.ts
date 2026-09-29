@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getTestHarness,
   installTestHarness,
@@ -61,6 +61,19 @@ describe('test harness', () => {
     await pending;
     expect(resolved).toBe(true);
     expect(harness.frame).toBe(3);
+  });
+
+  it('falls back after the timeout when frames never advance', async () => {
+    vi.useFakeTimers();
+    try {
+      const harness = installTestHarness();
+      const pending = harness.waitForFrames(5, 1000);
+      vi.advanceTimersByTime(1000);
+      await pending;
+      expect(harness.frame).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('clamps frame waits to at least one frame and tears down cleanly', async () => {

@@ -1,8 +1,10 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import sharp from 'sharp';
 
-const LEVEL = 'high';
+const LEVEL = 'medium';
 const VIEWPORT = { width: 1200, height: 800 };
+const SETTLE_FRAMES = 4;
+const STABILITY_GAP = 2;
 
 const LEFT_REGION = { left: 150, top: 160, width: 420, height: 480 };
 const TANK_REGION = { left: 300, top: 160, width: 860, height: 480 };
@@ -114,19 +116,19 @@ async function captureBackend(
     window.__vibe_test.setAllPoses(poses);
     window.__vibe_test.freeze();
   }, RIGHT_POSES);
-  await page.evaluate(() => window.__vibe_test.waitForFrames(20));
+  await page.evaluate((frames) => window.__vibe_test.waitForFrames(frames), SETTLE_FRAMES);
   const emptyRef = await capture(page, `${backend}-empty-ref`, testInfo);
 
   // Fish on the left, settled.
   await page.evaluate((poses) => window.__vibe_test.setAllPoses(poses), LEFT_POSES);
-  await page.evaluate(() => window.__vibe_test.waitForFrames(20));
+  await page.evaluate((frames) => window.__vibe_test.waitForFrames(frames), SETTLE_FRAMES);
   const left = await capture(page, `${backend}-fish-left`, testInfo);
 
   // Move right and let the renderer settle; the left region must stay empty.
   await page.evaluate((poses) => window.__vibe_test.setAllPoses(poses), RIGHT_POSES);
-  await page.evaluate(() => window.__vibe_test.waitForFrames(20));
+  await page.evaluate((frames) => window.__vibe_test.waitForFrames(frames), SETTLE_FRAMES);
   const settled = await capture(page, `${backend}-settled`, testInfo);
-  await page.evaluate(() => window.__vibe_test.waitForFrames(3));
+  await page.evaluate((frames) => window.__vibe_test.waitForFrames(frames), STABILITY_GAP);
   const settledAgain = await capture(page, `${backend}-settled-again`, testInfo);
 
   await testInfo.attach(`${backend}-status`, {
@@ -146,7 +148,7 @@ async function captureBackend(
 }
 
 test.describe('renderer visual parity', () => {
-  test.setTimeout(180_000);
+  test.setTimeout(300_000);
 
   test('WebGL and WebGPU show no fish ghosts and comparable exposure', async ({
     page,

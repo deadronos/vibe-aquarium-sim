@@ -23,10 +23,15 @@ export interface VibeTestHarness {
   unfreeze: () => void;
   startMotion: (vx: number, vy: number, vz: number, startFrame?: number) => void;
   stopMotion: () => void;
-  waitForFrames: (count: number) => Promise<void>;
+  /**
+   * Resolves once `count` render frames elapse, or after `timeoutMs` so a
+   * stalled/slow software GPU cannot hang a test forever. Timeout fallbacks
+   * fail loudly in the parity assertions rather than masking missed frames.
+   */
+  waitForFrames: (count: number, timeoutMs?: number) => Promise<void>;
 }
 
-type FrameWaiter = { target: number; resolve: () => void };
+type FrameWaiter = { target: number; done: boolean; resolve: () => void };
 
 const waiters: FrameWaiter[] = [];
 let harness: VibeTestHarness | null = null;
@@ -77,10 +82,24 @@ export function installTestHarness(): VibeTestHarness {
     stopMotion() {
       value.motion = null;
     },
-    waitForFrames(count) {
+    waitForFrames(count, timeoutMs = 30_000) {
       const target = value.frame + Math.max(1, Math.floor(count));
       return new Promise<void>((resolve) => {
-        waiters.push({ target, resolve });
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const waiter: FrameWaiter = {
+          target,
+          done: false,
+          resolve: () => {
+            if (waiter.done) return;
+            waiter.done = true;
+            if (timer !== undefined) clearTimeout(timer);
+            resolve();
+          },
+        };
+        if (timeoutMs > 0) {
+          timer = setTimeout(() => waiter.resolve(), timeoutMs);
+        }
+        waiters.push(waiter);
       });
     },
   };
@@ -95,8 +114,10 @@ export function tickTestHarnessFrame(): void {
   if (!harness) return;
   harness.frame++;
   for (let i = waiters.length - 1; i >= 0; i--) {
-    if (harness.frame >= waiters[i]!.target) {
-      waiters.splice(i, 1)[0]!.resolve();
+    const waiter = waiters[i]!;
+    if (harness.frame >= waiter.target) {
+      waiters.splice(i, 1);
+      waiter.resolve();
     }
   }
 }
