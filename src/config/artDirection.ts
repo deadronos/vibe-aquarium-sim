@@ -1,4 +1,6 @@
 import type { DecorationType } from '../domain/types';
+import type { SpeciesId } from '../domain/species';
+import { weightedSpeciesForIndex } from '../domain/species';
 import { TANK_DIMENSIONS } from './constants';
 
 export const AQUARIUM_PALETTE = {
@@ -143,6 +145,7 @@ export type InitialFishSpawn = {
   vx: number;
   vy: number;
   vz: number;
+  speciesId: SpeciesId;
   modelIndex: 0 | 1 | 2;
 };
 
@@ -161,6 +164,10 @@ export const getInitialFishSpawn = (index: number, total: number): InitialFishSp
   const z = layers === 1 ? 0 : -0.55 + (layer / (layers - 1)) * 1.1;
   const angle = ((index * 37) % 360) * (Math.PI / 180);
 
+  // Weighted, deterministic species mix. The render model defaults to the
+  // species' preferred model but is a separate field, so the two can diverge.
+  const species = weightedSpeciesForIndex(index);
+
   return {
     x,
     y,
@@ -168,6 +175,7 @@ export const getInitialFishSpawn = (index: number, total: number): InitialFishSp
     vx: Math.cos(angle) * 0.16,
     vy: Math.sin(angle * 0.7) * 0.07,
     vz: Math.sin(angle) * 0.16,
-    modelIndex: ((index + row) % 3) as 0 | 1 | 2,
+    speciesId: species.id,
+    modelIndex: species.preferredModel,
   };
 };

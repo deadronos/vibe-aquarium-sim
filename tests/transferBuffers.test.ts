@@ -25,7 +25,7 @@ describe('transferable boids buffers', () => {
       fishCount,
       positions: new Float32Array([1, 2, 3, 4, 5, 6]),
       velocities: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
-      modelIndices: new Int32Array([2, 1]),
+      speciesIndices: new Int32Array([2, 1]),
       species: [
         {
           maxSpeed: 5,
@@ -71,7 +71,7 @@ describe('transferable boids buffers', () => {
         expect.closeTo(0.6),
       ])
     );
-    expect(Array.from(buffers.modelIndices.subarray(0, 2))).toEqual([2, 1]);
+    expect(Array.from(buffers.speciesIndices.subarray(0, 2))).toEqual([2, 1]);
     expect(Array.from(buffers.foodPositions.subarray(0, 3))).toEqual([9, 8, 7]);
     expect(buffers.eatenFoodCount[0]).toBe(0);
   });

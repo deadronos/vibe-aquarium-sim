@@ -25,7 +25,7 @@ describe('transferable boids worker protocol', () => {
     fishCount: 1,
     positions: new Float32Array([0, 0, 0]),
     velocities: new Float32Array([10, 0, 0]),
-    modelIndices: new Int32Array([0]),
+    speciesIndices: new Int32Array([0]),
     species: [
       {
         maxSpeed: 5,

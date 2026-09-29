@@ -2,21 +2,21 @@
 
 ## Current focus
 
-- Branch: `fix/issue-140-webgpu-ghosting-parity`
-- Issue #140: deterministic renderer-parity coverage plus a color-management fix so WebGPU/WebGL exposure matches.
+- Branch: `feat/issue-112-species-registry`
+- Issue #112: first-class fish species registry with species identity decoupled from the render model.
 
 ## Recent changes
 
-- Added a `?testHarness=1`-gated `window.__vibe_test` harness (`src/utils/testHarness.ts`, `src/systems/TestHarnessDriver.tsx`) that freezes the school, pins fish to scripted poses, and supports constant-velocity motion for deterministic captures.
-- Root-caused the WebGPU/WebGL exposure mismatch: the custom GLSL materials (`waterShader`, `waterSurfaceShader`, `causticsShader`, `AmbientParticles`) wrote `gl_FragColor` without three's output pipeline, while their WebGPU node-material equivalents are tone-mapped and color-space converted. Adding `#include <tonemapping_fragment>` / `#include <colorspace_fragment>` brought tank luminance parity from ~21 to ~2 (8-bit scale).
-- Added `tests/e2e/renderer-parity.spec.ts`: deterministic both-backend ghost + temporal-stability + exposure assertions. Verified it fails pre-fix (relative exposure 0.283) and passes post-fix (~0.03).
-- Confirmed no persistent fish trails/ghosts reproduce on native Metal WebGPU with frozen or scripted motion.
+- Added `src/domain/species/` (`types.ts`, per-species configs `tetra`/`goldfish`/`betta`, and a registry with helpers). `SPECIES_CONFIG` is derived from the registry for compatibility.
+- Decoupled species from render model: entities now carry `speciesId` alongside `modelIndex`; the worker protocol sends a per-fish `speciesIndices` buffer (renamed from `modelIndices`) across shared/transfer/cloned transports.
+- `getInitialFishSpawn` and `Spawner` assign species via a deterministic weighted mix (tetra 60%, goldfish 25%, betta 15%); `modelIndex` defaults to the species' preferred model.
+- `fishPhysicsStep` now clamps speed using the entity's species params instead of indexing by model.
+- Tests: registry integrity/weights, per-species worker steering, snapshot species mapping, and a species-vs-model clamp test.
 
 ## Next steps
 
-1. Publish the Issue #140 PR with the parity evidence and screenshots.
-2. Continue visual parity work in #148 (browser-backed ECS/Rapier coverage).
-3. Keep the umbrella issue #150 synchronized with the phase status and acceptance evidence.
+1. Validate and open the Issue #112 PR; close #112 and update umbrella #150 after merge.
+2. Remaining active follow-ups: #148 (browser ECS/Rapier coverage), #111 (DevTools telemetry panel).
 
 ## Active decisions / considerations
 

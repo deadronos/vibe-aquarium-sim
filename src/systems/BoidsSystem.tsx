@@ -27,7 +27,7 @@ export const BoidsSystem = () => {
         const {
           positions,
           velocities,
-          modelIndices,
+          speciesIndices,
           foodPositions,
           fishCount,
           foodCount,
@@ -40,7 +40,7 @@ export const BoidsSystem = () => {
             fishCount,
             positions,
             velocities,
-            modelIndices,
+            speciesIndices,
             species: SPECIES_CONFIG,
             foodCount,
             foodPositions,

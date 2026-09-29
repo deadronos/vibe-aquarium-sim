@@ -60,6 +60,24 @@ describe('applyFishPhysicsStep', () => {
     expect(entity.externalForce?.lengthSq()).toBe(0);
   });
 
+  it('clamps speed by the entity species, not the render model', () => {
+    const tetra = createFish({
+      velocity: new Vector3(1, 0, 0),
+      speciesId: 'tetra',
+      modelIndex: 2,
+    });
+    applyFishPhysicsStep(new MockRigidBody(), tetra, 1 / 60);
+    expect(tetra.targetVelocity?.length()).toBeCloseTo(0.5 * 1.1, 5);
+
+    const betta = createFish({
+      velocity: new Vector3(1, 0, 0),
+      speciesId: 'betta',
+      modelIndex: 0,
+    });
+    applyFishPhysicsStep(new MockRigidBody(), betta, 1 / 60);
+    expect(betta.targetVelocity?.length()).toBeCloseTo(0.25 * 1.1, 5);
+  });
+
   it('keeps ECS transform state for the post-step render sync', () => {
     const rigidBody = new MockRigidBody();
     rigidBody.setTranslation({ x: 0.5, y: 0.25, z: -0.25 });

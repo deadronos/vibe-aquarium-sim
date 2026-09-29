@@ -1,26 +1,18 @@
+import type { SpeciesParams } from '../../domain/species';
+
+export type { SpeciesParams } from '../../domain/species';
+
 export type Float32Buffer = Float32Array<ArrayBufferLike>;
 export type Int32Buffer = Int32Array<ArrayBufferLike>;
 export type EatenFoodIndices = number[] | Int32Buffer;
-
-export interface SpeciesParams {
-  maxSpeed: number;
-  maxForce: number;
-  neighborDist: number;
-  separationDist: number;
-  weights: {
-    separation: number;
-    alignment: number;
-    cohesion: number;
-  };
-}
 
 export type SimulationInput = {
   snapshotRevision: number;
   fishCount: number;
   positions: Float32Buffer;
   velocities: Float32Buffer;
-  modelIndices: Int32Array; // Per-fish model index
-  species: SpeciesParams[]; // Species configurations
+  speciesIndices: Int32Array; // Per-fish species index
+  species: SpeciesParams[]; // Species configurations ordered by species index
   foodCount: number;
   foodPositions: Float32Buffer;
   time: number;

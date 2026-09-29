@@ -7,7 +7,7 @@ describe('simulationWorker benchmark', () => {
     const fishCount = 5000;
     const positions = new Float32Array(fishCount * 3);
     const velocities = new Float32Array(fishCount * 3);
-    const modelIndices = new Int32Array(fishCount);
+    const speciesIndices = new Int32Array(fishCount);
 
     for (let i = 0; i < fishCount; i++) {
       const b = i * 3;
@@ -18,14 +18,14 @@ describe('simulationWorker benchmark', () => {
       velocities[b] = (Math.random() - 0.5) * 5;
       velocities[b + 1] = (Math.random() - 0.5) * 5;
       velocities[b + 2] = (Math.random() - 0.5) * 5;
-      modelIndices[i] = i % 3;
+      speciesIndices[i] = i % 3;
     }
 
     const input: SimulationInput = {
       fishCount,
       positions,
       velocities,
-      modelIndices,
+      speciesIndices,
       species: [
         {
           maxSpeed: 0.5,

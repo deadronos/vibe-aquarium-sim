@@ -176,7 +176,7 @@ export class WorkerOrchestrator {
     const hydrated = hydrateTransferableSimulationBuffers(data.payload);
     slot.positions = hydrated.positions;
     slot.velocities = hydrated.velocities;
-    slot.modelIndices = hydrated.modelIndices;
+    slot.speciesIndices = hydrated.speciesIndices;
     slot.foodPositions = hydrated.foodPositions;
     slot.steering = hydrated.steering;
     slot.externalForces = hydrated.externalForces;

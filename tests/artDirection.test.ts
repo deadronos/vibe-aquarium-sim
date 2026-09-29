@@ -9,6 +9,7 @@ import {
   getInitialFishSpawn,
 } from '../src/config/artDirection';
 import { SIMULATION_BOUNDS } from '../src/config/constants';
+import { getSpecies } from '../src/domain/species';
 
 describe('aquarium art direction', () => {
   test.each([1, 30, 300])(
@@ -60,13 +61,25 @@ describe('aquarium art direction', () => {
     expect(counts.rock).toBe(6);
   });
 
-  test('spreads the default fish opening across the tank and cycles model indices', () => {
+  test('spreads the default fish opening across the tank with a weighted species mix', () => {
     const fish = Array.from({ length: 30 }, (_, index) => getInitialFishSpawn(index, 30));
 
     expect(new Set(fish.map(({ modelIndex }) => modelIndex))).toEqual(new Set([0, 1, 2]));
     expect(Math.min(...fish.map(({ x }) => x))).toBeLessThan(-0.5);
     expect(Math.max(...fish.map(({ x }) => x))).toBeGreaterThan(0.5);
     expect(fish.every(({ y, z }) => Math.abs(y) < 0.8 && Math.abs(z) < 1.2)).toBe(true);
+
+    const speciesCounts = fish.reduce<Record<string, number>>((counts, { speciesId }) => {
+      counts[speciesId] = (counts[speciesId] ?? 0) + 1;
+      return counts;
+    }, {});
+    // Tetra is the dominant schooling species; betta is the rarest.
+    expect(speciesCounts.tetra).toBeGreaterThan(speciesCounts.goldfish ?? 0);
+    expect(speciesCounts.goldfish).toBeGreaterThan(speciesCounts.betta ?? 0);
+    // The default visual pairing maps each species to its preferred model.
+    for (const spawn of fish) {
+      expect(spawn.modelIndex).toBe(getSpecies(spawn.speciesId).preferredModel);
+    }
   });
 
   test('uses a matte non-metal decoration material language', () => {

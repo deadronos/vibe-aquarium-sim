@@ -6,7 +6,7 @@ const makeInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
   const fishCount = overrides.fishCount ?? 1;
   const positions = overrides.positions ?? new Float32Array(fishCount * 3);
   const velocities = overrides.velocities ?? new Float32Array(fishCount * 3);
-  const modelIndices = overrides.modelIndices ?? new Int32Array(fishCount);
+  const speciesIndices = overrides.speciesIndices ?? new Int32Array(fishCount);
   const foodCount = overrides.foodCount ?? 0;
   const foodPositions = overrides.foodPositions ?? new Float32Array(foodCount * 3);
 
@@ -14,7 +14,7 @@ const makeInput = (overrides: Partial<SimulationInput> = {}): SimulationInput =>
     fishCount,
     positions,
     velocities,
-    modelIndices,
+    speciesIndices,
     species: [
       {
         maxSpeed: 5,
@@ -52,7 +52,7 @@ describe('simulationWorker extra tests', () => {
       fishCount: 0,
       positions: new Float32Array(0),
       velocities: new Float32Array(0),
-      modelIndices: new Int32Array(0),
+      speciesIndices: new Int32Array(0),
     });
     const out = simulateStep(input);
 

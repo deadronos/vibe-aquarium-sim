@@ -17,7 +17,7 @@ describe('shared boids buffers', () => {
     const fishCount = overrides.fishCount ?? 1;
     const positions = overrides.positions ?? new Float32Array(fishCount * 3);
     const velocities = overrides.velocities ?? new Float32Array(fishCount * 3);
-    const modelIndices = overrides.modelIndices ?? new Int32Array(fishCount);
+    const speciesIndices = overrides.speciesIndices ?? new Int32Array(fishCount);
     const foodCount = overrides.foodCount ?? 0;
     const foodPositions = overrides.foodPositions ?? new Float32Array(foodCount * 3);
 
@@ -26,7 +26,7 @@ describe('shared boids buffers', () => {
       fishCount,
       positions,
       velocities,
-      modelIndices,
+      speciesIndices,
       species: [
         {
           maxSpeed: 5,
@@ -98,7 +98,7 @@ describe('shared boids buffers', () => {
       fishCount: 2,
       positions: new Float32Array([1, 2, 3, 4, 5, 6]),
       velocities: new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
-      modelIndices: new Int32Array([0, 0]),
+      speciesIndices: new Int32Array([0, 0]),
       foodCount: 1,
       foodPositions: new Float32Array([9, 8, 7]),
     });
