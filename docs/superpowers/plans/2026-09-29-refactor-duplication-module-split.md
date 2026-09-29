@@ -270,3 +270,23 @@
 - [ ] Types named consistently across tasks (`RendererBackend`, `ShaderLike`, `createSimulationInput`, `readDebugCounts`).
 - [ ] Hot-loop zero-allocation constraint checked explicitly in B2, D2, D7.
 - [ ] No placeholders; split tasks cite exact source line ranges.
+
+## Execution record
+
+Executed via subagent-driven development on branch `refactor/duplication-and-module-split`.
+
+- 17 implementation tasks (Tiers 1-4) + validation, each with a task-scoped review.
+- Pre-review concerns caught and fixed: Task 5 (waterSurface `1e-12` epsilon),
+  Task 9 (mock scene fixture parity), Task 15 (HUD section state ownership),
+  Task 17 (ambient particle material lifecycle).
+- One reviewed fix round: Task 6 (inert type-level assertions).
+- Final gate (all green):
+  - `npm run format:check`
+  - `npm run lint -- --max-warnings=0`
+  - `npx tsc -p tsconfig.app.json --noEmit` (`npm run typecheck` is a pre-existing no-op)
+  - `npm run test -- --maxWorkers=1` — 66 files, 287 tests passed
+  - `npm run build`
+  - `npm run check:bundle` — JS 1,417,513 / 1,700,000 gzip bytes
+  - `npm run test:smoke` — 16 passed
+- Deferred minors and the pre-existing `typecheck` gate gap are recorded in the
+  SDD ledger at `.superpowers/sdd/2026-09-29-refactor-duplication-module-split/progress.md`.
