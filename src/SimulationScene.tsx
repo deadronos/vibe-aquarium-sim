@@ -42,6 +42,8 @@ import { useQualityStore } from './performance/qualityStore';
 import { Spawner } from './systems/Spawner';
 import { AQUARIUM_PALETTE, ART_DIRECTION_LIGHTING } from './config/artDirection';
 import { AquariumCamera } from './components/AquariumCamera';
+import { TestHarnessDriver } from './systems/TestHarnessDriver';
+import { isTestHarnessEnabled } from './utils/testHarness';
 
 function SceneLights({
   directionalLightRef,
@@ -308,6 +310,7 @@ export default function SimulationScene() {
 
           <FeedingController />
           <EffectsManager />
+          {isTestHarnessEnabled() && <TestHarnessDriver />}
         </Physics>
 
         <AmbientParticles />

@@ -165,5 +165,11 @@ void main() {
   vec3 finalColor = gradientColor + vec3(caustics) + fresnel * 0.2 + vec3(volumeSpec);
 
   gl_FragColor = vec4(finalColor, opacity * (0.6 + 0.4 * fresnel));
+
+  // Match three's managed output for built-in and WebGPU node materials:
+  // tone mapping then output color space conversion. These chunks resolve to
+  // identity while rendering into a linear render target (post-processing).
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;

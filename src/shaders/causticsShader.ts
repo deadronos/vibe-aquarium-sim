@@ -122,5 +122,9 @@ void main() {
   vec3 outColor = color * strength;
 
   gl_FragColor = vec4(outColor, strength);
+
+  // Managed output parity with built-in and WebGPU node materials.
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
