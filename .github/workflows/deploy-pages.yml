@@ -14,7 +14,8 @@ jobs:
   # ci.yml on main - including the renderer-heavy visual-quality and mobile-ux
   # specs, which run there under Xvfb with the software Vulkan stack. Repeating
   # that suite here cost ~6-9 minutes of software rasterization per release and
-  # flaked: this workflow never installed libvulkan1/mesa-vulkan-drivers/xvfb,
+  # failed deterministically on v0.1.9 (the failure reproduced exactly on a
+  # re-run): this workflow never installed libvulkan1/mesa-vulkan-drivers/xvfb,
   # so Chromium was launched with playwright.config's linux GPU flags against a
   # runner stripped of the GPU stack, and an input event in mobile-ux.spec.ts
   # hung until its 60s timeout while build/deploy were skipped.
