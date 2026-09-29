@@ -33,7 +33,7 @@
 
 ## Phase A - Canonical types and helpers (Tier 4)
 
-### Task A1: Canonical shared type declarations
+### Task 1 (A1): Canonical shared type declarations
 
 **Files:**
 
@@ -55,7 +55,7 @@
 - [ ] **Step 3:** Declare each type once; replace duplicates with imports/aliases; use `export type { X }` re-exports where a path must stay stable.
 - [ ] **Step 4:** `npx vitest run tests/domainTypes.test.ts && npm run typecheck` - expect PASS; `rg -n "type (ShaderLike|ShaderWithProgram|RendererBackend|DecorationType)" src` shows one definition each.
 
-### Task A2: Renderer and material helpers
+### Task 2 (A2): Renderer and material helpers
 
 **Files:**
 
@@ -76,7 +76,7 @@
 - [ ] **Step 3:** Implement helpers; replace the 7 `isWebGPU ? 'webgpu' : 'webgl'` sites, the 4 `__vibe_rendererStatus` writes, the redundant `new THREE.Color(c)` ternaries, and per-render `vec3(new Vector3(...))` axes with module-level constants.
 - [ ] **Step 4:** `npx vitest run tests/materialUtils.test.ts tests/Water.test.tsx tests/TankCausticsOverlay.test.tsx tests/PostProcessing.test.tsx` - PASS.
 
-### Task A3: Clamp and shadow-map helpers
+### Task 3 (A3): Clamp and shadow-map helpers
 
 **Files:**
 
@@ -95,7 +95,7 @@
 
 ## Phase B - Concentrated duplication (Tier 1)
 
-### Task B1: Generic worker simulation-buffer codec
+### Task 4 (B1): Generic worker simulation-buffer codec
 
 **Files:**
 
@@ -115,7 +115,7 @@
 - [ ] **Step 4:** `npx vitest run tests/simulationBuffers.test.ts tests/sharedBuffers.test.ts tests/transferBuffers.test.ts tests/transferWorkerProtocol.test.ts tests/simulationWorker.test.ts tests/simulationWorker.extra.test.ts tests/workerOrchestrator.test.ts` - PASS, unchanged assertions.
 - [ ] **Step 5:** `rg -n "nextCapacity|copySimulationInput" src/workers/boids` shows a single implementation.
 
-### Task B2: Shared GLSL chunks
+### Task 5 (B2): Shared GLSL chunks
 
 **Files:**
 
@@ -131,7 +131,7 @@
 - [ ] **Step 3:** Extract the blocks; re-run the shader tests plus `tests/Water.test.tsx tests/TankMaterial.test.tsx tests/fishLightingMaterial.test.tsx tests/AmbientParticles.test.tsx` - PASS.
 - [ ] **Step 4:** `rg -c "snoise" src/shaders` - one definition in `glsl/common.ts`.
 
-### Task B3: Single debug/perf type source
+### Task 6 (B3): Single debug/perf type source
 
 **Files:**
 
@@ -148,7 +148,7 @@
 - [ ] **Step 3:** Move declarations into one file; re-export from `src/utils/perfDebug.ts`; delete `DebugHUD` local block.
 - [ ] **Step 4:** `npx tsc --noEmit && npx vitest run tests/DebugHUD.test.tsx tests/debugTypes.test.ts` - PASS; `rg -n "interface Window" src` shows a single augmentation.
 
-### Task B4: Dead code removal
+### Task 7 (B4): Dead code removal
 
 **Files:**
 
@@ -168,7 +168,7 @@
 
 ## Phase C - Test consolidation (Tier 3)
 
-### Task C1: Shared SimulationInput fixture
+### Task 8 (C1): Shared SimulationInput fixture
 
 **Files:** Create `tests/support/simulationInput.ts`; modify 8 tests: `workerOrchestrator`, `transferBuffers`, `sharedBuffers`, `simulationWorker`, `simulationWorker.extra`, `transferWorkerProtocol`, `workerTransport.bench`, `speciesSteering`.
 
@@ -176,13 +176,13 @@
 
 - [ ] **Step 1:** Create fixture; replace each local builder; `npx vitest run tests/workerOrchestrator.test.ts tests/transferBuffers.test.ts tests/sharedBuffers.test.ts tests/simulationWorker.test.ts tests/simulationWorker.extra.test.ts tests/transferWorkerProtocol.test.ts tests/workerTransport.bench.test.ts tests/speciesSteering.test.ts` - PASS.
 
-### Task C2: Shared R3F mocks and unmount helper
+### Task 9 (C2): Shared R3F mocks and unmount helper
 
 **Files:** Create `tests/support/r3fMocks.ts` (`createUseFrameMock()`, `createUseGLTFMock()`), `tests/support/fishScenes.ts` (`makeScene(color)`), `tests/support/r3fTestRenderer.ts` (`unmountTestRenderer(renderer)`); modify the 10 tests using `@react-three/fiber` mocks and the 4 using the GLTF mock.
 
 - [ ] **Step 1:** Extract hoisted factories; rewire tests; `npx vitest run tests/FishRenderSystem.adaptive.test.tsx tests/FishRenderSystem.cap.test.tsx tests/FishRenderSystem.loading.test.tsx tests/fishLightingMaterial.test.tsx tests/SchedulerSystem.test.tsx tests/AdaptiveQualityManager.test.tsx tests/TankCausticsOverlay.test.tsx tests/Water.test.tsx tests/PostProcessing.test.tsx tests/TankMaterial.test.tsx tests/components/Fish.physics-hook.test.tsx` - PASS.
 
-### Task C3: Store/world resets and ResizeObserver in setup
+### Task 10 (C3): Store/world resets and ResizeObserver in setup
 
 **Files:** Create `tests/support/stores.ts` (`resetWorld`, `resetGameStore`, `resetQualityStore(level?)`, `clearVibeGlobals`); modify `tests/setup.ts` (add `ResizeObserver` via existing `defineGlobalIfMissing`); modify tests listed in scan (remove 8 inline shims; replace reset blocks).
 
@@ -195,7 +195,7 @@
 
 ## Phase D - Module splits (Tier 2)
 
-### Task D1: Decompose workerOrchestrator.ts (455)
+### Task 11 (D1): Decompose workerOrchestrator.ts (455)
 
 **Files:** Create `src/systems/boids/transportStatus.ts` (`createTransportStatus()`, `publishTransportStatus`, `recordError`), `mainThreadTransport.ts`, `copyTransport.ts`; modify `workerOrchestrator.ts`.
 
@@ -205,7 +205,7 @@
 - [ ] **Step 2:** `npx vitest run tests/workerOrchestrator.test.ts tests/workerTransport.bench.test.ts tests/transferWorkerProtocol.test.ts` - PASS (unchanged worker behavior).
 - [ ] **Step 3 (optional, separate commit):** extract `sharedTransport.ts` + `transferTransport.ts` if tests stay green.
 
-### Task D2: Decompose workers/boids/index.ts (269)
+### Task 12 (D2): Decompose workers/boids/index.ts (269)
 
 **Files:** Create `workers/boids/flocking.ts` (`accumulateFlocking(...)` with scalar out-params, reuses `cache.tempSteer`), `outputWriter.ts` (`writeSimulationOutput(...)` from lines 243-268), `params.ts` (`deriveCellSize(species, boids)`); modify `index.ts`.
 
@@ -214,35 +214,35 @@
 - [ ] **Step 3:** Extract the flocking loop body preserving out-params and zero allocations; add a focused `tests/flocking.test.ts` asserting sep/ali/coh accumulation for a 2-fish fixture by comparing to `simulateStep` output.
 - [ ] **Step 4:** Re-run worker tests + `rg -n "new (Vector3|Float32Array)|\.map\(|\.filter\(" src/workers/boids/flocking.ts` - no allocations.
 
-### Task D3: Decompose SimulationScene.tsx (323)
+### Task 13 (D3): Decompose SimulationScene.tsx (323)
 
 **Files:** Create `src/systems/renderer/rendererBootstrap.ts` (extract 97-157 + fallback 179-201), `src/components/RendererCanvas.tsx` (the `gl` factory, 166-258), `src/components/SceneLights.tsx`, `src/components/AquariumScene.tsx` (262-314); modify `SimulationScene.tsx` to compose (~80 lines).
 
 - [ ] **Step 1:** Extract `SceneLights` verbatim (exported), then `RendererCanvas`, then bootstrap, then `AquariumScene`. Preserve `default export SimulationScene` and `SceneLights` behavior.
 - [ ] **Step 2:** `npx vitest run tests/` R3F suites + `npm run typecheck` - PASS; `npm run test:smoke` for renderer selection/fallback.
 
-### Task D4: Decompose Tank.tsx (257)
+### Task 14 (D4): Decompose Tank.tsx (257)
 
 **Files:** Create `src/components/tank/tankGeometry.ts` (`createWall`, merged glass geometry, caustics geometry, `BACKPLATE_Z`), `src/components/tank/TankColliders.tsx` (82-118), `src/components/tank/TankCausticsOverlay.tsx` (170-257); modify `Tank.tsx`; keep `export { TankCausticsOverlay }` so the existing test path resolves.
 
 - [ ] **Step 1:** Move geometry builders + colliders + overlay; add `tests/tankGeometry.test.ts` asserting merged geometry has 4 groups and caustics geometry has 5 parts.
 - [ ] **Step 2:** `npx vitest run tests/TankMaterial.test.tsx tests/TankCausticsOverlay.test.tsx tests/tankGeometry.test.ts` - PASS.
 
-### Task D5: Decompose HUD.tsx (314)
+### Task 15 (D5): Decompose HUD.tsx (314)
 
 **Files:** Create `src/components/ui/hudTime.ts` (`formatTimeAgo`, `getDefaultPanelOpen`), `useHudEntityCounts.ts` (86-94), `useHudShortcuts.ts` (114-162), `HudSection.tsx` (storage-backed `<details>` wrapper), `HudStatsSection.tsx`, `HudPerformanceSection.tsx`, `HudDecorationsSection.tsx`; modify `HUD.tsx`.
 
 - [ ] **Step 1:** Extract helpers + hooks + `HudSection`; replace the 3 duplicated `<details>` blocks. Retain Phase 7 individual Zustand selectors.
 - [ ] **Step 2:** `npx vitest run tests/HUD.test.tsx tests/domainTypes.test.ts` - PASS including the render-count isolation test.
 
-### Task D6: Decompose DebugHUD.tsx (248)
+### Task 16 (D6): Decompose DebugHUD.tsx (248)
 
 **Files:** Create `src/components/debug/useVibeDebugSnapshot.ts` (`readDebugCounts(dbg)` + 500 ms sampling), `src/components/debug/DebugControls.tsx` (184-241); modify `DebugHUD.tsx`.
 
 - [ ] **Step 1:** Extract; use one `readDebugCounts` in both sampling and `addFish` (removes duplication at 92-99 / 125-133).
 - [ ] **Step 2:** `npx vitest run tests/DebugHUD.test.tsx` - PASS.
 
-### Task D7: Decompose AmbientParticles.tsx (286)
+### Task 17 (D7): Decompose AmbientParticles.tsx (286)
 
 **Files:** Create `src/shaders/ambientParticlesShader.ts` (GLSL 31-104, `mulberry32`, `createParticlesGeometry`), `src/components/particles/ParticleLayer.tsx`, `src/components/particles/useParticleUniforms.ts`; modify `AmbientParticles.tsx`.
 
@@ -255,7 +255,7 @@
 
 ## Phase E - Final validation
 
-### Task E: Full gate and plan record
+### Task 18 (E): Full gate and plan record
 
 - [ ] **Step 1:** `npm run format:check && npm run lint -- --max-warnings=0 && npm run typecheck && npm run test -- --maxWorkers=1`
 - [ ] **Step 2:** `npm run build && npm run check:bundle`
