@@ -6,7 +6,9 @@ import * as THREE from 'three';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { MODEL_URLS } from '../src/systems/fishModels';
-import { useGameStore } from '../src/gameStore';
+import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore } from './support/stores';
 
 const { useGLTFMock, setResponse, resetResponses } = vi.hoisted(() => {
   type Response = { scene: THREE.Object3D } | Error | Promise<never>;
@@ -35,30 +37,11 @@ vi.mock('@react-three/fiber', async () => {
   return { ...actual, useFrame: vi.fn() };
 });
 
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-const makeScene = (color: number) => {
-  const scene = new THREE.Object3D();
-  scene.add(
-    new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), new THREE.MeshStandardMaterial({ color }))
-  );
-  return scene;
-};
-
-const unmount = async (renderer: ReactThreeTestRenderer) => {
-  const result = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-  if (result && typeof (result as Promise<unknown>).then === 'function') await result;
-};
-
 describe('FishRenderSystem progressive model loading', () => {
   beforeEach(() => {
     resetResponses();
     delete window.__vibe_fishAssetStatus;
-    act(() => useGameStore.setState({ visualQualityOverrides: {} }));
+    act(() => resetGameStore());
   });
 
   afterEach(() => {
@@ -67,7 +50,7 @@ describe('FishRenderSystem progressive model loading', () => {
   });
 
   it('requests the primary model before deferred variants', async () => {
-    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000) });
+    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000, FISH_SCENE_DIMENSIONS) });
     setResponse(MODEL_URLS[1], new Promise<never>(() => {}));
     setResponse(MODEL_URLS[2], new Promise<never>(() => {}));
 
@@ -89,14 +72,14 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['loading', 'loading'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
     }
   });
 
   it('keeps the primary mesh when a variant fails and publishes its error status', async () => {
-    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000) });
+    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000, FISH_SCENE_DIMENSIONS) });
     setResponse(MODEL_URLS[1], new Error('variant download failed'));
-    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff) });
+    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff, FISH_SCENE_DIMENSIONS) });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const renderer = await ReactThreeTestRenderer.create(
@@ -116,14 +99,14 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['error', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
     }
   });
 
   it('publishes ready after both deferred variants settle', async () => {
-    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000) });
-    setResponse(MODEL_URLS[1], { scene: makeScene(0x00ff00) });
-    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff) });
+    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000, FISH_SCENE_DIMENSIONS) });
+    setResponse(MODEL_URLS[1], { scene: makeScene(0x00ff00, FISH_SCENE_DIMENSIONS) });
+    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff, FISH_SCENE_DIMENSIONS) });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
@@ -138,16 +121,16 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['ready', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
       expect(window.__vibe_fishAssetStatus).toBeUndefined();
     }
   });
 
   it('settles an optional variant after its loading timeout', async () => {
     vi.useFakeTimers();
-    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000) });
+    setResponse(MODEL_URLS[0], { scene: makeScene(0xff0000, FISH_SCENE_DIMENSIONS) });
     setResponse(MODEL_URLS[1], new Promise<never>(() => {}));
-    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff) });
+    setResponse(MODEL_URLS[2], { scene: makeScene(0x0000ff, FISH_SCENE_DIMENSIONS) });
 
     const renderer = await ReactThreeTestRenderer.create(
       <VisualQualityProvider>
@@ -171,7 +154,7 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['error', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
       vi.useRealTimers();
     }
   });

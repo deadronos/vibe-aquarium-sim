@@ -1,5 +1,4 @@
-import type { SimulationInput, SimulationOutput } from '../../workers/simulationWorker';
-import { simulateStep } from '../../workers/simulationWorker';
+import type { SimulationInput, SimulationOutput } from '../../workers/boids/types';
 import {
   copySimulationInputToShared,
   createSharedSimulationOutput,
@@ -24,6 +23,12 @@ import {
   type TransferableSimulationJobMessage,
 } from '../../workers/boids/transferBuffers';
 import { disposeBoidsCache } from '../../workers/boids/cache';
+import {
+  createTransportStatus,
+  publishTransportStatus as publishStatus,
+  recordTransportError,
+} from './transportStatus';
+import { runMainThreadStep } from './mainThreadTransport';
 
 type TransportMode = VibeTransportMode;
 
@@ -38,18 +43,9 @@ export class WorkerOrchestrator {
   private transferSlots: Array<TransferableSimulationBuffers | null> = [null, null];
   private activeTransferSlotIndex: number | null = null;
   private pendingTransferSlotIndex: number | null = null;
-  private readonly transportStatus: VibeTransportStatus = {
-    mode: 'main-thread',
-    isolationSupported: supportsSharedSimulationBuffers(),
-    fishCapacity: 0,
-    foodCapacity: 0,
-    submitted: 0,
-    completed: 0,
-    errors: 0,
-    overlapCount: 0,
-    busy: false,
-    latestReason: null,
-  };
+  private readonly transportStatus: VibeTransportStatus = createTransportStatus(
+    supportsSharedSimulationBuffers()
+  );
 
   constructor() {
     this.initWorker();
@@ -80,17 +76,11 @@ export class WorkerOrchestrator {
   }
 
   private publishTransportStatus() {
-    this.transportStatus.busy = this.hasJob;
-    if (typeof window !== 'undefined') {
-      window.__vibe_transportStatus = this.transportStatus;
-      if (window.__vibe_debug) window.__vibe_debug.transport = this.transportStatus;
-    }
+    publishStatus(this.transportStatus, this.hasJob);
   }
 
   private recordError(reason: string) {
-    this.transportStatus.errors += 1;
-    this.transportStatus.latestReason = reason;
-    this.publishTransportStatus();
+    recordTransportError(this.transportStatus, this.hasJob, reason);
   }
 
   private initWorker() {
@@ -369,21 +359,7 @@ export class WorkerOrchestrator {
 
   private submitMainThreadJob(input: SimulationInput) {
     try {
-      const t0 = performance.now();
-      this.pendingResult = simulateStep(input);
-      const t1 = performance.now();
-      try {
-        const dbg = typeof window !== 'undefined' ? window.__vibe_debug : null;
-        if (dbg) {
-          dbg.simulateStep.push({
-            duration: t1 - t0,
-            time: Date.now(),
-            fishCount: input.fishCount,
-          });
-        }
-      } catch {
-        /* ignore optional diagnostics */
-      }
+      this.pendingResult = runMainThreadStep(input);
       this.transportStatus.submitted += 1;
       this.transportStatus.completed += 1;
       this.hasJob = false;

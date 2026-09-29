@@ -21,11 +21,6 @@ export const triggerEffect = (type: EffectType, position: Vector3, payload?: any
   );
 };
 
-// Legacy support for EatingBurst
-export const triggerEatingBurst = (position: Vector3) => {
-  triggerEffect('EAT', position);
-};
-
 export const addEffectListener = (listener: EffectListener) => {
   listeners.add(listener);
 };

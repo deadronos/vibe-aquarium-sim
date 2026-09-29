@@ -1,5 +1,6 @@
-export type Float32Buffer = Float32Array<ArrayBufferLike>;
-export type Int32Buffer = Int32Array<ArrayBufferLike>;
+import type { Float32Buffer, Int32Buffer } from '../../workers/boids/types';
+
+export type { Float32Buffer, Int32Buffer } from '../../workers/boids/types';
 
 export const ensureCapacity = (buffer: Float32Buffer, needed: number): Float32Buffer => {
   if (buffer.length < needed) {

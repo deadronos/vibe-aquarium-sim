@@ -5,7 +5,7 @@ import { fixedScheduler } from '../utils/FixedStepScheduler';
 import { updateSnapshots } from './boids/snapshot';
 import { applySimulationResult } from './boids/resultApplier';
 import { WorkerOrchestrator } from './boids/workerOrchestrator';
-import type { SimulationInput } from '../workers/simulationWorker';
+import type { SimulationInput } from '../workers/boids/types';
 
 export const BoidsSystem = () => {
   useEffect(() => {

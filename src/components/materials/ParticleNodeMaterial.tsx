@@ -12,17 +12,10 @@ import {
   cos,
   vec4,
 } from 'three/tsl';
-import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
+import { AXIS_X, AXIS_Y, AXIS_Z, registerNodeMaterial, resolveThreeColor } from './materialUtils';
 
-// Extend so we can use <pointsNodeMaterial /> in JSX
-extend({ PointsNodeMaterial });
-
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    pointsNodeMaterial: ThreeElement<typeof PointsNodeMaterial>;
-  }
-}
+registerNodeMaterial('PointsNodeMaterial', PointsNodeMaterial);
 
 interface ParticleNodeMaterialProps {
   color?: string | THREE.Color;
@@ -71,15 +64,12 @@ export const ParticleNodeMaterial = ({
     .add(cos(flutterTime.mul(1.5)).mul(0.03));
 
   // Construction of vec3 from nodes needs to be careful
-  const flutterVec = vec3(new THREE.Vector3(1, 0, 0))
-    .mul(flutterX)
-    .add(vec3(new THREE.Vector3(0, 1, 0)).mul(flutterY))
-    .add(vec3(new THREE.Vector3(0, 0, 1)).mul(flutterZ));
+  const flutterVec = AXIS_X.mul(flutterX).add(AXIS_Y.mul(flutterY)).add(AXIS_Z.mul(flutterZ));
 
   const finalP = wrappedP.add(flutterVec);
 
   // 3. Fragment Logic (Twinkle and Shape)
-  const c = colorByProp(colorProp);
+  const c = color(resolveThreeColor(colorProp));
   const twinkle = float(0.6).add(float(0.4).mul(sin(seed.mul(99.0).add(c.r))));
 
   const finalAlpha = float(opacity).mul(twinkle);
@@ -96,8 +86,3 @@ export const ParticleNodeMaterial = ({
     />
   );
 };
-
-// Helper to convert prop to TSL color node
-function colorByProp(c: string | THREE.Color) {
-  return color(new THREE.Color(typeof c === 'string' ? c : c));
-}

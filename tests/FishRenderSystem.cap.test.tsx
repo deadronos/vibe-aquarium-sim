@@ -8,39 +8,27 @@ import { VisualQualityProvider } from '../src/performance/VisualQualityProvider'
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { resetInstanceCapWarnings } from '../src/systems/instanceCapWarning';
 import { world } from '../src/store';
-import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
+import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore, resetWorld } from './support/stores';
 
 // Capture frame callbacks so tests can invoke them deterministically
-const frameCallbacks: Array<(state: unknown, delta: number) => void> = [];
+const { useFrame, frameCallbacks, resetUseFrameMock } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock();
+});
+
+const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = await vi.hoisted(async () => {
+  const { createUseGLTFMock } = await import('./support/r3fMocks');
+  return createUseGLTFMock();
+});
 
 vi.mock('@react-three/fiber', async () => {
   const actual = await vi.importActual<typeof import('@react-three/fiber')>('@react-three/fiber');
   return {
     ...actual,
-    useFrame: (cb: (state: unknown, delta: number) => void) => {
-      frameCallbacks.push(cb);
-    },
-  };
-});
-
-const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
-  let scenes: Array<{ traverse: (fn: (child: unknown) => void) => void }> = [];
-
-  const useGLTFMock = vi.fn((url: string) => {
-    const index = url.includes('fish3') ? 2 : url.includes('fish2') ? 1 : 0;
-    const scene = scenes[index] ?? scenes[scenes.length - 1];
-    return { scene } as unknown as { scene: THREE.Object3D };
-  });
-
-  return {
-    useGLTFMock,
-    setUseGLTFScenes: (nextScenes: typeof scenes) => {
-      scenes = nextScenes;
-    },
-    resetUseGLTFMock: () => {
-      useGLTFMock.mockClear();
-    },
+    useFrame,
   };
 });
 
@@ -50,45 +38,32 @@ vi.mock('@react-three/drei', () => {
   };
 });
 
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('FishRenderSystem instance cap warning', () => {
   beforeEach(() => {
-    frameCallbacks.length = 0;
+    resetUseFrameMock();
     resetUseGLTFMock();
     resetInstanceCapWarnings();
 
-    const makeScene = (mat: THREE.Material) => {
-      const scene = new THREE.Object3D();
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), mat);
-      scene.add(mesh);
-      return scene;
-    };
-
     setUseGLTFScenes([
-      makeScene(new THREE.MeshStandardMaterial({ color: 0xff0000 })),
-      makeScene(new THREE.MeshStandardMaterial({ color: 0x00ff00 })),
-      makeScene(new THREE.MeshStandardMaterial({ color: 0x0000ff })),
+      makeScene(0xff0000, FISH_SCENE_DIMENSIONS),
+      makeScene(0x00ff00, FISH_SCENE_DIMENSIONS),
+      makeScene(0x0000ff, FISH_SCENE_DIMENSIONS),
     ]);
 
     act(() => {
-      useGameStore.setState({ visualQualityOverrides: {} });
+      resetGameStore();
       useQualityStore.setState({ instanceUpdateBudget: 128 });
     });
 
-    world.entities.length = 0;
+    resetWorld();
     vi.spyOn(Math, 'random').mockImplementation(() => 0);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    frameCallbacks.length = 0;
-    world.entities.length = 0;
+    resetUseFrameMock();
+    resetWorld();
   });
 
   it('warns via console.warn when fish exceed the per-model instance cap', async () => {
@@ -121,10 +96,7 @@ describe('FishRenderSystem instance cap warning', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('MAX_INSTANCES_PER_MODEL'));
 
     warnSpy.mockRestore();
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 
   it('warns at most once per model per session', async () => {
@@ -158,9 +130,6 @@ describe('FishRenderSystem instance cap warning', () => {
     expect(capWarnings.length).toBe(1);
 
     warnSpy.mockRestore();
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 });

@@ -1,4 +1,5 @@
-import { simulateStep, type SimulationInput } from './simulationWorker';
+import { simulateStep } from './boids/index';
+import type { SimulationInput } from './boids/types';
 import {
   createSharedSimulationInput,
   createSharedSimulationOutputTarget,

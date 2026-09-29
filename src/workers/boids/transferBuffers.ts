@@ -4,6 +4,16 @@ import type {
   SimulationOutputTarget,
   SpeciesParams,
 } from './types';
+import {
+  assertCapacity,
+  copySimulationInputInto,
+  createFloat32,
+  createInt32,
+  createSimulationInputFromJob,
+  createSimulationOutputFrom,
+  createSimulationOutputTargetFrom,
+  nextCapacity,
+} from './simulationBuffers';
 
 const MIN_FISH_CAPACITY = 16;
 const MIN_FOOD_CAPACITY = 8;
@@ -66,15 +76,6 @@ type TransferSupportScope = {
   ArrayBuffer?: typeof ArrayBuffer;
 };
 
-const nextCapacity = (requested: number, minimum: number) =>
-  Math.max(minimum, Math.ceil(requested * 1.5));
-
-const createFloat32 = (length: number) =>
-  new Float32Array(new ArrayBuffer(Float32Array.BYTES_PER_ELEMENT * length));
-
-const createInt32 = (length: number) =>
-  new Int32Array(new ArrayBuffer(Int32Array.BYTES_PER_ELEMENT * length));
-
 export function supportsTransferableSimulationBuffers(
   scope: TransferSupportScope = globalThis as TransferSupportScope
 ) {
@@ -125,15 +126,8 @@ export function copySimulationInputToTransfer(
   input: SimulationInput,
   buffers: TransferableSimulationBuffers
 ) {
-  if (input.fishCount > buffers.fishCapacity || input.foodCount > buffers.foodCapacity) {
-    throw new Error('Transferable boids buffer capacity is too small for the submitted job.');
-  }
-
-  buffers.positions.set(input.positions.subarray(0, input.fishCount * 3), 0);
-  buffers.velocities.set(input.velocities.subarray(0, input.fishCount * 3), 0);
-  buffers.speciesIndices.set(input.speciesIndices.subarray(0, input.fishCount), 0);
-  buffers.foodPositions.set(input.foodPositions.subarray(0, input.foodCount * 3), 0);
-  buffers.eatenFoodCount[0] = 0;
+  assertCapacity(input.fishCount, input.foodCount, buffers, 'Transferable');
+  copySimulationInputInto(input, buffers);
 }
 
 export function serializeTransferableSimulationBuffers(buffers: TransferableSimulationBuffers) {
@@ -188,25 +182,8 @@ export function createTransferSimulationInput(
   message: TransferableSimulationJobMessage,
   buffers: TransferableSimulationBuffers
 ): SimulationInput {
-  if (message.fishCount > buffers.fishCapacity || message.foodCount > buffers.foodCapacity) {
-    throw new Error('Transferable boids buffer capacity is too small for the submitted job.');
-  }
-
-  return {
-    snapshotRevision: message.snapshotRevision,
-    fishCount: message.fishCount,
-    positions: buffers.positions.subarray(0, message.fishCount * 3),
-    velocities: buffers.velocities.subarray(0, message.fishCount * 3),
-    speciesIndices: buffers.speciesIndices.subarray(0, message.fishCount),
-    species: message.species,
-    foodCount: message.foodCount,
-    foodPositions: buffers.foodPositions.subarray(0, message.foodCount * 3),
-    time: message.time,
-    boids: message.boids,
-    bounds: message.bounds,
-    water: message.water,
-    current: message.current,
-  };
+  assertCapacity(message.fishCount, message.foodCount, buffers, 'Transferable');
+  return createSimulationInputFromJob(message, buffers);
 }
 
 export function createTransferSimulationOutputTarget(
@@ -214,16 +191,7 @@ export function createTransferSimulationOutputTarget(
   fishCount: number,
   foodCount: number
 ): SimulationOutputTarget {
-  if (fishCount > buffers.fishCapacity || foodCount > buffers.foodCapacity) {
-    throw new Error('Transferable boids buffer capacity is too small for the completed job.');
-  }
-
-  return {
-    steering: buffers.steering.subarray(0, fishCount * 3),
-    externalForces: buffers.externalForces.subarray(0, fishCount * 3),
-    eatenFoodIndices: buffers.eatenFoodIndices.subarray(0, foodCount),
-    eatenFoodCount: buffers.eatenFoodCount,
-  };
+  return createSimulationOutputTargetFrom(buffers, fishCount, foodCount, 'Transferable');
 }
 
 export function createTransferSimulationOutput(
@@ -232,14 +200,7 @@ export function createTransferSimulationOutput(
   fishCount: number,
   eatenFoodCount: number = buffers.eatenFoodCount[0]
 ): SimulationOutput {
-  const safeEatenFoodCount = Math.max(0, Math.min(eatenFoodCount, buffers.foodCapacity));
-
-  return {
-    snapshotRevision,
-    steering: buffers.steering.subarray(0, fishCount * 3),
-    externalForces: buffers.externalForces.subarray(0, fishCount * 3),
-    eatenFoodIndices: buffers.eatenFoodIndices.subarray(0, safeEatenFoodCount),
-  };
+  return createSimulationOutputFrom(buffers, snapshotRevision, fishCount, eatenFoodCount);
 }
 
 export function markTransferSlotInFlight(

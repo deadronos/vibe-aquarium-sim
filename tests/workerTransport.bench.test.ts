@@ -5,37 +5,18 @@ import {
   serializeTransferableSimulationBuffers,
 } from '../src/workers/boids/transferBuffers';
 import type { SimulationInput } from '../src/workers/boids/types';
+import { createSimulationInput } from './support/simulationInput';
 
 describe('boids worker transport benchmark', () => {
-  const createInput = (fishCount: number): SimulationInput => ({
-    snapshotRevision: 1,
-    fishCount,
-    positions: Float32Array.from({ length: fishCount * 3 }, (_, index) => index % 17),
-    velocities: Float32Array.from({ length: fishCount * 3 }, (_, index) => (index % 11) / 10),
-    speciesIndices: Int32Array.from({ length: fishCount }, (_, index) => index % 3),
-    species: [
-      {
-        maxSpeed: 5,
-        maxForce: 0.1,
-        neighborDist: 10,
-        separationDist: 5,
-        weights: { separation: 2, alignment: 1, cohesion: 1 },
-      },
-    ],
-    foodCount: 16,
-    foodPositions: new Float32Array(16 * 3),
-    time: 0,
-    boids: { neighborDist: 10, separationDist: 5, maxSpeed: 5, maxForce: 0.1 },
-    bounds: { x: 100, y: 100, z: 100 },
-    water: { density: 1, dragCoefficient: 0.01, crossSectionArea: 1 },
-    current: {
-      strength: 0.03,
-      frequency1: 0.2,
-      frequency2: 0.13,
-      spatialScale1: 0.5,
-      spatialScale2: 0.3,
-    },
-  });
+  const createInput = (fishCount: number): SimulationInput =>
+    createSimulationInput({
+      fishCount,
+      positions: Float32Array.from({ length: fishCount * 3 }, (_, index) => index % 17),
+      velocities: Float32Array.from({ length: fishCount * 3 }, (_, index) => (index % 11) / 10),
+      speciesIndices: Int32Array.from({ length: fishCount }, (_, index) => index % 3),
+      foodCount: 16,
+      foodPositions: new Float32Array(16 * 3),
+    });
 
   it('logs synthetic clone preparation versus transferable packing at supported scales', () => {
     const iterations = 50;

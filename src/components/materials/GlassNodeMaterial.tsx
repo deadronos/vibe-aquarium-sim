@@ -1,16 +1,9 @@
 import { MeshPhysicalNodeMaterial } from 'three/webgpu';
 
-import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
+import { registerNodeMaterial, resolveThreeColor } from './materialUtils';
 
-// Extend so we can use <meshPhysicalNodeMaterial /> in JSX
-extend({ MeshPhysicalNodeMaterial });
-
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshPhysicalNodeMaterial: ThreeElement<typeof MeshPhysicalNodeMaterial>;
-  }
-}
+registerNodeMaterial('MeshPhysicalNodeMaterial', MeshPhysicalNodeMaterial);
 
 interface GlassNodeMaterialProps {
   color?: string | THREE.Color;
@@ -33,7 +26,7 @@ export const GlassNodeMaterial = ({
 }: GlassNodeMaterialProps) => {
   return (
     <meshPhysicalNodeMaterial
-      color={new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp)}
+      color={resolveThreeColor(colorProp)}
       transmission={transmission}
       opacity={opacity}
       roughness={roughness}

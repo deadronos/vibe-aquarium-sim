@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { logShaderOnce } from '../utils/shaderDebug';
+import { logShaderOnce, type ShaderLike } from '../utils/shaderDebug';
 
 export const VIBE_FISH_LIGHTING_MARKER = '// VIBE_RIM_LIGHTING';
 
@@ -44,15 +44,6 @@ const createUniforms = (): VibeFishLightingUniforms => ({
   vibeSSSPower: { value: DEFAULT_VIBE_FISH_SSS_POWER },
   vibeTime: { value: 0 },
 });
-
-// Minimal local shader shape used by onBeforeCompile.
-// @types/three does not reliably export a Shader type across versions, so
-// use a compact local interface to avoid depending on that symbol.
-type ShaderLike = {
-  fragmentShader: string;
-  vertexShader?: string;
-  uniforms: Record<string, { value: unknown }>;
-};
 
 const injectRimAndSSS = (shader: ShaderLike) => {
   // Idempotency: onBeforeCompile can run multiple times (program cache, renderer reuse).

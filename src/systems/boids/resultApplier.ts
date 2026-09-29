@@ -1,6 +1,6 @@
 import { world } from '../../store';
 import { triggerEffect } from '../../utils/effectsBus';
-import type { SimulationOutput } from '../../workers/simulationWorker';
+import type { SimulationOutput } from '../../workers/boids/types';
 import { areSnapshotsCurrent, fishSnapshot, foodSnapshot, snapshotRevision } from './snapshot';
 
 const eatenFoodSet = new Set<number>();

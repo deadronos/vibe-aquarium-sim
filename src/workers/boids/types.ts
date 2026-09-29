@@ -1,3 +1,4 @@
+import type { Vec3Like } from '../../domain/types';
 import type { SpeciesParams } from '../../domain/species';
 
 export type { SpeciesParams } from '../../domain/species';
@@ -17,7 +18,7 @@ export type SimulationInput = {
   foodPositions: Float32Buffer;
   time: number;
   boids: { neighborDist: number; separationDist: number; maxSpeed: number; maxForce: number };
-  bounds: { x: number; y: number; z: number };
+  bounds: Vec3Like;
   water: { density: number; dragCoefficient: number; crossSectionArea: number };
   current: {
     strength: number;
@@ -50,8 +51,8 @@ export type BoidsCache = {
   foodCellHead: Int32Array;
   foodCellNext: Int32Array;
   eatenFoodIndexSet: Set<number>;
-  tempSteer: { x: number; y: number; z: number };
-  tempForce: { x: number; y: number; z: number };
+  tempSteer: Vec3Like;
+  tempForce: Vec3Like;
   EPS: number;
   // Persistent output buffers
   steering: Float32Array;

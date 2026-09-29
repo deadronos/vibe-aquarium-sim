@@ -42,6 +42,15 @@ defineGlobalIfMissing('GPUColorWrite', {
   ALL: 15,
 });
 
+defineGlobalIfMissing(
+  'ResizeObserver',
+  class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+);
+
 vi.mock('detect-gpu', () => ({
   getGPUTier: vi.fn(async () => ({
     tier: 3,

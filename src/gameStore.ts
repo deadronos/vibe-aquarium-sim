@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { VisualQualityFlags } from './performance/qualityPresets';
-import type { DecorationType } from './domain/types';
+import type { DecorationType, Vec3Like } from './domain/types';
 
 interface GameState {
   // Feeding
@@ -13,7 +13,7 @@ interface GameState {
   // Effects queue (for spawning effects from systems)
   pendingEffects: Array<{
     type: 'ripple' | 'eating_burst';
-    position: { x: number; y: number; z: number };
+    position: Vec3Like;
     id: string;
   }>;
 

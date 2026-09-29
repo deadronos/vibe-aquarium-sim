@@ -8,7 +8,7 @@ import type { VibeFishLightingUniforms } from '../../shaders/fishLightingMateria
 
 export const OPTIONAL_FISH_MODEL_TIMEOUT_MS = 15_000;
 
-export type DeferredFishModelProps = {
+type DeferredFishModelProps = {
   modelIndex: 1 | 2;
   meshRef: MutableRefObject<InstancedMesh | null>;
   uniformsRef: MutableRefObject<VibeFishLightingUniforms[]>;
@@ -18,12 +18,12 @@ export type DeferredFishModelProps = {
   onReady: () => void;
 };
 
-export const DeferredFishModel = ({ modelIndex, ...props }: DeferredFishModelProps) => {
+const DeferredFishModel = ({ modelIndex, ...props }: DeferredFishModelProps) => {
   const gltf = useGLTF(MODEL_URLS[modelIndex]);
   return <FishModelMesh modelIndex={modelIndex} gltf={gltf} {...props} />;
 };
 
-export type DeferredFishModelSlotProps = DeferredFishModelProps & { onError: () => void };
+type DeferredFishModelSlotProps = DeferredFishModelProps & { onError: () => void };
 
 /**
  * Optional variants must never hold the Suspense tree in a permanent loading

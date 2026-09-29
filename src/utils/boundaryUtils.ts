@@ -1,6 +1,16 @@
-import { TANK_DIMENSIONS } from '../config/constants';
+import type { Vec3Like } from '../domain/types';
+import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
+import { clamp } from './mathUtils';
 
-export type Vec3Like = { x: number; y: number; z: number };
+export type { Vec3Like } from '../domain/types';
+
+/**
+ * Clamps a scalar coordinate to the symmetric simulation bounds. Defaults to
+ * the x-axis bound; callers clamp other axes by passing that axis' bound.
+ */
+export function clampToSimulationBounds(value: number, bound = SIMULATION_BOUNDS.x): number {
+  return clamp(value, -bound, bound);
+}
 
 const HALF_TANK_WIDTH = TANK_DIMENSIONS.width / 2;
 const HALF_TANK_HEIGHT = TANK_DIMENSIONS.height / 2;

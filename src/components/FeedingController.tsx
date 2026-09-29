@@ -4,6 +4,7 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { world } from '../store';
 import { useGameStore } from '../gameStore';
 import { SIMULATION_BOUNDS, TANK_DIMENSIONS } from '../config/constants';
+import { clampToSimulationBounds } from '../utils/boundaryUtils';
 import { ClickRipple } from './effects/ClickRipple';
 import { feedAt } from '../game/feedingActions';
 
@@ -30,8 +31,8 @@ export const FeedingController = () => {
         const floorY = -TANK_DIMENSIONS.height / 2 + 0.01;
 
         // Clamp to tank bounds
-        const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
-        const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+        const x = clampToSimulationBounds(point.x, SIMULATION_BOUNDS.x);
+        const z = clampToSimulationBounds(point.z, SIMULATION_BOUNDS.z);
 
         world.add({
           isDecoration: true,

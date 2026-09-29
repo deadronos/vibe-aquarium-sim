@@ -11,30 +11,17 @@ import {
   dot,
   pow,
   smoothstep,
-  normalize,
   normalView,
   positionView,
   mx_noise_vec3,
   sin,
   vec4,
 } from 'three/tsl';
-import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../../config/artDirection';
+import { AXIS_Y, registerNodeMaterial, resolveThreeColor, tslSafeNormalize } from './materialUtils';
 
-// Extend so we can use <meshBasicNodeMaterial /> in JSX
-extend({ MeshBasicNodeMaterial });
-
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshBasicNodeMaterial: ThreeElement<typeof MeshBasicNodeMaterial>;
-  }
-}
-
-// --- Utils ---
-
-// Safe normalize (avoid div by zero)
-const safeNormalize = (v: any) => normalize(v);
+registerNodeMaterial('MeshBasicNodeMaterial', MeshBasicNodeMaterial);
 
 // Simplex-like noise wrapper using mx_noise_vec3
 const snoise = (v: any) => mx_noise_vec3(v).x;
@@ -64,26 +51,26 @@ export const WaterVolumeNodeMaterial = ({
 
   // 1. Depth Gradient
   const depth = smoothstep(-1.0, 1.0, positionLocal.y);
-  const baseColor = color(new THREE.Color(waterColor));
+  const baseColor = color(resolveThreeColor(waterColor));
   const gradientColor = mix(baseColor.mul(0.5), baseColor.mul(1.5), depth);
 
   // 2. Caustics - simplified: use position with time offset on Y
   const noiseInput = positionLocal.mul(causticsScale);
   // Add time-based vertical offset by manipulating the y component
-  const timeOffset = vec3(new THREE.Vector3(0, 1, 0)).mul(t.mul(causticsSpeed));
+  const timeOffset = AXIS_Y.mul(t.mul(causticsSpeed));
   const noiseCtx = noiseInput.add(timeOffset);
   const noiseVal = snoise(noiseCtx);
   const causticMask = smoothstep(0.4, 0.6, noiseVal).mul(causticsIntensity);
 
   // 3. Fresnel
-  const viewDir = safeNormalize(positionView.negate());
+  const viewDir = tslSafeNormalize(positionView.negate());
   const ndv = max(dot(viewDir, normalView), 0.0);
   const fresnel = pow(float(1.0).sub(ndv), 3.0);
 
   // 4. Specular - simplified without complex shimmer
   // Use base normal for specular
-  const lightDir = safeNormalize(vec3(new THREE.Vector3(0.25, 1.0, 0.15)));
-  const halfDir = safeNormalize(lightDir.add(viewDir));
+  const lightDir = tslSafeNormalize(vec3(new THREE.Vector3(0.25, 1.0, 0.15)));
+  const halfDir = tslSafeNormalize(lightDir.add(viewDir));
   const rawSpec = pow(max(dot(normalView, halfDir), 0.0), 48.0);
   const shimmerPhase = sin(positionLocal.x.mul(2.0).add(t.mul(1.2)));
   const shimmer = shimmerPhase.mul(0.5).add(0.5).mul(float(volumeShimmerStrength));
@@ -135,20 +122,20 @@ export const WaterSurfaceNodeMaterial = ({
     .mul(surfaceShimmerStrength);
 
   // Perturb normal with wave in Y direction only (simplified)
-  const perturbDirection = vec3(new THREE.Vector3(0, 1, 0)).mul(wave);
-  const n = safeNormalize(normalView.add(perturbDirection));
+  const perturbDirection = AXIS_Y.mul(wave);
+  const n = tslSafeNormalize(normalView.add(perturbDirection));
 
-  const v = safeNormalize(positionView.negate());
-  const l = safeNormalize(vec3(new THREE.Vector3(0.35, 1.0, 0.2)));
+  const v = tslSafeNormalize(positionView.negate());
+  const l = tslSafeNormalize(vec3(new THREE.Vector3(0.35, 1.0, 0.2)));
 
   const ndv = max(dot(n, v), 0.0);
   const fresnel = pow(float(1.0).sub(ndv), 5.0);
 
-  const h = safeNormalize(l.add(v));
+  const h = tslSafeNormalize(l.add(v));
   const spec = pow(max(dot(n, h), 0.0), 64.0);
   const glint = spec.mul(float(0.3).add(float(0.7).mul(fresnel)));
 
-  const tintColor = color(new THREE.Color(surfaceTint)).mul(0.12);
+  const tintColor = color(resolveThreeColor(surfaceTint)).mul(0.12);
   const glintColor = vec3(glint).mul(surfaceStrength);
   const fresnelColor = vec3(new THREE.Vector3(0.25, 0.55, 0.85))
     .mul(fresnel)

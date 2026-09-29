@@ -1,12 +1,11 @@
+import { SAFE_NORMALIZE_HIGH_EPS_GLSL, TONEMAP_COLORSPACE_INCLUDES } from './glsl/common';
+
 export const waterSurfaceVertexShader = `
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewDir;
 
-vec3 safeNormalize(vec3 v) {
-  return v * inversesqrt(max(dot(v, v), 1e-12));
-}
-
+${SAFE_NORMALIZE_HIGH_EPS_GLSL}
 void main() {
   vUv = uv;
   vNormal = safeNormalize(normalMatrix * normal);
@@ -28,10 +27,7 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewDir;
 
-vec3 safeNormalize(vec3 v) {
-  return v * inversesqrt(max(dot(v, v), 1e-12));
-}
-
+${SAFE_NORMALIZE_HIGH_EPS_GLSL}
 vec3 perturbNormal(vec3 n) {
   // Small, cheap wave-like perturbation for glints (no textures).
   float w1 = sin(vUv.x * 20.0 + time * 0.6) * sin(vUv.y * 18.0 - time * 0.5);
@@ -60,7 +56,6 @@ void main() {
   gl_FragColor = vec4(color, clamp(alpha, 0.0, 0.9));
 
   // Managed output parity with built-in and WebGPU node materials.
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
+  ${TONEMAP_COLORSPACE_INCLUDES}
 }
 `;

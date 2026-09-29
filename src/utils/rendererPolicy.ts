@@ -1,4 +1,5 @@
-export type RendererPreference = 'webgl' | 'webgpu';
+export type RendererBackend = 'webgl' | 'webgpu';
+export type RendererPreference = RendererBackend;
 export type RendererKind = RendererPreference;
 
 type RendererWithBackend = {
@@ -29,4 +30,27 @@ export function selectRenderer(
 /** Returns true only when Three is actively using its WebGPU backend. */
 export function isWebGPURendererBackend(renderer: RendererWithBackend): boolean {
   return renderer.backend?.isWebGPUBackend === true;
+}
+
+/** Maps the `isWebGPU` flag used across components to a backend identifier. */
+export function toRendererBackend(isWebGPU: boolean): RendererBackend {
+  return isWebGPU ? 'webgpu' : 'webgl';
+}
+
+/** Publishes the active renderer status for debug tooling. */
+export function setRendererStatus(status: VibeRendererStatus): void {
+  window.__vibe_rendererStatus = status;
+}
+
+/**
+ * Builds the shared renderer options applied to every renderer we construct —
+ * both the WebGL renderer and the WebGPU wrapper receive this same shape.
+ */
+export function createRendererOptions<T extends object>(props: T) {
+  return {
+    ...props,
+    powerPreference: 'high-performance' as const,
+    antialias: true,
+    alpha: true,
+  };
 }

@@ -5,44 +5,15 @@ import React, { act } from 'react';
 import { AmbientParticles } from '../src/components/AmbientParticles';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
-import { useQualityStore } from '../src/performance/qualityStore';
-import { getQualitySettings } from '../src/performance/qualityPresets';
-
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
+import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore, resetQualityStore } from './support/stores';
 
 describe('AmbientParticles', () => {
   beforeEach(() => {
     act(() => {
-      const qualityState = useQualityStore.getState();
-      useQualityStore.setState(
-        {
-          ...qualityState,
-          // Make tests deterministic and order-independent.
-          isAdaptiveEnabled: true,
-          level: 'low',
-          settings: getQualitySettings('low', 2),
-          fpsEma: 60,
-        },
-        true
-      );
-
-      const gameState = useGameStore.getState();
-      useGameStore.setState(
-        {
-          ...gameState,
-          lastFedTime: null,
-          isPlacingDecoration: false,
-          selectedDecorationType: 'seaweed',
-          pendingEffects: [],
-          visualQualityOverrides: {},
-        },
-        true
-      );
+      // Make tests deterministic and order-independent.
+      resetQualityStore('low');
+      resetGameStore();
     });
   });
 
@@ -69,10 +40,7 @@ describe('AmbientParticles', () => {
       expect(anyGroup.children?.[0].type).toBe('Points');
       expect(anyGroup.children?.[1].type).toBe('Points');
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -90,10 +58,7 @@ describe('AmbientParticles', () => {
     try {
       expect(renderer.scene.children.length).toBe(0);
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 });
