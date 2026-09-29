@@ -12,6 +12,7 @@ import {
 import {
   EPS_CONST_GLSL,
   SAFE_NORMALIZE_GLSL,
+  SAFE_NORMALIZE_HIGH_EPS_GLSL,
   SIMPLEX_3D_NOISE_GLSL,
   TONEMAP_COLORSPACE_INCLUDES,
 } from '../src/shaders/glsl/common';
@@ -78,6 +79,7 @@ describe('shared glsl chunks', () => {
   const chunks = {
     EPS_CONST_GLSL,
     SAFE_NORMALIZE_GLSL,
+    SAFE_NORMALIZE_HIGH_EPS_GLSL,
     SIMPLEX_3D_NOISE_GLSL,
     TONEMAP_COLORSPACE_INCLUDES,
   };
@@ -94,8 +96,38 @@ describe('shared glsl chunks', () => {
     expect(SIMPLEX_3D_NOISE_GLSL).toContain('vec4 permute(vec4 x)');
     expect(SIMPLEX_3D_NOISE_GLSL).toContain('vec4 taylorInvSqrt(vec4 r)');
     expect(SAFE_NORMALIZE_GLSL).toContain('vec3 safeNormalize(vec3 v)');
+    expect(SAFE_NORMALIZE_HIGH_EPS_GLSL).toContain('vec3 safeNormalize(vec3 v)');
+    expect(SAFE_NORMALIZE_HIGH_EPS_GLSL).toContain('1e-12');
     expect(EPS_CONST_GLSL).toContain('EPS');
+    expect(EPS_CONST_GLSL).toContain('1e-6');
     expect(TONEMAP_COLORSPACE_INCLUDES).toContain('#include <tonemapping_fragment>');
     expect(TONEMAP_COLORSPACE_INCLUDES).toContain('#include <colorspace_fragment>');
+  });
+
+  it('preserves each originals epsilon guard', () => {
+    const epsOneSix = {
+      causticsVertexShader,
+      causticsFragmentShader,
+      waterVertexShader,
+      waterFragmentShader,
+    };
+    for (const [name, source] of Object.entries(epsOneSix)) {
+      expect(source, `${name} should declare EPS=1e-6`).toContain('const float EPS = 1e-6;');
+    }
+
+    for (const name of ['causticsVertexShader', 'waterVertexShader', 'waterFragmentShader'] as const) {
+      expect(safeNormalizeShaders[name], `${name} should use EPS guard`).toContain(
+        'max(dot(v, v), EPS)'
+      );
+    }
+
+    for (const name of ['waterSurfaceVertexShader', 'waterSurfaceFragmentShader'] as const) {
+      expect(safeNormalizeShaders[name], `${name} should use 1e-12 guard`).toContain(
+        'max(dot(v, v), 1e-12)'
+      );
+      expect(safeNormalizeShaders[name], `${name} should not declare EPS`).not.toContain(
+        'const float EPS'
+      );
+    }
   });
 });

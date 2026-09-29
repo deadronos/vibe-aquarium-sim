@@ -8,6 +8,12 @@ vec3 safeNormalize(vec3 v) {
 }
 `;
 
+export const SAFE_NORMALIZE_HIGH_EPS_GLSL = `
+vec3 safeNormalize(vec3 v) {
+  return v * inversesqrt(max(dot(v, v), 1e-12));
+}
+`;
+
 export const SIMPLEX_3D_NOISE_GLSL = `
 // Simplex 3D Noise
 // by Ian McEwan, Ashima Arts

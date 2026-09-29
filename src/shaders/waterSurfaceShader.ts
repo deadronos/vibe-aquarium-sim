@@ -1,17 +1,11 @@
-import {
-  EPS_CONST_GLSL,
-  SAFE_NORMALIZE_GLSL,
-  TONEMAP_COLORSPACE_INCLUDES,
-} from './glsl/common';
+import { SAFE_NORMALIZE_HIGH_EPS_GLSL, TONEMAP_COLORSPACE_INCLUDES } from './glsl/common';
 
 export const waterSurfaceVertexShader = `
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewDir;
 
-${EPS_CONST_GLSL}
-
-${SAFE_NORMALIZE_GLSL}
+${SAFE_NORMALIZE_HIGH_EPS_GLSL}
 void main() {
   vUv = uv;
   vNormal = safeNormalize(normalMatrix * normal);
@@ -33,9 +27,7 @@ varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vViewDir;
 
-${EPS_CONST_GLSL}
-
-${SAFE_NORMALIZE_GLSL}
+${SAFE_NORMALIZE_HIGH_EPS_GLSL}
 vec3 perturbNormal(vec3 n) {
   // Small, cheap wave-like perturbation for glints (no textures).
   float w1 = sin(vUv.x * 20.0 + time * 0.6) * sin(vUv.y * 18.0 - time * 0.5);
