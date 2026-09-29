@@ -72,23 +72,21 @@ export const AdaptiveQualityManager = ({
       lastAppliedDprRef.current = nextDpr;
     }
 
-    if (directionalLightRef?.current && !isWebGPU) {
+    const applyShadowMapToLight = (
+      ref: RefObject<THREE.DirectionalLight | THREE.SpotLight | null> | undefined,
+      size: number
+    ): void => {
+      if (!ref?.current || isWebGPU) return;
       if (
         lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
+        lastAppliedShadowSizeRef.current !== size
       ) {
-        applyQualityShadowMap(directionalLightRef.current, profile.shadowMapSize, backend);
+        applyQualityShadowMap(ref.current, size, backend);
       }
-    }
+    };
 
-    if (spotLightRef?.current && !isWebGPU) {
-      if (
-        lastAppliedShadowSizeRef.current === null ||
-        lastAppliedShadowSizeRef.current !== profile.shadowMapSize
-      ) {
-        applyQualityShadowMap(spotLightRef.current, profile.shadowMapSize, backend);
-      }
-    }
+    applyShadowMapToLight(directionalLightRef, profile.shadowMapSize);
+    applyShadowMapToLight(spotLightRef, profile.shadowMapSize);
 
     lastAppliedShadowSizeRef.current = profile.shadowMapSize;
   }, [directionalLightRef, isWebGPU, level, qualityProfile, setDpr, spotLightRef]);

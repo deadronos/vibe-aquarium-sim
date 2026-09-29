@@ -1,3 +1,4 @@
+import { clamp } from '../../utils/mathUtils';
 import { SPECIES_TETRA } from './tetra';
 import { SPECIES_GOLDFISH } from './goldfish';
 import { SPECIES_BETTA } from './betta';
@@ -38,7 +39,7 @@ export function paramsForSpecies(id: SpeciesId | undefined): SpeciesParams {
 
 export function speciesForIndex(index: number): SpeciesDefinition {
   if (!Number.isFinite(index)) return SPECIES_REGISTRY[0]!;
-  const clamped = Math.min(SPECIES_REGISTRY.length - 1, Math.max(0, Math.floor(index)));
+  const clamped = clamp(Math.floor(index), 0, SPECIES_REGISTRY.length - 1);
   return SPECIES_REGISTRY[clamped]!;
 }
 

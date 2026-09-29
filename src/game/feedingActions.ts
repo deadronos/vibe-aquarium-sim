@@ -3,6 +3,7 @@ import { Vector3 } from 'three';
 import type { BubbleConfig } from '../domain/types';
 import { useGameStore } from '../gameStore';
 import { SIMULATION_BOUNDS } from '../config/constants';
+import { clampToSimulationBounds } from '../utils/boundaryUtils';
 import { world } from '../store';
 
 export const TANK_CENTER = new Vector3(0, 0, 0);
@@ -35,8 +36,8 @@ export function feedAt(point: Vector3): void {
     }
   }
 
-  const x = Math.max(-SIMULATION_BOUNDS.x, Math.min(SIMULATION_BOUNDS.x, point.x));
-  const z = Math.max(-SIMULATION_BOUNDS.z, Math.min(SIMULATION_BOUNDS.z, point.z));
+  const x = clampToSimulationBounds(point.x, SIMULATION_BOUNDS.x);
+  const z = clampToSimulationBounds(point.z, SIMULATION_BOUNDS.z);
   world.add({
     isFood: true,
     position: new Vector3(x, point.y, z),

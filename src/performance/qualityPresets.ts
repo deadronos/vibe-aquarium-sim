@@ -1,3 +1,5 @@
+import { clamp } from '../utils/mathUtils';
+
 export type QualityLevel = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface QualitySettings {
@@ -26,8 +28,6 @@ type EnabledBooleanKey<T> = {
 }[keyof T];
 
 export type VisualQualityFlags = Pick<QualitySettings, EnabledBooleanKey<QualitySettings>>;
-
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export const getDeviceMaxDpr = (): number => {
   if (typeof window === 'undefined') return 2;
