@@ -58,8 +58,8 @@ describe('writeSimulationOutput', () => {
   });
 });
 
-describe('accumulateFlocking parity with simulateStep', () => {
-  it('matches simulateStep steering for a 2-fish fixture (in bounds, no food)', () => {
+describe('accumulateFlocking parity with the pre-refactor implementation', () => {
+  it('matches the frozen b8304d2 steering snapshot for a 2-fish fixture', () => {
     const positions = new Float32Array([0, 0, 0, 0.3, 0.1, -0.2]);
     const velocities = new Float32Array([1, 0.2, -0.1, -0.4, 0.7, 0.3]);
     const input = createSimulationInput({
@@ -70,11 +70,16 @@ describe('accumulateFlocking parity with simulateStep', () => {
       speciesIndices: Int32Array.from([0, 0]),
     });
 
+    // Hard-coded steering vector produced by the ORIGINAL inline flocking math
+    // at base commit b8304d2. This is an independent oracle: simulateStep now
+    // delegates to accumulateFlocking, so comparing the two would be circular
+    // and could never catch a regression in the extracted math.
     // In bounds and no food, so boundary + feeding contribute zero and the
     // reported steering is exactly the accumulated flocking steering.
-    // Both sides are stored in Float32Arrays so the comparison is at the
-    // same precision the worker actually ships.
-    const expected = simulateStep(input).steering;
+    const expected = new Float32Array([
+      -0.1572452038526535, 0.04707733541727066, 0.06507682055234909, 0.1878468543291092,
+      -0.013720542192459106, -0.07606726139783859,
+    ]);
 
     const cache = getBoidsCache(2, 0);
     const cellSize = deriveCellSize(input.species, input.boids);
@@ -91,5 +96,9 @@ describe('accumulateFlocking parity with simulateStep', () => {
 
     expect(Array.from(actual)).toEqual(Array.from(expected));
     expect(Array.from(actual).some((v) => v !== 0)).toBe(true);
+
+    // The full step must also match the frozen snapshot; with no food and in
+    // bounds its steering is exactly the accumulated flocking steering.
+    expect(Array.from(simulateStep(input).steering)).toEqual(Array.from(expected));
   });
 });
