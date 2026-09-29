@@ -1,27 +1,9 @@
 import type { SimulationInput, SimulationOutput } from '../../workers/boids/types';
 import {
-  copySimulationInputToShared,
-  createSharedSimulationOutput,
-  ensureSharedSimulationBuffers,
-  serializeSharedSimulationBuffers,
   supportsSharedSimulationBuffers,
   type BoidsWorkerResponse,
-  type SharedSimulationBuffers,
 } from '../../workers/boids/sharedBuffers';
-import {
-  copySimulationInputToTransfer,
-  createTransferSimulationOutput,
-  ensureTransferableSimulationBuffers,
-  hydrateTransferableSimulationBuffers,
-  invalidateTransferSlot,
-  markTransferSlotInFlight,
-  markTransferSlotPendingResult,
-  releaseTransferSlot,
-  serializeTransferableSimulationBuffers,
-  supportsTransferableSimulationBuffers,
-  type TransferableSimulationBuffers,
-  type TransferableSimulationJobMessage,
-} from '../../workers/boids/transferBuffers';
+import { supportsTransferableSimulationBuffers } from '../../workers/boids/transferBuffers';
 import { disposeBoidsCache } from '../../workers/boids/cache';
 import {
   createTransportStatus,
@@ -29,9 +11,20 @@ import {
   recordTransportError,
 } from './transportStatus';
 import { runMainThreadStep } from './mainThreadTransport';
+import { createSharedTransport, type SharedTransport } from './sharedTransport';
+import { createTransferTransport, type TransferTransport } from './transferTransport';
+import type { TransportHost } from './transportHost';
 
 type TransportMode = VibeTransportMode;
 
+/**
+ * Routes boids jobs over the best available transport and owns the fallback
+ * chain between them: shared -> transfer -> cloned -> main thread.
+ *
+ * The shared-buffer and transferable transports own their own buffer/slot
+ * state in `sharedTransport.ts` / `transferTransport.ts`; this class keeps the
+ * worker handle, the job slot, and every mode transition.
+ */
 export class WorkerOrchestrator {
   private worker: Worker | null = null;
   private disposed = false;
@@ -39,15 +32,38 @@ export class WorkerOrchestrator {
   private hasJob = false;
   private pendingResult: SimulationOutput | null = null;
   private pendingFishCount = 0;
-  private sharedBuffers: SharedSimulationBuffers | null = null;
-  private transferSlots: Array<TransferableSimulationBuffers | null> = [null, null];
-  private activeTransferSlotIndex: number | null = null;
-  private pendingTransferSlotIndex: number | null = null;
   private readonly transportStatus: VibeTransportStatus = createTransportStatus(
     supportsSharedSimulationBuffers()
   );
+  private readonly sharedTransport: SharedTransport;
+  private readonly transferTransport: TransferTransport;
 
   constructor() {
+    const readWorker = () => this.worker;
+    const host: TransportHost = {
+      get worker() {
+        return readWorker();
+      },
+      status: this.transportStatus,
+      publishStatus: () => this.publishTransportStatus(),
+      setBusy: (busy) => {
+        this.hasJob = busy;
+      },
+      setMode: (mode, reason = null) => this.setTransportMode(mode, reason),
+      recordError: (reason) => this.recordError(reason),
+      setPendingResult: (result, fishCount) => {
+        this.pendingResult = result;
+        this.pendingFishCount = fishCount;
+      },
+      handleWorkerFailure: (reason) => this.handleWorkerFailure(reason),
+      submitClonedJob: (input) => this.submitClonedJob(input),
+      submitMainThreadJob: (input) => this.submitMainThreadJob(input),
+      submitTransferOrCopy: (input) => this.submitTransferOrCopy(input),
+    };
+
+    this.sharedTransport = createSharedTransport(host);
+    this.transferTransport = createTransferTransport(host);
+
     this.initWorker();
 
     // Expose toggle via window for testing.
@@ -101,18 +117,18 @@ export class WorkerOrchestrator {
         const data = event.data;
         if (data.type === 'success') {
           if (data.mode === 'shared') {
-            if (!this.sharedBuffers) {
+            const output = this.sharedTransport.takeOutput(
+              data.snapshotRevision,
+              data.eatenFoodCount,
+              this.pendingFishCount
+            );
+            if (!output) {
               this.handleWorkerFailure('shared result arrived before buffers were ready');
               return;
             }
-            this.pendingResult = createSharedSimulationOutput(
-              this.sharedBuffers,
-              data.snapshotRevision,
-              this.pendingFishCount,
-              data.eatenFoodCount
-            );
+            this.pendingResult = output;
           } else if (data.mode === 'transfer') {
-            this.handleTransferSuccess(data);
+            this.transferTransport.handleSuccess(data);
             return;
           } else {
             this.pendingResult = data.result;
@@ -138,194 +154,14 @@ export class WorkerOrchestrator {
   }
 
   private handleWorkerFailure(reason: string) {
-    const activeIndex = this.activeTransferSlotIndex;
-    if (activeIndex !== null) {
-      const slot = this.transferSlots[activeIndex];
-      if (slot) invalidateTransferSlot(slot);
-      this.activeTransferSlotIndex = null;
+    if (this.transferTransport.invalidateActiveSlot()) {
       this.setTransportMode('copy', reason);
     } else if (this.transportStatus.mode === 'shared') {
-      this.sharedBuffers = null;
+      this.sharedTransport.invalidate();
       this.setTransportMode(supportsTransferableSimulationBuffers() ? 'transfer' : 'copy', reason);
     }
     this.hasJob = false;
     this.recordError(reason);
-  }
-
-  private handleTransferSuccess(
-    data: Extract<BoidsWorkerResponse, { type: 'success'; mode: 'transfer' }>
-  ) {
-    const activeIndex = this.activeTransferSlotIndex;
-    const slot = activeIndex === null ? null : this.transferSlots[activeIndex];
-    if (activeIndex === null || !slot || slot.state !== 'in-flight' || slot.jobRevision === null) {
-      this.handleWorkerFailure('transfer result arrived without an active slot');
-      return;
-    }
-
-    const jobRevision = slot.jobRevision;
-    const hydrated = hydrateTransferableSimulationBuffers(data.payload);
-    slot.positions = hydrated.positions;
-    slot.velocities = hydrated.velocities;
-    slot.speciesIndices = hydrated.speciesIndices;
-    slot.foodPositions = hydrated.foodPositions;
-    slot.steering = hydrated.steering;
-    slot.externalForces = hydrated.externalForces;
-    slot.eatenFoodIndices = hydrated.eatenFoodIndices;
-    slot.eatenFoodCount = hydrated.eatenFoodCount;
-
-    if (!markTransferSlotPendingResult(slot, jobRevision)) {
-      invalidateTransferSlot(slot);
-      this.handleWorkerFailure('transfer slot state changed before result hydration');
-      return;
-    }
-
-    this.pendingTransferSlotIndex = activeIndex;
-    this.activeTransferSlotIndex = null;
-    this.pendingFishCount = data.fishCount;
-    this.pendingResult = createTransferSimulationOutput(
-      slot,
-      data.snapshotRevision,
-      data.fishCount,
-      data.eatenFoodCount
-    );
-    this.hasJob = false;
-    this.transportStatus.completed += 1;
-    this.publishTransportStatus();
-  }
-
-  private findTransferSlot(fishCount: number, foodCount: number) {
-    for (let index = 0; index < this.transferSlots.length; index += 1) {
-      const slot = this.transferSlots[index];
-      if (
-        slot &&
-        slot.state === 'free' &&
-        slot.fishCapacity >= fishCount &&
-        slot.foodCapacity >= foodCount
-      ) {
-        return index;
-      }
-    }
-
-    for (let index = 0; index < this.transferSlots.length; index += 1) {
-      const slot = this.transferSlots[index];
-      if (!slot || slot.state === 'invalid' || slot.state === 'free') {
-        this.transferSlots[index] = ensureTransferableSimulationBuffers(slot, fishCount, foodCount);
-        const replacement = this.transferSlots[index];
-        if (replacement) {
-          this.transportStatus.fishCapacity = Math.max(
-            this.transportStatus.fishCapacity,
-            replacement.fishCapacity
-          );
-          this.transportStatus.foodCapacity = Math.max(
-            this.transportStatus.foodCapacity,
-            replacement.foodCapacity
-          );
-          this.publishTransportStatus();
-        }
-        return index;
-      }
-    }
-
-    return null;
-  }
-
-  private submitSharedJob(input: SimulationInput) {
-    if (!this.worker) return this.submitClonedJob(input);
-
-    try {
-      const nextBuffers = ensureSharedSimulationBuffers(
-        this.sharedBuffers,
-        input.fishCount,
-        input.foodCount
-      );
-
-      if (nextBuffers !== this.sharedBuffers) {
-        this.sharedBuffers = nextBuffers;
-        this.transportStatus.fishCapacity = nextBuffers.fishCapacity;
-        this.transportStatus.foodCapacity = nextBuffers.foodCapacity;
-        this.worker.postMessage({
-          type: 'shared-buffers',
-          payload: serializeSharedSimulationBuffers(nextBuffers),
-        });
-      }
-
-      if (!this.sharedBuffers) throw new Error('Shared boids buffers were not initialized.');
-      copySimulationInputToShared(input, this.sharedBuffers);
-      this.hasJob = true;
-      this.worker.postMessage({
-        type: 'shared-job',
-        snapshotRevision: input.snapshotRevision,
-        fishCount: input.fishCount,
-        foodCount: input.foodCount,
-        time: input.time,
-        species: input.species,
-        boids: input.boids,
-        bounds: input.bounds,
-        water: input.water,
-        current: input.current,
-      });
-      this.transportStatus.submitted += 1;
-      this.publishTransportStatus();
-      return true;
-    } catch (error) {
-      this.hasJob = false;
-      this.sharedBuffers = null;
-      this.recordError(error instanceof Error ? error.message : String(error));
-      this.setTransportMode(
-        supportsTransferableSimulationBuffers() ? 'transfer' : 'copy',
-        'shared transport failed; falling back'
-      );
-      return this.submitTransferOrCopy(input);
-    }
-  }
-
-  private submitTransferJob(input: SimulationInput) {
-    if (!this.worker) return this.submitMainThreadJob(input);
-
-    const slotIndex = this.findTransferSlot(input.fishCount, input.foodCount);
-    if (slotIndex === null) {
-      this.setTransportMode('copy', 'no free transfer slot');
-      return this.submitClonedJob(input);
-    }
-
-    const slot = this.transferSlots[slotIndex];
-    if (!slot) return this.submitClonedJob(input);
-
-    copySimulationInputToTransfer(input, slot);
-    const { payload, transferables } = serializeTransferableSimulationBuffers(slot);
-    const message: TransferableSimulationJobMessage = {
-      type: 'transfer-job',
-      payload,
-      snapshotRevision: input.snapshotRevision,
-      fishCount: input.fishCount,
-      foodCount: input.foodCount,
-      time: input.time,
-      species: input.species,
-      boids: input.boids,
-      bounds: input.bounds,
-      water: input.water,
-      current: input.current,
-    };
-
-    if (!markTransferSlotInFlight(slot, input.snapshotRevision)) {
-      return this.submitClonedJob(input);
-    }
-
-    this.activeTransferSlotIndex = slotIndex;
-    this.hasJob = true;
-    try {
-      this.worker.postMessage(message, transferables);
-      this.transportStatus.submitted += 1;
-      this.publishTransportStatus();
-      return true;
-    } catch (error) {
-      invalidateTransferSlot(slot);
-      this.activeTransferSlotIndex = null;
-      this.hasJob = false;
-      this.recordError(error instanceof Error ? error.message : String(error));
-      this.setTransportMode('copy', 'transfer post failed; falling back to cloned messages');
-      return this.submitClonedJob(input);
-    }
   }
 
   private submitClonedJob(input: SimulationInput) {
@@ -353,7 +189,7 @@ export class WorkerOrchestrator {
   }
 
   private submitTransferOrCopy(input: SimulationInput) {
-    if (this.transportStatus.mode === 'transfer') return this.submitTransferJob(input);
+    if (this.transportStatus.mode === 'transfer') return this.transferTransport.submit(input);
     return this.submitClonedJob(input);
   }
 
@@ -379,13 +215,7 @@ export class WorkerOrchestrator {
   }
 
   public clearPendingResult() {
-    if (this.pendingTransferSlotIndex !== null) {
-      const slot = this.transferSlots[this.pendingTransferSlotIndex];
-      if (slot) {
-        releaseTransferSlot(slot);
-      }
-      this.pendingTransferSlotIndex = null;
-    }
+    this.transferTransport.releasePendingSlot();
     this.pendingResult = null;
     this.pendingFishCount = 0;
     this.publishTransportStatus();
@@ -409,8 +239,8 @@ export class WorkerOrchestrator {
 
     this.pendingFishCount = input.fishCount;
     if (this.useWorker && this.worker) {
-      if (this.transportStatus.mode === 'shared') return this.submitSharedJob(input);
-      if (this.transportStatus.mode === 'transfer') return this.submitTransferJob(input);
+      if (this.transportStatus.mode === 'shared') return this.sharedTransport.submit(input);
+      if (this.transportStatus.mode === 'transfer') return this.transferTransport.submit(input);
       return this.submitClonedJob(input);
     }
 

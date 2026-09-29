@@ -235,6 +235,35 @@ describe('WorkerOrchestrator transport lifecycle', () => {
     orchestrator.dispose();
   });
 
+  it('degrades through the fallback chain in order: shared, transfer, copy, main-thread', () => {
+    setIsolation(true);
+    const orchestrator = new WorkerOrchestrator();
+    const worker = MockWorker.instances[0];
+
+    const modes = [orchestrator.getTransportStatus().mode];
+
+    // Shared buffers, then a worker error drops the shared transport.
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 1 }))).toBe(true);
+    worker.onerror?.(new ErrorEvent('error', { message: 'shared crashed' }));
+    modes.push(orchestrator.getTransportStatus().mode);
+
+    // Transferable in flight, then a worker error invalidates the active slot.
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 2 }))).toBe(true);
+    worker.onerror?.(new ErrorEvent('error', { message: 'transfer crashed' }));
+    modes.push(orchestrator.getTransportStatus().mode);
+
+    // Cloned messages, then a post failure retires the worker entirely.
+    MockWorker.throwOnClone = true;
+    expect(orchestrator.submitJob(createInput({ snapshotRevision: 3 }))).toBe(true);
+    modes.push(orchestrator.getTransportStatus().mode);
+
+    expect(modes).toEqual(['shared', 'transfer', 'copy', 'main-thread']);
+    expect(worker.terminated).toBe(true);
+    expect(orchestrator.getPendingResult()).not.toBeNull();
+
+    orchestrator.dispose();
+  });
+
   it('uses main-thread simulation when workers are unavailable', () => {
     vi.stubGlobal('Worker', undefined);
     const orchestrator = new WorkerOrchestrator();
