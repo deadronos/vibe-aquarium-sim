@@ -7,6 +7,7 @@ import { VisualQualityProvider } from '../src/performance/VisualQualityProvider'
 import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 
 const { EffectComposerMock, DepthOfFieldMock } = vi.hoisted(() => {
   const EffectComposerMock = ({ children }: { children?: React.ReactNode }) => (
@@ -83,10 +84,7 @@ describe('PostProcessing', () => {
     try {
       expect(renderer.scene.children.length).toBe(0);
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -108,10 +106,7 @@ describe('PostProcessing', () => {
       expect(anyRoot.children?.length).toBe(1);
       expect(anyRoot.children?.[0].type).toBe('Group');
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 });

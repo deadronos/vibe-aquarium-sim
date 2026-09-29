@@ -10,42 +10,27 @@ import { world } from '../src/store';
 import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
+import { makeScene } from './support/fishScenes';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 
 // Capture frame callbacks so tests can invoke them deterministically
-const frameCallbacks: Array<(state: unknown, delta: number) => void> = [];
+const { useFrame, frameCallbacks, resetUseFrameMock } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock('replace');
+});
 
 vi.mock('@react-three/fiber', async () => {
   const actual = await vi.importActual<typeof import('@react-three/fiber')>('@react-three/fiber');
   return {
     ...actual,
-    useFrame: (cb: (state: unknown, delta: number) => void) => {
-      // React Three Fiber replaces the frame subscription on rerender. Keep
-      // only the active callback so deferred child mounting does not make this
-      // test invoke stale subscriptions.
-      frameCallbacks[0] = cb;
-    },
+    useFrame,
   };
 });
 
 // Mock GLTF loader to provide simple scenes (three box meshes)
-const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = vi.hoisted(() => {
-  let scenes: Array<{ traverse: (fn: (child: unknown) => void) => void }> = [];
-
-  const useGLTFMock = vi.fn((url: string) => {
-    const index = url.includes('fish3') ? 2 : url.includes('fish2') ? 1 : 0;
-    const scene = scenes[index] ?? scenes[scenes.length - 1];
-    return { scene } as unknown as { scene: THREE.Object3D };
-  });
-
-  return {
-    useGLTFMock,
-    setUseGLTFScenes: (nextScenes: typeof scenes) => {
-      scenes = nextScenes;
-    },
-    resetUseGLTFMock: () => {
-      useGLTFMock.mockClear();
-    },
-  };
+const { useGLTFMock, setUseGLTFScenes, resetUseGLTFMock } = await vi.hoisted(async () => {
+  const { createUseGLTFMock } = await import('./support/r3fMocks');
+  return createUseGLTFMock();
 });
 
 vi.mock('@react-three/drei', () => {
@@ -63,22 +48,11 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('FishRenderSystem adaptive instance updates', () => {
   beforeEach(() => {
-    frameCallbacks.length = 0;
+    resetUseFrameMock();
     resetUseGLTFMock();
 
     // three simple scenes (one mesh each)
-    const makeScene = (mat: THREE.Material) => {
-      const scene = new THREE.Object3D();
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), mat);
-      scene.add(mesh);
-      return scene;
-    };
-
-    setUseGLTFScenes([
-      makeScene(new THREE.MeshStandardMaterial({ color: 0xff0000 })),
-      makeScene(new THREE.MeshStandardMaterial({ color: 0x00ff00 })),
-      makeScene(new THREE.MeshStandardMaterial({ color: 0x0000ff })),
-    ]);
+    setUseGLTFScenes([makeScene(0xff0000), makeScene(0x00ff00), makeScene(0x0000ff)]);
 
     // Reset stores
     act(() => {
@@ -98,7 +72,7 @@ describe('FishRenderSystem adaptive instance updates', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    frameCallbacks.length = 0;
+    resetUseFrameMock();
     world.entities.length = 0;
     delete window.__vibe_debug;
     delete window.__vibe_renderStatus;
@@ -150,10 +124,7 @@ describe('FishRenderSystem adaptive instance updates', () => {
     // If matrices were written directly, setMatrixAt should have been called for most instances
     expect(instanceSpy.mock.calls.length).toBeGreaterThanOrEqual(Math.max(1, Math.floor(N * 0.9)));
 
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 
   it('skips optional fish lighting enhancement at low quality', async () => {
@@ -182,10 +153,7 @@ describe('FishRenderSystem adaptive instance updates', () => {
       )
     ).toBe(true);
 
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 
   it('does not sample timing or publish render status when telemetry is disabled', async () => {
@@ -211,10 +179,7 @@ describe('FishRenderSystem adaptive instance updates', () => {
     expect(nowSpy).not.toHaveBeenCalled();
     expect(window.__vibe_renderStatus).toBeUndefined();
 
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 
   it('buffers instance writes and limits setMatrixAt calls when adaptive PoC is enabled', async () => {
@@ -260,9 +225,6 @@ describe('FishRenderSystem adaptive instance updates', () => {
     expect(instanceSpy.mock.calls.length).toBeGreaterThan(0);
     expect(instanceSpy.mock.calls.length).toBeLessThan(N / 10);
 
-    const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-    if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-      await maybePromise;
-    }
+    await unmountTestRenderer(renderer);
   });
 });

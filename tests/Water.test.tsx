@@ -3,19 +3,9 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Color } from 'three';
 import React, { act } from 'react';
 
-const { useFrameSpy, getCapturedFrameCallback, resetCapturedFrameCallback } = vi.hoisted(() => {
-  let captured: ((state: unknown) => void) | undefined;
-  const spy = vi.fn((callback: (state: unknown) => void) => {
-    captured = callback;
-  });
-
-  return {
-    useFrameSpy: spy,
-    getCapturedFrameCallback: () => captured,
-    resetCapturedFrameCallback: () => {
-      captured = undefined;
-    },
-  };
+const { useFrame: useFrameSpy, getFrameCallback, resetUseFrameMock } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock('replace');
 });
 
 vi.mock('@react-three/fiber', async () => {
@@ -48,8 +38,7 @@ describe('Water', () => {
       useGameStore.setState({ visualQualityOverrides: {} });
     });
 
-    useFrameSpy.mockClear();
-    resetCapturedFrameCallback();
+    resetUseFrameMock();
   });
 
   it('renders mesh and shader material with correct uniforms', async () => {
@@ -178,7 +167,7 @@ describe('Water', () => {
     expect(material.uniforms.time.value).toBe(0);
 
     expect(useFrameSpy).toHaveBeenCalled();
-    const frameCallback = getCapturedFrameCallback();
+    const frameCallback = getFrameCallback();
     expect(typeof frameCallback).toBe('function');
 
     frameCallback?.({ clock: { elapsedTime: 123 } });

@@ -8,16 +8,17 @@ import { getQualitySettings } from '../src/performance/qualityPresets';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
+import { makeScene } from './support/fishScenes';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 import {
   VIBE_FISH_LIGHTING_MARKER,
   enhanceFishMaterialWithRimAndSSS,
   type VibeFishLightingUniforms,
 } from '../src/shaders/fishLightingMaterial';
 
-const { useFrameSpy } = vi.hoisted(() => {
-  return {
-    useFrameSpy: vi.fn(),
-  };
+const { useFrame: useFrameSpy } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock();
 });
 
 vi.mock('@react-three/fiber', async () => {
@@ -28,24 +29,9 @@ vi.mock('@react-three/fiber', async () => {
   };
 });
 
-const { useGLTFMock, resetUseGLTFMock, setUseGLTFScenes } = vi.hoisted(() => {
-  let scenes: Array<{ traverse: (fn: (child: unknown) => void) => void }> = [];
-
-  const useGLTFMock = vi.fn((url: string) => {
-    const index = url.includes('fish3') ? 2 : url.includes('fish2') ? 1 : 0;
-    const scene = scenes[index] ?? scenes[scenes.length - 1];
-    return { scene };
-  });
-
-  return {
-    useGLTFMock,
-    setUseGLTFScenes: (nextScenes: typeof scenes) => {
-      scenes = nextScenes;
-    },
-    resetUseGLTFMock: () => {
-      useGLTFMock.mockClear();
-    },
-  };
+const { useGLTFMock, resetUseGLTFMock, setUseGLTFScenes } = await vi.hoisted(async () => {
+  const { createUseGLTFMock } = await import('./support/r3fMocks');
+  return createUseGLTFMock();
 });
 
 vi.mock('@react-three/drei', () => {
@@ -72,18 +58,7 @@ describe('fish lighting material injection', () => {
     });
 
     // Ensure the mocked GLTF loader returns stable, Three-backed scenes.
-    const makeScene = (material: THREE.Material) => {
-      const scene = new THREE.Object3D();
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
-      scene.add(mesh);
-      return scene;
-    };
-
-    const matA = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-    const matB = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const matC = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-
-    setUseGLTFScenes([makeScene(matA), makeScene(matB), makeScene(matC)]);
+    setUseGLTFScenes([makeScene(0xff0000), makeScene(0x00ff00), makeScene(0x0000ff)]);
   });
 
   afterEach(() => {
@@ -239,10 +214,7 @@ describe('fish lighting material injection', () => {
         }
       }
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -297,10 +269,7 @@ describe('fish lighting material injection', () => {
         }
       }
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 });

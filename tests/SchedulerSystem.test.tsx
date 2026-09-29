@@ -6,16 +6,17 @@ import { SchedulerSystem } from '../src/systems/SchedulerSystem';
 import { useGameStore } from '../src/gameStore';
 import { fixedScheduler } from '../src/utils/FixedStepScheduler';
 
-type FrameCallback = (state: unknown, delta: number) => void;
 type PhysicsCallback = (world: unknown) => void;
 
-const frameCallbacks: FrameCallback[] = [];
 const beforePhysicsCallbacks: PhysicsCallback[] = [];
 
+const { useFrame, frameCallbacks, resetUseFrameMock } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock();
+});
+
 vi.mock('@react-three/fiber', () => ({
-  useFrame: (cb: FrameCallback) => {
-    frameCallbacks.push(cb);
-  },
+  useFrame,
 }));
 
 vi.mock('@react-three/rapier', () => ({
@@ -32,7 +33,7 @@ declare global {
 
 describe('SchedulerSystem adaptive behaviors', () => {
   beforeEach(() => {
-    frameCallbacks.length = 0;
+    resetUseFrameMock();
     beforePhysicsCallbacks.length = 0;
     useGameStore.setState({ visualQualityOverrides: {} });
     fixedScheduler.setMaxSubSteps(5);
@@ -44,7 +45,7 @@ describe('SchedulerSystem adaptive behaviors', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    frameCallbacks.length = 0;
+    resetUseFrameMock();
     beforePhysicsCallbacks.length = 0;
     delete window.__vibe_debug;
     delete window.__vibe_schedStatus;

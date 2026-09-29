@@ -7,6 +7,7 @@ import { VisualQualityProvider } from '../src/performance/VisualQualityProvider'
 import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 
 // Mock ResizeObserver which is needed by R3F/Three
 global.ResizeObserver = class ResizeObserver {
@@ -69,10 +70,7 @@ describe('AmbientParticles', () => {
       expect(anyGroup.children?.[0].type).toBe('Points');
       expect(anyGroup.children?.[1].type).toBe('Points');
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -90,10 +88,7 @@ describe('AmbientParticles', () => {
     try {
       expect(renderer.scene.children.length).toBe(0);
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 });

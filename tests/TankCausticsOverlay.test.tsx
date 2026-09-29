@@ -5,20 +5,11 @@ import React, { act } from 'react';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
 import { TankCausticsOverlay } from '../src/components/Tank';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 
-const { useFrameSpy, getCapturedFrameCallback, resetCapturedFrameCallback } = vi.hoisted(() => {
-  let captured: ((state: unknown) => void) | undefined;
-  const spy = vi.fn((callback: (state: unknown) => void) => {
-    captured = callback;
-  });
-
-  return {
-    useFrameSpy: spy,
-    getCapturedFrameCallback: () => captured,
-    resetCapturedFrameCallback: () => {
-      captured = undefined;
-    },
-  };
+const { useFrame: useFrameSpy, getFrameCallback, resetUseFrameMock } = await vi.hoisted(async () => {
+  const { createUseFrameMock } = await import('./support/r3fMocks');
+  return createUseFrameMock('replace');
 });
 
 vi.mock('@react-three/fiber', async () => {
@@ -53,8 +44,7 @@ describe('TankCausticsOverlay', () => {
     act(() => {
       useGameStore.setState({ visualQualityOverrides: {} });
     });
-    useFrameSpy.mockClear();
-    resetCapturedFrameCallback();
+    resetUseFrameMock();
   });
 
   it('renders overlay shader with expected uniforms when caustics enabled', async () => {
@@ -85,16 +75,13 @@ describe('TankCausticsOverlay', () => {
       expect(typeof material.uniforms.intensity.value).toBe('number');
       expect(material.uniforms.intensity.value).toBeGreaterThan(0);
 
-      const frameCallback = getCapturedFrameCallback();
+      const frameCallback = getFrameCallback();
       expect(typeof frameCallback).toBe('function');
 
       frameCallback?.({ clock: { elapsedTime: 123 } });
       expect(material.uniforms.time.value).toBe(123);
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -113,10 +100,7 @@ describe('TankCausticsOverlay', () => {
       expect(useFrameSpy).not.toHaveBeenCalled();
       expect(renderer.scene.children.length).toBe(0);
     } finally {
-      const maybePromise = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-      if (maybePromise && typeof (maybePromise as Promise<unknown>).then === 'function') {
-        await maybePromise;
-      }
+      await unmountTestRenderer(renderer);
     }
   });
 });

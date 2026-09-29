@@ -7,6 +7,8 @@ import { VisualQualityProvider } from '../src/performance/VisualQualityProvider'
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { MODEL_URLS } from '../src/systems/fishModels';
 import { useGameStore } from '../src/gameStore';
+import { makeScene } from './support/fishScenes';
+import { unmountTestRenderer } from './support/r3fTestRenderer';
 
 const { useGLTFMock, setResponse, resetResponses } = vi.hoisted(() => {
   type Response = { scene: THREE.Object3D } | Error | Promise<never>;
@@ -39,19 +41,6 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
-};
-
-const makeScene = (color: number) => {
-  const scene = new THREE.Object3D();
-  scene.add(
-    new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.05), new THREE.MeshStandardMaterial({ color }))
-  );
-  return scene;
-};
-
-const unmount = async (renderer: ReactThreeTestRenderer) => {
-  const result = (renderer as unknown as { unmount?: () => unknown }).unmount?.();
-  if (result && typeof (result as Promise<unknown>).then === 'function') await result;
 };
 
 describe('FishRenderSystem progressive model loading', () => {
@@ -89,7 +78,7 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['loading', 'loading'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -116,7 +105,7 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['error', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
     }
   });
 
@@ -138,7 +127,7 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['ready', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
       expect(window.__vibe_fishAssetStatus).toBeUndefined();
     }
   });
@@ -171,7 +160,7 @@ describe('FishRenderSystem progressive model loading', () => {
         variants: ['error', 'ready'],
       });
     } finally {
-      await unmount(renderer);
+      await unmountTestRenderer(renderer);
       vi.useRealTimers();
     }
   });
