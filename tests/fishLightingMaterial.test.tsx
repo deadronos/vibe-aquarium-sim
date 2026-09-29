@@ -40,13 +40,6 @@ vi.mock('@react-three/drei', () => {
   };
 });
 
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('fish lighting material injection', () => {
   beforeEach(() => {
     resetUseGLTFMock();

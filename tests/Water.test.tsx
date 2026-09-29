@@ -23,13 +23,6 @@ import { useQualityStore } from '../src/performance/qualityStore';
 import { Water } from '../src/components/Water';
 import { AQUARIUM_PALETTE, WATER_MATERIAL } from '../src/config/artDirection';
 
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('Water', () => {
   beforeEach(() => {
     // Make tests deterministic: default to Low (no water upgrades).

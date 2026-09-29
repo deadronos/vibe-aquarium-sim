@@ -6,9 +6,9 @@ import * as THREE from 'three';
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { MODEL_URLS } from '../src/systems/fishModels';
-import { useGameStore } from '../src/gameStore';
 import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore } from './support/stores';
 
 const { useGLTFMock, setResponse, resetResponses } = vi.hoisted(() => {
   type Response = { scene: THREE.Object3D } | Error | Promise<never>;
@@ -37,17 +37,11 @@ vi.mock('@react-three/fiber', async () => {
   return { ...actual, useFrame: vi.fn() };
 });
 
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('FishRenderSystem progressive model loading', () => {
   beforeEach(() => {
     resetResponses();
     delete window.__vibe_fishAssetStatus;
-    act(() => useGameStore.setState({ visualQualityOverrides: {} }));
+    act(() => resetGameStore());
   });
 
   afterEach(() => {

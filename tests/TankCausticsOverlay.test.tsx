@@ -32,13 +32,6 @@ vi.mock('@react-three/rapier', () => {
   };
 });
 
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('TankCausticsOverlay', () => {
   beforeEach(() => {
     act(() => {

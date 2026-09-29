@@ -5,9 +5,8 @@ import React from 'react';
 
 import { VisualQualityProvider } from '../src/performance/VisualQualityProvider';
 import { useGameStore } from '../src/gameStore';
-import { useQualityStore } from '../src/performance/qualityStore';
-import { getQualitySettings } from '../src/performance/qualityPresets';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore, resetQualityStore } from './support/stores';
 
 const { EffectComposerMock, DepthOfFieldMock } = vi.hoisted(() => {
   const EffectComposerMock = ({ children }: { children?: React.ReactNode }) => (
@@ -34,41 +33,12 @@ vi.mock('../src/components/vfx/EffectComposer', () => {
 
 import { PostProcessing } from '../src/components/PostProcessing';
 
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('PostProcessing', () => {
   beforeEach(() => {
     act(() => {
-      const qualityState = useQualityStore.getState();
-      useQualityStore.setState(
-        {
-          ...qualityState,
-          // Make tests deterministic and order-independent.
-          isAdaptiveEnabled: true,
-          level: 'low',
-          settings: getQualitySettings('low', 2),
-          fpsEma: 60,
-        },
-        true
-      );
-
-      const gameState = useGameStore.getState();
-      useGameStore.setState(
-        {
-          ...gameState,
-          lastFedTime: null,
-          isPlacingDecoration: false,
-          selectedDecorationType: 'seaweed',
-          pendingEffects: [],
-          visualQualityOverrides: {},
-        },
-        true
-      );
+      // Make tests deterministic and order-independent.
+      resetQualityStore('low');
+      resetGameStore();
     });
   });
 

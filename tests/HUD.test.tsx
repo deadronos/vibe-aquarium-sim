@@ -6,9 +6,9 @@ import { HUD } from '../src/components/ui/HUD';
 import { useGameStore } from '../src/gameStore';
 import * as feedingActions from '../src/game/feedingActions';
 import { TANK_CENTER } from '../src/game/feedingActions';
+import { resetGameStore } from './support/stores';
 
 describe('HUD', () => {
-  const initialGameState = useGameStore.getState();
   const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
@@ -21,17 +21,7 @@ describe('HUD', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     act(() => {
-      useGameStore.setState(
-        {
-          ...initialGameState,
-          lastFedTime: null,
-          isPlacingDecoration: false,
-          selectedDecorationType: 'seaweed',
-          pendingEffects: [],
-          visualQualityOverrides: {},
-        },
-        true
-      );
+      resetGameStore();
     });
   });
 
@@ -44,7 +34,7 @@ describe('HUD', () => {
     window.matchMedia = originalMatchMedia;
 
     act(() => {
-      useGameStore.setState(initialGameState, true);
+      resetGameStore();
     });
   });
 

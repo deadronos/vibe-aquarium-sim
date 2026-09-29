@@ -3,11 +3,10 @@ import { Vector3 } from 'three';
 import { world } from '../src/store';
 import { updateSnapshots } from '../src/systems/boids/snapshot';
 import { speciesIndexFor } from '../src/domain/species';
+import { resetWorld } from './support/stores';
 
 afterEach(() => {
-  for (const entity of [...world.entities]) {
-    world.remove(entity);
-  }
+  resetWorld();
 });
 
 describe('boids snapshot species mapping', () => {

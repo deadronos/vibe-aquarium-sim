@@ -4,17 +4,18 @@ import { Vector3 } from 'three';
 import { useGameStore } from '../src/gameStore';
 import { world } from '../src/store';
 import { feedAt } from '../src/game/feedingActions';
+import { resetWorld } from './support/stores';
 
 describe('feedAt', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2023-11-14T22:13:20.000Z'));
-    world.clear();
+    resetWorld();
     useGameStore.setState({ lastFedTime: null });
   });
 
   afterEach(() => {
-    world.clear();
+    resetWorld();
     vi.useRealTimers();
   });
 

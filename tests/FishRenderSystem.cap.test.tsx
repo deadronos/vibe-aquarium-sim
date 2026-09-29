@@ -8,10 +8,10 @@ import { VisualQualityProvider } from '../src/performance/VisualQualityProvider'
 import { FishRenderSystem } from '../src/systems/FishRenderSystem';
 import { resetInstanceCapWarnings } from '../src/systems/instanceCapWarning';
 import { world } from '../src/store';
-import { useGameStore } from '../src/gameStore';
 import { useQualityStore } from '../src/performance/qualityStore';
 import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { resetGameStore, resetWorld } from './support/stores';
 
 // Capture frame callbacks so tests can invoke them deterministically
 const { useFrame, frameCallbacks, resetUseFrameMock } = await vi.hoisted(async () => {
@@ -38,12 +38,6 @@ vi.mock('@react-three/drei', () => {
   };
 });
 
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('FishRenderSystem instance cap warning', () => {
   beforeEach(() => {
     resetUseFrameMock();
@@ -57,11 +51,11 @@ describe('FishRenderSystem instance cap warning', () => {
     ]);
 
     act(() => {
-      useGameStore.setState({ visualQualityOverrides: {} });
+      resetGameStore();
       useQualityStore.setState({ instanceUpdateBudget: 128 });
     });
 
-    world.entities.length = 0;
+    resetWorld();
     vi.spyOn(Math, 'random').mockImplementation(() => 0);
   });
 
@@ -69,7 +63,7 @@ describe('FishRenderSystem instance cap warning', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     resetUseFrameMock();
-    world.entities.length = 0;
+    resetWorld();
   });
 
   it('warns via console.warn when fish exceed the per-model instance cap', async () => {

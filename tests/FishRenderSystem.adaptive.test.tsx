@@ -12,6 +12,7 @@ import { useQualityStore } from '../src/performance/qualityStore';
 import { getQualitySettings } from '../src/performance/qualityPresets';
 import { FISH_SCENE_DIMENSIONS, makeScene } from './support/fishScenes';
 import { unmountTestRenderer } from './support/r3fTestRenderer';
+import { clearVibeGlobals, resetGameStore, resetWorld } from './support/stores';
 
 // Capture frame callbacks so tests can invoke them deterministically
 const { useFrame, frameCallbacks, resetUseFrameMock } = await vi.hoisted(async () => {
@@ -39,13 +40,6 @@ vi.mock('@react-three/drei', () => {
   };
 });
 
-// Minimal ResizeObserver shim for tests
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('FishRenderSystem adaptive instance updates', () => {
   beforeEach(() => {
     resetUseFrameMock();
@@ -60,14 +54,13 @@ describe('FishRenderSystem adaptive instance updates', () => {
 
     // Reset stores
     act(() => {
-      useGameStore.setState({ visualQualityOverrides: {} });
+      resetGameStore();
       useQualityStore.setState({ instanceUpdateBudget: 128 }); // default
     });
 
     // ensure clean world
-    world.entities.length = 0;
-    delete window.__vibe_debug;
-    delete window.__vibe_renderStatus;
+    resetWorld();
+    clearVibeGlobals();
 
     // Make Math.random deterministic so all fish pick modelIndex 0
     vi.spyOn(Math, 'random').mockImplementation(() => 0);
@@ -77,9 +70,8 @@ describe('FishRenderSystem adaptive instance updates', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     resetUseFrameMock();
-    world.entities.length = 0;
-    delete window.__vibe_debug;
-    delete window.__vibe_renderStatus;
+    resetWorld();
+    clearVibeGlobals();
     // Clear the PoC flag safely
     delete (window as unknown as { __vibe_poc_enabled?: boolean }).__vibe_poc_enabled;
   });

@@ -4,12 +4,11 @@ import { world } from '../src/store';
 import { updateSnapshots } from '../src/systems/boids/snapshot';
 import { applySimulationResult } from '../src/systems/boids/resultApplier';
 import * as effectsBus from '../src/utils/effectsBus';
+import { resetWorld } from './support/stores';
 
 describe('applySimulationResult', () => {
   beforeEach(() => {
-    for (const entity of Array.from(world.entities)) {
-      world.remove(entity);
-    }
+    resetWorld();
     vi.restoreAllMocks();
   });
 

@@ -39,13 +39,6 @@ vi.mock('@react-three/drei', async () => {
 
 import { Tank } from '../src/components/Tank';
 
-// Mock ResizeObserver which is needed by R3F/Three
-global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 describe('Tank material defaults', () => {
   it('uses readable standard glass on the WebGPU path', async () => {
     act(() => {
