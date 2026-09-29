@@ -4,10 +4,17 @@ import { HudSection } from './HudSection';
 type HudPerformanceSectionProps = {
   fpsEma: number;
   qualityLevel: QualityLevel;
+  open: boolean;
+  onToggle: (open: boolean) => void;
 };
 
-export const HudPerformanceSection = ({ fpsEma, qualityLevel }: HudPerformanceSectionProps) => (
-  <HudSection title="Performance" storageKey="hud.section.performance.open">
+export const HudPerformanceSection = ({
+  fpsEma,
+  qualityLevel,
+  open,
+  onToggle,
+}: HudPerformanceSectionProps) => (
+  <HudSection title="Performance" open={open} onToggle={onToggle}>
     <div className="hud-stat">
       <span className="hud-stat-label">FPS</span>
       <span className="hud-stat-value">{Math.round(fpsEma)}</span>

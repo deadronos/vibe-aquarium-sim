@@ -5,10 +5,23 @@ type HudStatsSectionProps = {
   fishCount: number;
   foodCount: number;
   lastFedTime: Date | null;
+  open: boolean;
+  onToggle: (open: boolean) => void;
 };
 
-export const HudStatsSection = ({ fishCount, foodCount, lastFedTime }: HudStatsSectionProps) => (
-  <HudSection title="Aquarium Stats" storageKey="hud.section.stats.open" titleClassName="hud-title">
+export const HudStatsSection = ({
+  fishCount,
+  foodCount,
+  lastFedTime,
+  open,
+  onToggle,
+}: HudStatsSectionProps) => (
+  <HudSection
+    title="Aquarium Stats"
+    open={open}
+    onToggle={onToggle}
+    titleClassName="hud-title"
+  >
     <div className="hud-stat">
       <span className="hud-stat-label">Fish</span>
       <span className="hud-stat-value">{fishCount}</span>

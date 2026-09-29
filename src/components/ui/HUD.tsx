@@ -11,6 +11,7 @@ import { HudStatsSection } from './HudStatsSection';
 import { getDefaultPanelOpen } from './hudTime';
 import { useHudEntityCounts } from './useHudEntityCounts';
 import { useHudShortcuts } from './useHudShortcuts';
+import { usePersistentToggle } from './usePersistentToggle';
 import './HUD.css';
 
 type HUDProps = {
@@ -27,6 +28,16 @@ export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => 
 
   const fpsEma = useQualityStore((s) => s.fpsEma);
   const qualityLevel = useQualityStore((s) => s.level);
+
+  const [statsOpen, setStatsOpen] = usePersistentToggle('hud.section.stats.open', true);
+  const [performanceOpen, setPerformanceOpen] = usePersistentToggle(
+    'hud.section.performance.open',
+    true
+  );
+  const [decorationsOpen, setDecorationsOpen] = usePersistentToggle(
+    'hud.section.decorations.open',
+    true
+  );
 
   const lastFedTime = useGameStore((state) => state.lastFedTime);
   const isPlacingDecoration = useGameStore((state) => state.isPlacingDecoration);
@@ -109,11 +120,22 @@ export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => 
               {calloutText}
             </div>
 
-            <HudStatsSection fishCount={fishCount} foodCount={foodCount} lastFedTime={lastFedTime} />
+            <HudStatsSection
+              fishCount={fishCount}
+              foodCount={foodCount}
+              lastFedTime={lastFedTime}
+              open={statsOpen}
+              onToggle={setStatsOpen}
+            />
 
             <div className="hud-divider" />
 
-            <HudPerformanceSection fpsEma={fpsEma} qualityLevel={qualityLevel} />
+            <HudPerformanceSection
+              fpsEma={fpsEma}
+              qualityLevel={qualityLevel}
+              open={performanceOpen}
+              onToggle={setPerformanceOpen}
+            />
 
             <div className="hud-divider" />
 
@@ -121,6 +143,8 @@ export const HUD = ({ onOpenSettings, shortcutsDisabled = false }: HUDProps) => 
               isPlacingDecoration={isPlacingDecoration}
               selectedDecorationType={selectedDecorationType}
               onDecorationClick={handleDecorationClick}
+              open={decorationsOpen}
+              onToggle={setDecorationsOpen}
             />
           </div>
         )}

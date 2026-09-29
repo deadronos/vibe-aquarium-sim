@@ -5,6 +5,8 @@ type HudDecorationsSectionProps = {
   isPlacingDecoration: boolean;
   selectedDecorationType: DecorationType;
   onDecorationClick: (type: DecorationType) => void;
+  open: boolean;
+  onToggle: (open: boolean) => void;
 };
 
 const decorationTypes: { type: DecorationType; icon: string; label: string; shortcut: string }[] = [
@@ -17,8 +19,10 @@ export const HudDecorationsSection = ({
   isPlacingDecoration,
   selectedDecorationType,
   onDecorationClick,
+  open,
+  onToggle,
 }: HudDecorationsSectionProps) => (
-  <HudSection title="Decorations" storageKey="hud.section.decorations.open">
+  <HudSection title="Decorations" open={open} onToggle={onToggle}>
     <div className="decoration-buttons">
       {decorationTypes.map(({ type, icon, label }) => (
         <button
