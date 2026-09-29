@@ -1,9 +1,12 @@
 import { readBoolFromStorage } from './storageUtils';
 
-type ShaderLike = {
+export type ShaderLike = {
+  vertexShader: string;
   fragmentShader: string;
-  vertexShader?: string;
+  uniforms: Record<string, { value: unknown }>;
 };
+
+export type ShaderWithProgram = ShaderLike;
 
 const logged = new Set<string>();
 

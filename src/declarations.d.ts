@@ -1,3 +1,5 @@
+import type { RendererBackend } from './utils/rendererPolicy';
+
 declare module '*.glb' {
   const src: string;
   export default src;
@@ -20,8 +22,8 @@ declare global {
   } | null;
 
   type VibeRendererStatus = {
-    requested: 'webgl' | 'webgpu';
-    selected: 'webgl' | 'webgpu';
+    requested: RendererBackend;
+    selected: RendererBackend;
     fallback: boolean;
   };
 
@@ -50,7 +52,7 @@ declare global {
   type VibeQualityTransitionEntry = {
     from: 'low' | 'medium' | 'high' | 'ultra';
     to: 'low' | 'medium' | 'high' | 'ultra';
-    backend: 'webgl' | 'webgpu';
+    backend: RendererBackend;
     ema: number;
     reason: 'low-fps' | 'high-fps' | 'device-clamp';
     time: number;
@@ -96,7 +98,7 @@ declare global {
     __vibe_schedStatus?: VibeSchedStatus;
     __vibe_rendererStatus?: VibeRendererStatus;
     __vibe_qualityStatus?: {
-      backend: 'webgl' | 'webgpu';
+      backend: RendererBackend;
       softwareWebGPU?: boolean;
       level: 'low' | 'medium' | 'high' | 'ultra';
       shadowMapSize: number;

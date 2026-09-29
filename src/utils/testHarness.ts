@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import type { Vec3Like } from '../domain/types';
 
 /**
  * Test-only deterministic control surface for renderer parity/ghosting tests.
@@ -7,7 +8,7 @@ import { Vector3 } from 'three';
  * production simulation path. It lets a browser test freeze the school and pin
  * individual fish to known poses so two backends can be compared frame-for-frame.
  */
-export type VibeTestPose = { x: number; y: number; z: number };
+export type VibeTestPose = Vec3Like;
 
 export interface VibeTestHarness {
   enabled: true;

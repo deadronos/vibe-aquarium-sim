@@ -1,6 +1,7 @@
+import type { Vec3Like } from '../domain/types';
 import { TANK_DIMENSIONS } from '../config/constants';
 
-export type Vec3Like = { x: number; y: number; z: number };
+export type { Vec3Like } from '../domain/types';
 
 const HALF_TANK_WIDTH = TANK_DIMENSIONS.width / 2;
 const HALF_TANK_HEIGHT = TANK_DIMENSIONS.height / 2;

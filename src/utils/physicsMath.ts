@@ -1,5 +1,7 @@
 // Pure math functions for physics calculations, independent of Three.js or other libraries.
 
+import type { Vec3Like } from '../domain/types';
+
 export interface DragParams {
   density: number;
   dragCoefficient: number;
@@ -23,8 +25,8 @@ export function calculateDragForce(
   vy: number,
   vz: number,
   params: DragParams,
-  out: { x: number; y: number; z: number }
-): { x: number; y: number; z: number } {
+  out: Vec3Like
+): Vec3Like {
   const speedSq = vx * vx + vy * vy + vz * vz;
   if (speedSq < 0.0001) {
     out.x = 0;
@@ -53,8 +55,8 @@ export function calculateWaterCurrent(
   pz: number,
   time: number,
   params: CurrentParams,
-  out: { x: number; y: number; z: number }
-): { x: number; y: number; z: number } {
+  out: Vec3Like
+): Vec3Like {
   const { strength, frequency1, frequency2, spatialScale1, spatialScale2 } = params;
 
   const cx =

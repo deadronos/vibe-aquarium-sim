@@ -1,3 +1,4 @@
+import type { Vec3Like } from '../../domain/types';
 import type { BoidsCache, Float32Buffer } from './types';
 import { steerTo } from './steering';
 
@@ -14,8 +15,8 @@ export function calculateFeeding(
   maxForce: number,
   cache: BoidsCache,
   cellSize: number,
-  out: { x: number; y: number; z: number }
-): { x: number; y: number; z: number } {
+  out: Vec3Like
+): Vec3Like {
   let steerX = 0;
   let steerY = 0;
   let steerZ = 0;

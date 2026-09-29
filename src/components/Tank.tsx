@@ -11,13 +11,8 @@ import { AQUARIUM_PALETTE, CAUSTICS_MATERIAL, GLASS_MATERIAL } from '../config/a
 
 import { useVisualQuality } from '../performance/VisualQualityContext';
 
-type ShaderWithProgram = {
-  vertexShader: string;
-  fragmentShader: string;
-  uniforms: Record<string, { value: unknown }>;
-};
 import { causticsFragmentShader, causticsVertexShader } from '../shaders/causticsShader';
-import { logShaderOnce } from '../utils/shaderDebug';
+import { logShaderOnce, type ShaderWithProgram } from '../utils/shaderDebug';
 import { GlassNodeMaterial } from './materials/GlassNodeMaterial';
 import { TankCausticsNodeMaterial } from './materials/TankCausticsNodeMaterial';
 

@@ -1,7 +1,7 @@
 import createECS from 'miniplex-react';
 import { Vector3, Quaternion } from 'three';
 import { World } from 'miniplex';
-import type { DecorationType } from './domain/types';
+import type { BubbleConfig, DecorationType } from './domain/types';
 import type { SpeciesId } from './domain/species';
 
 export type { DecorationType } from './domain/types';
@@ -34,9 +34,7 @@ export type Entity = {
   decorationType?: DecorationType;
   decorationProps?: Record<string, unknown>; // Arbitrary data to configure decoration components (seeded at spawn time)
   // Visual/FX specific data pulled from spawn events (e.g., bubble trails for food)
-  bubbleConfig?:
-    | Array<{ offset: Vector3; speed: number; phase: number; size: number; wobble: number }>
-    | undefined;
+  bubbleConfig?: BubbleConfig | undefined;
 
   // Fish state
   excitementLevel?: number; // 0-1, triggers flash/speed boost

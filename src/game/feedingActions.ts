@@ -1,18 +1,11 @@
 import { Vector3 } from 'three';
 
+import type { BubbleConfig } from '../domain/types';
 import { useGameStore } from '../gameStore';
 import { SIMULATION_BOUNDS } from '../config/constants';
 import { world } from '../store';
 
 export const TANK_CENTER = new Vector3(0, 0, 0);
-
-type BubbleConfig = Array<{
-  offset: Vector3;
-  speed: number;
-  phase: number;
-  size: number;
-  wobble: number;
-}>;
 
 function createBubbleConfig(): BubbleConfig {
   return Array.from({ length: 8 }, () => ({

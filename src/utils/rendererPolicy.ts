@@ -1,4 +1,5 @@
-export type RendererPreference = 'webgl' | 'webgpu';
+export type RendererBackend = 'webgl' | 'webgpu';
+export type RendererPreference = RendererBackend;
 export type RendererKind = RendererPreference;
 
 type RendererWithBackend = {

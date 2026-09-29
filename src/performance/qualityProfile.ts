@@ -1,3 +1,4 @@
+import { type RendererBackend } from '../utils/rendererPolicy';
 import {
   clampShadowMapSize,
   getDeviceMaxDpr,
@@ -6,7 +7,7 @@ import {
   type QualitySettings,
 } from './qualityPresets';
 
-export type RendererBackend = 'webgl' | 'webgpu';
+export type { RendererBackend } from '../utils/rendererPolicy';
 
 export interface QualityProfile extends QualitySettings {
   backend: RendererBackend;
