@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useGameStore } from '../gameStore';
 import { useQualityStore } from './qualityStore';
 import { getQualityProfile } from './qualityProfile';
+import { toRendererBackend } from '../utils/rendererPolicy';
 import { VisualQualityContext, type VisualQualityContextValue } from './VisualQualityContext';
 
 export const VisualQualityProvider = ({
@@ -21,7 +22,7 @@ export const VisualQualityProvider = ({
   const value = useMemo<VisualQualityContextValue>(() => {
     const qualityProfile = getQualityProfile(
       settings.level,
-      isWebGPU ? 'webgpu' : 'webgl',
+      toRendererBackend(isWebGPU),
       undefined,
       softwareWebGPU
     );

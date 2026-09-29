@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { getDeviceMaxDpr, nextHigherQuality, nextLowerQuality } from './qualityPresets';
 import { getQualityProfile, type RendererBackend } from './qualityProfile';
+import { toRendererBackend } from '../utils/rendererPolicy';
 import { applyQualityShadowMap } from './qualityShadow';
 import { recordQualityTransition } from './qualityTelemetry';
 import { useQualityStore } from './qualityStore';
@@ -59,7 +60,7 @@ export const AdaptiveQualityManager = ({
   });
 
   useEffect(() => {
-    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const backend: RendererBackend = toRendererBackend(isWebGPU);
     const profile = qualityProfile;
     const nextDpr = profile.dpr;
 
@@ -95,7 +96,7 @@ export const AdaptiveQualityManager = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+    const backend: RendererBackend = toRendererBackend(isWebGPU);
     const profile = qualityProfile;
     const current = window.__vibe_qualityStatus;
     window.__vibe_qualityStatus = {
@@ -167,7 +168,7 @@ export const AdaptiveQualityManager = ({
         recordQualityTransition({
           from: level,
           to: next,
-          backend: isWebGPU ? 'webgpu' : 'webgl',
+          backend: toRendererBackend(isWebGPU),
           ema,
           reason: 'low-fps',
         });
@@ -182,7 +183,7 @@ export const AdaptiveQualityManager = ({
       if (next !== level) {
         // Avoid upgrading beyond what the device DPR makes meaningful.
         const deviceMaxDpr = deviceMaxDprRef.current;
-        const backend: RendererBackend = isWebGPU ? 'webgpu' : 'webgl';
+        const backend: RendererBackend = toRendererBackend(isWebGPU);
         const nextProfile = getQualityProfile(next, backend, deviceMaxDpr, softwareWebGPU);
         const currentProfile = qualityProfile;
         const dprDelta = nextProfile.dpr - currentProfile.dpr;

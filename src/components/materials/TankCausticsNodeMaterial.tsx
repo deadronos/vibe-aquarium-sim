@@ -11,18 +11,11 @@ import {
   vec4,
   abs,
 } from 'three/tsl';
-import { extend, type ThreeElement } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AQUARIUM_PALETTE, CAUSTICS_MATERIAL } from '../../config/artDirection';
+import { AXIS_Y, registerNodeMaterial, resolveThreeColor } from './materialUtils';
 
-// Extend so we can use <meshBasicNodeMaterial /> in JSX
-extend({ MeshBasicNodeMaterial });
-
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshBasicNodeMaterial: ThreeElement<typeof MeshBasicNodeMaterial>;
-  }
-}
+registerNodeMaterial('MeshBasicNodeMaterial', MeshBasicNodeMaterial);
 
 interface TankCausticsNodeMaterialProps {
   color?: string | THREE.Color;
@@ -41,7 +34,7 @@ export const TankCausticsNodeMaterial = ({
 
   // World space noise for continuous pattern
   const p = positionWorld.mul(scale);
-  const timeOffset = vec3(new THREE.Vector3(0, 1, 0)).mul(t.mul(speed));
+  const timeOffset = AXIS_Y.mul(t.mul(speed));
   const noiseCtx = p.add(timeOffset);
 
   // Domain warping for more organic caustics
@@ -59,9 +52,7 @@ export const TankCausticsNodeMaterial = ({
   const surfaceFade = float(0.6).add(float(0.4).mul(abs(normalWorld.y)));
 
   const finalStrength = causticsSquared.mul(intensity).mul(surfaceFade);
-  const outColorNode = color(
-    new THREE.Color(typeof colorProp === 'string' ? colorProp : colorProp)
-  ).mul(finalStrength);
+  const outColorNode = color(resolveThreeColor(colorProp)).mul(finalStrength);
 
   return (
     <meshBasicNodeMaterial

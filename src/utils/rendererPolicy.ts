@@ -31,3 +31,23 @@ export function selectRenderer(
 export function isWebGPURendererBackend(renderer: RendererWithBackend): boolean {
   return renderer.backend?.isWebGPUBackend === true;
 }
+
+/** Maps the `isWebGPU` flag used across components to a backend identifier. */
+export function toRendererBackend(isWebGPU: boolean): RendererBackend {
+  return isWebGPU ? 'webgpu' : 'webgl';
+}
+
+/** Publishes the active renderer status for debug tooling. */
+export function setRendererStatus(status: VibeRendererStatus): void {
+  window.__vibe_rendererStatus = status;
+}
+
+/** Builds the shared renderer options applied to WebGL renderer instances. */
+export function createWebGLRendererConfig<T extends object>(props: T) {
+  return {
+    ...props,
+    powerPreference: 'high-performance' as const,
+    antialias: true,
+    alpha: true,
+  };
+}
