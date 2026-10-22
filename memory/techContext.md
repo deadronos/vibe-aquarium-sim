@@ -2,35 +2,40 @@
 
 ## Core technologies
 
-- React 19 + TypeScript
-- Three.js / @react-three/fiber for rendering (WebGPU with WebGL fallback)
-- Three.js TSL (Three Shading Language) for WebGPU node materials
-- @react-three/rapier for Rapier physics bindings
-- Miniplex + miniplex-react for ECS
-- Zustand for UI state and quality settings
-- Vite for dev server and bundling
+- React 19 + TypeScript (strict, `erasableSyntaxOnly`: no parameter properties or enums)
+- Three.js r184 with `WebGLRenderer`
+- @react-three/fiber 9, @react-three/drei 10 (CameraControls, Environment/Lightformer,
+  RoundedBox, useGLTF with meshopt, PerformanceMonitor)
+- @react-three/postprocessing / postprocessing (DepthOfField, Bloom, Vignette, ToneMapping AgX)
+- zustand for UI state
+- Vite 8 with the React Compiler babel preset
+- Vitest (node environment) for unit tests; Playwright for the browser smoke test
 
 ## Useful scripts
 
-- `npm run dev` — start development server (vite)
-- `npm run build` — compile TypeScript and build for production
-- `npm run preview` — preview production build locally
-- `npm run test` — run unit tests (vitest)
-- `npm run test:watch` — watch mode for tests
-- `npm run lint` — run ESLint across the repo
-- `npm run format` — format using Prettier
+- `npm run dev`: dev server
+- `npm run build`: typecheck the app and build to `dist/`
+- `npm run test` / `npm run test:coverage`: unit tests
+- `npm run test:smoke`: Playwright smoke test against `dist/` (run `npm run build` first)
+- `npm run typecheck`: app + test typecheck
+- `npm run lint -- --max-warnings=0`, `npm run format`, `npm run format:check`
+- `npm run check:bundle`: JS gzip and fish-model byte budgets (after a build)
+- `npm run report:bundle`: regenerate `docs/performance/asset-transfer.md`
+- `npm run assets:optimize` / `npm run assets:verify`: re-encode and check the fish GLBs from
+  `assets/source/fish/`
 
-## Developer notes / constraints
+## Assets
 
-- Keep render-loop allocations to a minimum: create module-level temporary vectors and reuse in `useFrame`.
-- Physics is authoritative — systems should apply impulses/velocities to `RigidBody` rather than manually setting transforms.
-- Follow the project's ESLint / Prettier rules. Run `npm run lint --max-warnings=0` and `npm run format` as part of development workflow.
-- **WebGPU shadow maps**: Do NOT trigger shadow map resizes on WebGPU. Changing `light.shadow.mapSize` + `needsUpdate` causes Three.js to internally dispose the old depth texture, which crashes WebGPU with `"Destroyed texture used in a submit"`. The `AdaptiveQualityManager` skips shadow map resizing when `isWebGPU` is true.
-- **WebGPU materials**: Custom materials must use TSL node materials (`MeshBasicNodeMaterial`, `MeshPhysicalNodeMaterial` from `three/webgpu`) on WebGPU, not raw GLSL `shaderMaterial`. Branch on `useVisualQuality().isWebGPU`.
+- Fish: three meshopt-compressed GLBs in `public/` (clownfish, blue tang, angelfish). They are
+  quantised and have no normals; `FishView` bakes the node transform, welds vertices, normalises
+  to unit length along +Z (head forward) and computes normals.
+- Everything else is procedural.
 
-## Bundling notes
+## CI / deployment
 
-- Production builds use Vite/Rollup `manualChunks` to split major dependencies (notably `three` and `rapier`).
-- The simulation scene is lazy-loaded to defer physics (Rapier) startup cost until simulation start.
-- React StrictMode is disabled in `src/main.tsx` to avoid dev-only WebGL context loss from R3F double-mount behavior.
-- Note: Production environments (CDNs, GitHub Pages) can evaluate JS module chunks in ways that expose module initialization ordering bugs when critical dependencies are split into tiny chunks. When that happens merge critical runtime dependencies into a single vendor chunk or add deployment smoke tests that validate the live site for console errors.
+- `ci.yml` (PRs and `main`): format, lint, typecheck, unit tests, coverage, build, bundle budget,
+  and the Playwright smoke test under Xvfb with software Vulkan (SwiftShader).
+- `deploy-pages.yml` runs on `v*` tags (or manually): it checks that the tag is on `main`, runs
+  the smoke test against the build, then deploys `dist/` to GitHub Pages.
+- Software GL on CI compiles shaders slowly; the smoke test boots with `?quality=lite` and allows
+  90 s for the first frames.

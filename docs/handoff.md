@@ -1,1 +1,0 @@
-I can add a lightweight unit/integration test that exercises both the adaptive and baseline code paths (recommended). Would you like me to add that now?

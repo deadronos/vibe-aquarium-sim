@@ -10,7 +10,13 @@
 
 ## Completed
 
-- [DES001] Memory bank: core files and guidelines - Completed (2025-12-09)
+- [DES017] Living-room rebuild architecture - Completed (2026-10-22)
+- [DES001] Memory bank: core files and guidelines - Completed (2025-12-09), still current
+
+## Superseded by the v0.2.0 rebuild (archived in `COMPLETED/`)
+
+These describe the v0.1 ECS + Rapier + worker + WebGPU codebase and no longer match `src/`.
+
 - [DES002] Water Simulation (Hybrid Approach) - Completed (2025-12-15)
 - [DES003] Fixed-step physics (fish & boid logic) - Completed (2025-12-15)
 - [DES004] Physics: Force-Queue Pattern & Safe Rapier Integration - Completed (2025-12-15)

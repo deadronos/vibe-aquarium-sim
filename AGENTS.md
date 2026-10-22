@@ -16,6 +16,21 @@ the time of day, and a boids school of fish, built with React Three Fiber and Th
 2.  **[Performance](docs/agents/performance.md)**: allocation rules, shadows, quality modes.
 3.  **[Workflow](docs/agents/workflow.md)**: checks to run, memory bank.
 4.  **[Project Map](docs/agents/project-map.md)**: where things live.
+5.  **[Docs index](docs/README.md)**: what is current and what is archived.
+
+## 🧠 Memory Bank
+
+`memory/` holds the project brief, system patterns, progress and design/task records
+(conventions: `.github/instructions/memory-bank.instructions.md`). Check `memory/activeContext.md`
+for the current focus. Files under `memory/*/COMPLETED/` and everything in `docs/archive/v0.1/`
+describe the **pre-rebuild v0.1 codebase** (ECS, Rapier, workers, WebGPU): read them for history
+only, never as a description of `src/`.
+
+## 🚢 Releases
+
+Pushing a `v*` tag on the tip of `main` deploys to GitHub Pages after a smoke-test boot check
+(`.github/workflows/deploy-pages.yml`). The smoke spec is the deploy gate, so keep it green and
+fast.
 
 ## ⚠️ The Golden Rules
 

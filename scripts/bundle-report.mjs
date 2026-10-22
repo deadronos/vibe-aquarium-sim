@@ -94,7 +94,7 @@ export function formatBundleReport(report) {
 
   return `# Asset transfer report
 
-## Baseline
+## Baseline (v0.1, before the asset optimization pass)
 
 - Fish models: 4,173,384 raw bytes.
 - Major JavaScript bundle: 1,409,849 gzip bytes.

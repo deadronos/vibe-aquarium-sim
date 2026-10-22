@@ -2,22 +2,23 @@
 
 ## Why this project exists
 
-The project exists to provide a lightweight, extendable sandbox for experimenting with physics-driven, agent-based visual simulations. It focuses on combining predictable, high-quality physics (Rapier) with an ECS-driven design to make emergent behaviors easier to iterate on and visualize.
-
-## Problems it solves
-
-- Provides a small, performant environment for prototyping boids and soft physics interactions
-- Makes it easy to iterate on systems and behaviors with a clear separation of concerns (ECS systems vs rendering components)
+An aquarium is one of the most relaxing things to have in a room. Vibe Aquarium recreates that
+feeling on a screen: not a tank floating in a void, but a tank that belongs to a lived-in room,
+with light that changes through the day.
 
 ## How it should work
 
-- Simulation logic is expressed as small, composable Systems that operate on Entities
-- Rapier provides authoritative physics integration; simulation state is read back into the ECS for rendering and UI
-- Systems are implemented as React components using `useFrame` for simplicity and composability
+- The app opens on a seated "Sofa" view of the room with the tank as the focal point.
+- The clock follows local time by default: sunlight crosses the floor through the window, the
+  floor lamp comes on in the evening, and the tank LED runs 09:00–21:00 before switching to
+  blue moonlight. Fish slow down and settle low at night.
+- Visitors can feed the fish (click the water, F, or the Feed button), switch viewpoints (Sofa,
+  Tank, Up close, Room, Follow a fish), scrub or speed up the clock, and turn on ambient sound.
+- The HUD stays out of the way: it fades after a few seconds without input and can be hidden.
 
 ## User experience goals
 
-- A calm, visually pleasing default scene with a handful of fishes moving naturally
-- **Environmental Depth**: Visual cues (like marine snow/particulates) should provide parallax to make the tank feel like a 3D volume, not a flat image.
-- Gentle UI to tweak simulation parameters, spawn fish, or toggle debugging overlays
-- Fast feedback loop for developers via `npm run dev` and a clean test & lint workflow
+- Calm first: soft motion, no sudden camera jumps (viewpoints ease between shots).
+- Depth: water tint, caustics, light shafts, suspended particles and depth of field make the tank
+  read as a volume of water.
+- Runs well on ordinary hardware; degrades gracefully to Lite instead of stuttering.

@@ -1,25 +1,30 @@
 # Requirements (EARS-style)
 
-1. WHEN the simulation is started, THE SYSTEM SHALL create an ECS world and spawn a configurable number of fish entities.  
-   Acceptance: `npm run dev` launches the app and the scene contains the configured number of fishes.
+1. WHEN the app starts, THE SYSTEM SHALL show the living room with the tank and spawn every fish
+   defined in `SPECIES` (19 by default).
+   Acceptance: `tests/school.test.ts` (spawn count); smoke test sees "19 fish".
 
-2. WHEN fish move, THE SYSTEM SHALL drive motion through Rapier rigid-body APIs (velocity, impulses), not by directly mutating entity positions.  
-   Acceptance: Unit tests assert systems call Rapier APIs and `entity.position` is set only by reading physics state.
+2. WHILE fish swim, THE SYSTEM SHALL keep every fish inside the water volume, above the sand and
+   clear of rocks and driftwood.
+   Acceptance: `tests/school.test.ts` bounds and obstacle tests after 60–90 simulated seconds.
 
-3. WHEN fish collide with world geometry, THE SYSTEM SHALL rely on Rapier to resolve collisions and update ECS state for rendering.  
-   Acceptance: Integration test demonstrates two entities colliding and separating without overlapping after step resolution.
+3. WHEN food is sprinkled, THE SYSTEM SHALL float it, sink it, settle it on the sand, let hungry
+   fish eat it, and dissolve uneaten flakes.
+   Acceptance: `tests/food.test.ts`; `tests/school.test.ts` "eats food".
 
-4. WHEN running the default scene, THE SYSTEM SHALL maintain a target of 60 FPS with 30 fish on a typical consumer laptop.  
-   Acceptance: Manual performance test or CI profile shows median frame rate >= 60 for a short scenario.
+4. WHILE the tank light is off (night), THE SYSTEM SHALL slow the fish and settle them lower.
+   Acceptance: `tests/school.test.ts` "swims more slowly at night".
 
-5. WHEN users change runtime parameters via UI, THE SYSTEM SHALL apply changes without a full reload and keep simulation state consistent.  
-   Acceptance: Controlled UI change updates runtime parameters and effects are visible without reloading the page.
+5. WHEN the hour changes, THE SYSTEM SHALL update sun, sky, lamp, tank LED, moonlight and fish
+   activity continuously (no jumps).
+   Acceptance: `tests/timeOfDay.test.ts`.
 
-6. WHEN a fixed-step simulation tick occurs, THE SYSTEM SHALL compute boid steering forces and water drag/current in a worker pool (multithreading) and apply results back to ECS within the next fixed-step update.  
-   Acceptance: Boid/water math runs inside a worker function; the main thread only applies returned forces.
+6. WHEN the user feeds, switches viewpoint or changes the clock mode, THE SYSTEM SHALL respond
+   without a reload and without console errors.
+   Acceptance: `tests/e2e/smoke.spec.ts`.
 
-7. WHEN a worker job is still in flight, THE SYSTEM SHALL avoid launching overlapping simulation jobs and continue using the last applied forces.  
-   Acceptance: System code gates new jobs while a previous job is pending.
+7. WHEN frame rate declines, THE SYSTEM SHALL switch to Lite quality.
+   Acceptance: manual check (drei `PerformanceMonitor` → `setQuality('low')`).
 
-8. WHEN a worker job fails, THE SYSTEM SHALL log the error and keep the simulation running with the last known forces.  
-   Acceptance: Error handling logs failures without crashing the render loop.
+8. GIVEN the same seed, THE SYSTEM SHALL produce the same simulation.
+   Acceptance: `tests/school.test.ts` determinism; `tests/aquascape.test.ts` scatter.
