@@ -6,9 +6,18 @@
 
 ## Pending
 
-- [TASK014] Add unit tests for Tank material defaults - Pending (2026-01-13)
+- None
 
 ## Completed
+
+- [TASK020] Audit docs and agent guidance after the rebuild - Completed (2026-10-23)
+- [TASK019] Rebuild the app as a living-room aquarium - Completed (2026-10-22)
+
+## Superseded by the v0.2.0 rebuild (archived in `COMPLETED/`)
+
+These tasks targeted the v0.1 codebase. TASK014 (tank material tests) was still pending and is abandoned: the materials it covered no longer exist.
+
+- [TASK014] Add unit tests for Tank material defaults - Abandoned (2026-10-22)
 
 - [TASK001] Initialize memory bank and create core memory files - Completed (2025-12-09)
 - [TASK002] Implement Water Simulation (Hybrid Approach) - Completed (2025-12-15)

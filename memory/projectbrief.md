@@ -2,33 +2,40 @@
 
 ## Short description
 
-Vibe Aquarium Sim is a lightweight, real-time, physics-driven aquarium simulation built with React, TypeScript, Three.js, and Rapier Physics. The simulation uses an Entity-Component-System (ECS) architecture (Miniplex) to model fish and environment systems so we can experiment with emergent behaviors, performant rendering, and physics-based interactions.
+Vibe Aquarium is a cozy living-room aquarium you can sit and watch in the browser. A planted,
+rimless tank sits on a sideboard in a small living room that follows the time of day. A school
+of clownfish, blue tangs and angelfish swims inside. It is built with React, TypeScript, Three.js
+and React Three Fiber.
 
 ## Target audience
 
-- Hobbyist developers and artists exploring agent-based visualizations and physics-driven motion
-- Developers and researchers experimenting with fluid-like behaviors and GPU-friendly rendering patterns
+- People who want a calm, ambient "aquarium in the room" to leave open on a screen.
+- Developers and artists exploring procedural 3D scenes, boids behaviour and lightweight shading
+  tricks in React Three Fiber.
 
 ## Primary goals
 
-- Create a relaxing, visually appealing aquarium with believable fish behavior.
-- Keep the simulation maintainable and easy to extend using ECS + small systems.
-- Hit a consistent 60+ FPS on typical consumer hardware by minimizing GC and reusing math objects in render loops.
+- A believable, relaxing scene: the tank reads as part of a real room at real-world scale.
+- Natural-looking fish behaviour (schooling, feeding, day/night rhythm).
+- 60 FPS on typical consumer laptops, with an automatic Lite mode for weaker devices.
+- A small, maintainable codebase: plain-TypeScript simulation plus a thin rendering layer.
 
-## Scope / Out of scope
+## Scope
 
-In-scope:
+In scope:
 
-- Modular systems for boids-style steering, collisions and basic environment interaction
-- Rapier-based physics for reliable collision handling and integration of physical motion
-- Clean developer DX with Vite, TypeScript, linting and unit tests
+- Procedural room, furniture and aquascape (no downloaded textures or room models).
+- Boids school with food seeking, obstacle avoidance and day/night activity.
+- Time of day from the local clock, a fast day cycle, or a manual slider.
+- Viewpoints, feeding interaction, ambient audio, quality modes.
 
 Out of scope (for now):
 
-- Full GPU fluid simulation and large-scale performance tuning beyond prototyping
+- Physics engines, fluid simulation, WebGPU-specific rendering paths.
+- Authored room models (a Blender-baked room is a possible future upgrade, see `activeContext.md`).
 
 ## Acceptance criteria (minimal)
 
-- Repo includes a documented memory bank for project context and tasks.
-- Simulation runs locally with `npm run dev` and demonstrates boids-based fish behavior.
-- Code follows the project's performance patterns (no new object allocations in render loops).
+- `npm run dev` shows the living room with the tank and a schooling, feedable fish population.
+- Unit tests cover the simulation (`src/sim/`); a Playwright smoke test boots the production build.
+- Frame loops follow the zero-allocation rule (see `systemPatterns.md`).

@@ -1,6 +1,6 @@
 # Performance
 
-Target: 60 FPS at 1080p on integrated GPUs with the high-quality post stack.
+Target: 60 FPS on typical laptops with the High post stack, falling back to Lite rather than stuttering.
 
 ## Rules
 
@@ -12,7 +12,8 @@ Target: 60 FPS at 1080p on integrated GPUs with the high-quality post stack.
 - **Animation on the GPU where possible**: plant sway, fish tail wave, water motes and light
   shafts are all shader-driven.
 - **Shadows render on demand.** `gl.shadowMap.autoUpdate` is off; `Lights` sets `needsUpdate`
-  only when the sun has moved. Only the room and furniture cast shadows. Tank contents don't.
+  for 2 frames at start-up and then only when the sun has moved. Only the room and furniture cast
+  shadows. Tank contents don't.
 
 ## Quality modes
 
@@ -20,6 +21,8 @@ Target: 60 FPS at 1080p on integrated GPUs with the high-quality post stack.
   mapping.
 - **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
 - drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines.
+- `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
+  the post-processing shaders very slowly).
 
 ## Budgets
 

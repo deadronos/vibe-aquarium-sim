@@ -1,6 +1,6 @@
 # Asset transfer report
 
-## Baseline
+## Baseline (v0.1, before the asset optimization pass)
 
 - Fish models: 4,173,384 raw bytes.
 - Major JavaScript bundle: 1,409,849 gzip bytes.
@@ -15,17 +15,15 @@
 
 ## Post-build JavaScript
 
-| File                         |     Raw bytes |    Gzip bytes |
-| ---------------------------- | ------------: | ------------: |
-| SimulationScene-DKFwISFJ.js  |        93,076 |        29,205 |
-| boids.worker-BzFvhpQq.js     |         9,187 |         3,042 |
-| index-DyyPGA6P.js            |        19,906 |         6,389 |
-| miniplex-CcSsTDiU.js         |        15,321 |         3,691 |
-| r3f-drei-BBowdFUa.js         |     1,102,772 |       295,112 |
-| rapier-OqXz4Tqe.js           |     2,259,862 |       843,205 |
-| rolldown-runtime-QTnfLwEv.js |           694 |           423 |
-| vendor-CjzUeMs7.js           |       813,431 |       231,758 |
-| **Total**                    | **4,314,249** | **1,412,825** |
+| File                         |     Raw bytes |  Gzip bytes |
+| ---------------------------- | ------------: | ----------: |
+| index-D1I2QU53.js            |        76,806 |      26,150 |
+| postprocessing-C5800JyJ.js   |       987,946 |     258,700 |
+| r3f-8yBlt_En.js              |       173,298 |      51,102 |
+| react-B3I4rNpi.js            |       178,720 |      55,544 |
+| rolldown-runtime-QTnfLwEv.js |           694 |         422 |
+| three-BNr5Xt0t.js            |       248,618 |     102,116 |
+| **Total**                    | **1,666,082** | **494,034** |
 
 ## Post-build fish models
 

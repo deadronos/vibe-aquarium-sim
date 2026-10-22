@@ -35,7 +35,7 @@ Getting started
 
 Prerequisites
 
-- Node.js 20+ (this project uses modern toolchains)
+- Node.js 22 (the version CI uses; Vite 8 needs 20.19+ or 22.12+)
 
 Install
 
@@ -64,9 +64,11 @@ npm run preview
 Tests & formatting
 
 ```bash
-npm run test        # run tests
-npm run lint        # ESLint
+npm run test        # unit tests (Vitest)
+npm run typecheck   # app + test typecheck
+npm run lint -- --max-warnings=0
 npm run format      # Prettier
+npm run build && npm run test:smoke   # boot the production build in Chromium
 ```
 
 Development notes
@@ -76,20 +78,28 @@ Development notes
 - Start with `src/config/scene.ts` (dimensions), `src/sim/school.ts` (fish behaviour) and
   `src/scene/Experience.tsx` (scene composition).
 
-GitHub Actions / Deployment
+Releases & deployment
 
-- Pages workflow: `.github/workflows/deploy-pages.yml` builds the app and deploys the `dist/` output to GitHub Pages using current action versions (checkout@v6, setup-node@v6, upload-pages-artifact@v4, deploy-pages@v4).
-- Vite `base`: this repo is configured for the project Pages URL `https://deadronos.github.io/vibe-aquarium-sim/` — `base` is set to `/vibe-aquarium-sim/` in `vite.config.ts` and CI passes `--base /vibe-aquarium-sim/` when building.
+- `ci.yml` runs on every PR and on `main`: format, lint, typecheck, unit tests, coverage, build,
+  bundle budget, and the Playwright smoke test (Xvfb + software Vulkan).
+- `deploy-pages.yml` runs when a `v*` tag is pushed (or manually). It checks that the tagged
+  commit is on `main`, boots the built app with the smoke test, then deploys `dist/` to
+  [GitHub Pages](https://deadronos.github.io/vibe-aquarium-sim/). To release, tag the tip of
+  `main` (for example `git tag -a v0.2.1 -m "…" && git push origin v0.2.1`).
+- Vite's `base` is `/vibe-aquarium-sim/` for production builds (see `vite.config.ts`).
+
+Tips
+
+- Add `?quality=lite` to the URL to start without post-processing on slow machines.
+- Keyboard: 1–5 viewpoints, F feed, M sound, H hide the HUD.
 
 Contributing
 
-- Read .github/instructions/\* and memory/ to get the project's conventions and design history.
-- Keep changes small, test-driven and avoid allocations in render loops.
+- Start with [AGENTS.md](./AGENTS.md) and [docs/](./docs/README.md); the memory bank in
+  `memory/` holds the project brief, patterns and history.
+- Keep simulation logic in `src/sim/` with tests, and avoid allocations in render loops.
+- Documents under `docs/archive/v0.1/` describe the pre-rebuild codebase and are historical only.
 
-License & attribution
+License
 
-- Check the repository root for license and contributor information.
-
-Questions / next steps
-
-- Want a PR preview workflow (deploy a preview for PRs) or CI optimization (caching and faster builds)? Open an issue or start a draft PR.
+- The repository has no license file yet.
