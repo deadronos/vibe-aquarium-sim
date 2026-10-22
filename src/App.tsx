@@ -1,130 +1,26 @@
-import { HUD } from './components/ui/HUD';
-import DebugHUD from './components/DebugHUD';
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { readBoolFromStorage, writeBoolToStorage } from './utils/storageUtils';
-import { SettingsModal } from './components/ui/SettingsModal';
-import { useQualityStore } from './performance/qualityStore';
-import { resolveQualityLevel } from './performance/qualityQuery';
+import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three';
+import { Experience } from './scene/Experience';
+import { useAquarium } from './state/store';
+import { Hud } from './ui/Hud';
 
-import './App.css';
-
-const SimulationScene = React.lazy(() => import('./SimulationScene'));
-
-function App() {
-  const [started, setStarted] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [showDebugPanel, setShowDebugPanel] = useState(() =>
-    readBoolFromStorage('hud.debug.visible', false)
-  );
-
-  const start = useCallback(() => {
-    setStarted(true);
-  }, []);
-
-  const openSettings = useCallback((trigger?: HTMLButtonElement) => {
-    settingsTriggerRef.current = trigger ?? null;
-    setSettingsOpen(true);
-  }, []);
-
-  const closeSettings = useCallback(() => {
-    setSettingsOpen(false);
-  }, []);
-
-  const setDebugVisible = useCallback((next: boolean) => {
-    setShowDebugPanel(next);
-    writeBoolToStorage('hud.debug.visible', next);
-  }, []);
-
-  useEffect(() => {
-    const requestedQuality = resolveQualityLevel(window.location.search);
-    if (requestedQuality !== null) {
-      useQualityStore.getState().setLevel(requestedQuality);
-      // An explicit preset is an override, including during visual review.
-      // Normal visits retain adaptive quality.
-      useQualityStore.getState().setAdaptiveEnabled(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const startIdle = () => {
-      if (cancelled) return;
-
-      // Give the browser a moment to paint the shell UI first.
-      const w = window as unknown as {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
-      };
-
-      if (typeof w.requestIdleCallback === 'function') {
-        w.requestIdleCallback(
-          () => {
-            if (!cancelled) setStarted(true);
-          },
-          { timeout: 500 }
-        );
-      } else {
-        setTimeout(() => {
-          if (!cancelled) setStarted(true);
-        }, 0);
-      }
-    };
-
-    if (document.readyState === 'complete') {
-      startIdle();
-    } else {
-      window.addEventListener('load', startIdle);
-    }
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener('load', startIdle);
-    };
-  }, []);
-
-  const loadingOverlay = (
-    <div className="vibe-start-overlay">
-      <div className="vibe-start-card">
-        <div className="vibe-start-title">Vibe Aquarium</div>
-        <div className="vibe-start-subtitle">Loading simulation…</div>
-      </div>
-    </div>
-  );
-
+export default function App() {
+  const quality = useAquarium((state) => state.quality);
   return (
     <>
-      <div id="vibe-app-shell">
-        {/* HUD overlay outside Canvas */}
-        <HUD onOpenSettings={openSettings} shortcutsDisabled={settingsOpen} />
-        {showDebugPanel && <DebugHUD />}
-
-        {started ? (
-          <Suspense fallback={loadingOverlay}>
-            <SimulationScene />
-          </Suspense>
-        ) : (
-          <div className="vibe-start-overlay">
-            <div className="vibe-start-card">
-              <div className="vibe-start-title">Vibe Aquarium</div>
-              <div className="vibe-start-subtitle">Starting simulation…</div>
-              <button className="vibe-start-button" onClick={start} type="button">
-                Start Now
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <SettingsModal
-        open={settingsOpen}
-        onClose={closeSettings}
-        showDebugPanel={showDebugPanel}
-        setShowDebugPanel={setDebugVisible}
-        returnFocusRef={settingsTriggerRef}
-      />
+      <Canvas
+        shadows="percentage"
+        dpr={quality === 'high' ? [1, 1.75] : 1}
+        camera={{ fov: 42, near: 0.03, far: 40, position: [0.55, 1.38, 2.3] }}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.AgXToneMapping;
+          gl.toneMappingExposure = 1;
+        }}
+      >
+        <Experience />
+      </Canvas>
+      <Hud />
     </>
   );
 }
-
-export default App;

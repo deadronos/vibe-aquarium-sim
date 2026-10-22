@@ -1,38 +1,35 @@
 # Vibe Aquarium Sim
 
-A relaxing, physics-driven aquarium simulation built with React, Three.js and Rapier physics — designed as a high-performance, ECS-driven interactive demo.
+A cozy living-room aquarium you can sit and watch. A planted, rimless tank sits on a walnut
+sideboard. The room follows your local time: sunlight crosses the floor through the window, the
+lamp comes on in the evening, and the tank light dims to moonlight at night. A school of
+clownfish, blue tangs and angelfish swims inside.
 
-Models were generated with experimental Copilot 3D:
-(https://copilot.microsoft.com/labs/experiments/3d-generations)
+Fish models were generated with experimental Copilot 3D
+(https://copilot.microsoft.com/labs/experiments/3d-generations). Everything else is procedural:
+no textures or room models are downloaded.
 
 Live demo: [deadronos.github.io/vibe-aquarium-sim](https://deadronos.github.io/vibe-aquarium-sim/)
-Image: ![vibe aquarium screenshot](./image.png)
 
-Key ideas:
+![The living room with the aquarium in the afternoon](./docs/living-room.jpg)
 
-- Physics is the source of truth — rigid bodies in Rapier govern movement and collisions.
-- ECS architecture (Miniplex) separates simulation logic (systems) from render/physics representations (components).
-- Vite + React (R3F) + TypeScript for fast iteration and strong developer ergonomics.
+## What you can do
 
-Tech stack
+- **Watch**: switch between Sofa, Tank, Up close, Room and Follow a fish (keys 1–5).
+- **Feed**: click the water, press F, or use Feed. Hungry fish dart for the flakes.
+- **Time**: follow your local clock, run a six-minute day cycle, or drag the slider.
+- **Listen**: turn on the procedural filter hum and bubbles (M).
+- **Hide the UI**: it fades on its own when you stop moving the mouse, or press H.
 
-- React 19 + TypeScript
-- Vite (build tooling)
-- Three.js + @react-three/fiber for rendering
-- @react-three/rapier (Rapier) for physics
-- miniplex + miniplex-react for ECS
+## How it works
 
-Repository layout (high-level)
+- `src/sim/`: plain TypeScript boids school, food and time-of-day lighting model, unit-tested.
+- `src/scene/`: React Three Fiber room, furniture, tank and instanced fish. Under-water
+  materials get depth absorption and caustics from a shared shader patch.
+- See [AGENTS.md](./AGENTS.md) and [docs/agents](./docs/agents) for the details.
 
-- src/
-  - components/: R3F components + physics wrappers (Fish, Tank, Water)
-  - systems/: ECS systems (Boids, Excitement, FishRender, Scheduler, Spawner)
-  - store.ts: ECS world and entity definitions
-  - shaders/: custom water shader
-  - config/: shared physics configuration
-
-- public/: static assets
-- tests/: unit / integration tests
+Tech stack: React 19, TypeScript, Vite, Three.js, @react-three/fiber, drei, postprocessing,
+zustand.
 
 Getting started
 
@@ -72,20 +69,12 @@ npm run lint        # ESLint
 npm run format      # Prettier
 ```
 
-Development notes & patterns
+Development notes
 
-- Performance: avoid allocating new Vector3/Matrix objects inside render loops. Look for module-level temporary vectors in systems and components.
-- Physics-driven movement: systems compute desired velocities/impulses, apply them to Rapier rigid bodies, and `Fish.tsx` syncs back Rapier state into ECS.
-- Query ECS with `world.with(...)` and keep systems focused and fast.
-
-Important files / starting points
-
-- `src/store.ts` — ECS world + entity types
-- `src/components/Fish.tsx` — R3F + Rapier integration and ECS sync
-- `src/systems/BoidsSystem.tsx` — swarm-like behavior logic
-- `src/systems/FishRenderSystem.tsx` — instanced fish rendering and asset lifecycle
-- `src/config/waterPhysics.ts` — shared drag and current configuration
-- `src/utils/FixedStepScheduler.ts` — fixed-step simulation helper
+- Avoid allocating Vector3/Matrix objects inside render loops; reuse module-level scratch objects.
+- Keep simulation logic in `src/sim/` (no Three.js); the scene reads it each frame.
+- Start with `src/config/scene.ts` (dimensions), `src/sim/school.ts` (fish behaviour) and
+  `src/scene/Experience.tsx` (scene composition).
 
 GitHub Actions / Deployment
 

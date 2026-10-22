@@ -2,12 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30_000,
+  timeout: 60_000,
   expect: { timeout: 10_000 },
-  fullyParallel: true,
-  // Each smoke page owns a software WebGL context plus Rapier workers. Keep
-  // CI serial so concurrent contexts cannot starve renderer initialization or
-  // defer asset decoding past the smoke-test timeout on shared runners.
   workers: process.env.CI ? 1 : undefined,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
@@ -16,22 +12,13 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:5175/vibe-aquarium-sim/',
     ...devices['Desktop Chrome'],
     headless: true,
-    // Use the same full Chromium graphics stack for interaction and visual
-    // checks, rather than the separate software-only headless shell.
     channel: 'chromium',
     launchOptions: {
-      args: [
-        '--enable-unsafe-webgpu',
-        ...(process.platform === 'linux'
-          ? [
-              '--enable-features=Vulkan',
-              '--use-angle=vulkan',
-              '--use-vulkan=swiftshader',
-              '--use-webgpu-adapter=swiftshader',
-              '--disable-vulkan-surface',
-            ]
-          : []),
-      ],
+      // Software GL on Linux runners without a GPU.
+      args:
+        process.platform === 'linux'
+          ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+          : [],
     },
     trace: 'retain-on-failure',
   },
