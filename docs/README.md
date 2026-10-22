@@ -4,6 +4,7 @@
 | -------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------- |
 | [../README.md](../README.md)                                   | What the app is, how to run it                                    | Current                                |
 | [../AGENTS.md](../AGENTS.md)                                   | Entry point for coding agents: commands and golden rules          | Current                                |
+| [../CLAUDE.md](../CLAUDE.md)                                   | Imports AGENTS.md for Claude Code                                 | Current                                |
 | [agents/architecture.md](agents/architecture.md)               | Sim/scene split, daylight loop, underwater shader patch, camera   | Current                                |
 | [agents/performance.md](agents/performance.md)                 | Allocation rules, shadows, quality modes, budgets                 | Current                                |
 | [agents/workflow.md](agents/workflow.md)                       | Checks to run, testing, releases, memory bank                     | Current                                |
