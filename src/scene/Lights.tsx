@@ -18,7 +18,7 @@ export const Lights = () => {
   const hemi = useRef<THREE.HemisphereLight>(null);
   const windowLight = useRef<THREE.RectAreaLight>(null);
   const lamp = useRef<THREE.PointLight>(null);
-  const shadowFrames = useRef(30);
+  const shadowFrames = useRef(2);
 
   useLayoutEffect(() => {
     // The room is static, so shadows only re-render when the sun has moved noticeably.

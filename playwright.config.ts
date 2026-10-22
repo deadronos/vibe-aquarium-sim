@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 60_000,
+  timeout: 150_000,
   expect: { timeout: 10_000 },
   workers: process.env.CI ? 1 : undefined,
   forbidOnly: Boolean(process.env.CI),
@@ -14,10 +14,16 @@ export default defineConfig({
     headless: true,
     channel: 'chromium',
     launchOptions: {
-      // Software GL on Linux runners without a GPU.
+      // CI runs headed under Xvfb with Mesa's software Vulkan; route ANGLE through SwiftShader
+      // Vulkan, the stack this repo's smoke tests have been proven on.
       args:
         process.platform === 'linux'
-          ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+          ? [
+              '--enable-features=Vulkan',
+              '--use-angle=vulkan',
+              '--use-vulkan=swiftshader',
+              '--disable-vulkan-surface',
+            ]
           : [],
     },
     trace: 'retain-on-failure',

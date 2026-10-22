@@ -28,12 +28,19 @@ interface AquariumState {
   setReady: () => void;
 }
 
+/** `?quality=lite` starts without post-processing (handy on weak GPUs and in CI). */
+const initialQuality = (): Quality =>
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('quality') === 'lite'
+    ? 'low'
+    : 'high';
+
 export const useAquarium = create<AquariumState>((set) => ({
   clockMode: 'live',
   manualHour: 14,
   displayHour: 12,
   viewpoint: 'sofa',
-  quality: 'high',
+  quality: initialQuality(),
   sound: false,
   feedRequest: 0,
   fishCount: 0,
