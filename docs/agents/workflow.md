@@ -26,11 +26,15 @@ npm run lint -- --max-warnings=0  # Run ESLint (extra -- is required to pass fla
 ### Type Checking
 
 ```bash
-npm run typecheck   # Run tsc --noEmit
+npm run typecheck   # App + test typecheck
 ```
 
 ### Tests
 
 ```bash
 npm run test        # Run unit tests with Vitest
+npm run build && npm run test:smoke   # Boot the production build in Chromium
 ```
+
+Unit tests cover `src/sim/` (pure TypeScript). For visual changes, run `npm run dev` and
+check every viewpoint at a day hour and a night hour (drag the time slider).

@@ -1,44 +1,26 @@
-# Performance Guidelines
+# Performance
 
-Our goal is a steady **60+ FPS**. In a physics-heavy simulation, performance is managed primarily through memory discipline.
+Target: 60 FPS at 1080p on integrated GPUs with the high-quality post stack.
 
-## 🚀 Key Optimization: Vector Reuse
+## Rules
 
-In `useFrame` loops (especially in Systems), **never** create new `Vector3`, `Matrix4`, or `Euler` instances. This causes Garbage Collection (GC) spikes that lead to frame drops.
+- **No allocation in frame loops.** `useFrame` callbacks and `FishSchool.step` reuse
+  module-level `Vector3`/`Quaternion`/`Matrix4`/`Euler` scratch objects and typed arrays.
+  The daylight sample (`lightingAt`) is allocated at 5 Hz by design, never per frame.
+- **Instancing for anything repeated**: fish (one `InstancedMesh` per species), food, plants,
+  bubbles, books, leaves.
+- **Animation on the GPU where possible**: plant sway, fish tail wave, water motes and light
+  shafts are all shader-driven.
+- **Shadows render on demand.** `gl.shadowMap.autoUpdate` is off; `Lights` sets `needsUpdate`
+  only when the sun has moved. Only the room and furniture cast shadows. Tank contents don't.
 
-### ❌ The Bad Way
+## Quality modes
 
-```typescript
-useFrame(() => {
-  const target = new Vector3(1, 2, 3); // BAD: New object every frame
-  entity.position.lerp(target, 0.1);
-});
-```
+- **High**: DPR up to 1.75, `EffectComposer` with depth of field, bloom, vignette and AgX tone
+  mapping.
+- **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
+- drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines.
 
-### ✅ The Good Way
+## Budgets
 
-Create module-level temporary vectors to reuse.
-
-```typescript
-const tempVec = new Vector3(); // Module scope
-
-const MySystem = () => {
-  useFrame(() => {
-    tempVec.set(1, 2, 3); // Reuse the same object
-    entity.position.lerp(tempVec, 0.1);
-  });
-};
-```
-
-## 🏎️ General Tips
-
-- **Loops**: Prefer simple `for...of` loops over `world.with(...)` for performance.
-- **Miniplex Queries**: Use queries instead of manual array filtering to leverage Miniplex's internal indexing.
-- **R3F Hooks**: Use `@react-three/fiber` hooks (`useFrame`, `useThree`) for render-loop logic.
-
-## 🌐 WebGPU vs WebGL Considerations
-
-- **Shadow maps**: On WebGPU, shadow map resolution must NOT be changed after initial render. Three.js's WebGPU backend disposes the old depth texture during resize, but the GPU command buffer may still reference it, causing `"Destroyed texture used in a submit"` errors. The `AdaptiveQualityManager` skips shadow map resizing when `isWebGPU` is true.
-- **Dual materials**: Components with custom shaders must provide both a GLSL `shaderMaterial` (WebGL) and a TSL node material (WebGPU). Use `useVisualQuality().isWebGPU` to branch. See `src/components/materials/` for examples.
-- **No `onBeforeCompile`**: WebGPU uses WGSL, not GLSL. The `onBeforeCompile` injection pattern (used in `enhanceFishMaterialWithRimAndSSS`) is skipped on WebGPU.
-- **Post-processing**: `@react-three/postprocessing` (`EffectComposer`, `DepthOfField`) is disabled on WebGPU (`PostProcessing` returns `null`).
+`npm run check:bundle` enforces JS gzip and fish-model byte budgets after `npm run build`.

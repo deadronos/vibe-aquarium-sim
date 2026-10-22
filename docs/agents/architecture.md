@@ -1,38 +1,54 @@
-# Architecture Guidelines
+# Architecture
 
-Vibe Aquarium Sim uses an Entity-Component-System (ECS) architecture combined with the Rapier physics engine.
+The app has two layers that only talk in one direction:
 
-## 🔄 The "Source of Truth" Loop
+```
+src/sim/     pure TypeScript: schooling, food, aquascape layout, time-of-day lighting model
+   ▲ read
+src/scene/   React Three Fiber: room, furniture, tank, fish rendering, camera, post-processing
+src/ui/      DOM HUD driven by the zustand store in src/state/store.ts
+```
 
-There is a critical bidirectional data flow between the ECS (Miniplex) and the Physics engine (Rapier):
+## Simulation (`src/sim/`)
 
-1.  **ECS -> queued controls**: Systems (like `BoidsSystem`) calculate desired physics properties (velocity, forces, impulses) and queue those changes on the entity (for example, `steeringForce` or `externalForce`).
-2.  **Before fixed physics step**: `SchedulerSystem` advances the fixed-step callbacks from Rapier's `useBeforePhysicsStep` boundary. Boids and other simulation systems queue controls, then each `Fish` component consumes its queued controls immediately before Rapier advances a fixed `1/60`-second step.
-3.  **Physics update**: Rapier integrates the rigid bodies and resolves collisions. Its state is authoritative; ECS systems never call Rapier methods directly.
-4.  **After fixed physics step**: The `Fish` component's `useAfterPhysicsStep` callback reads the authoritative translation and velocity, applies the tank boundary safety net, and mirrors the result into ECS vectors.
-5.  **Fish render frame**: `Fish`'s `useFrame` is reserved for render-rate visual work and opt-in diagnostics. It does not apply forces or read/write the fish's Rapier state, so fish trajectories do not depend on display refresh rate. Other physics-backed entities may use their own synchronization paths.
+- `school.ts` — `FishSchool`, a struct-of-arrays boids school in **tank-local space**
+  (origin at the centre of the inner tank floor). Wander + separation (all fish) +
+  alignment/cohesion (same species) + soft walls, substrate, rocks and driftwood
+  (`aquascape.ts` obstacles) + food seeking. It also smooths yaw/pitch/roll and the
+  tail-beat phase, so the renderer only composes matrices.
+- `food.ts` — fixed-capacity `FoodPool`: flakes float, sink in a spiral, settle on the
+  sand and dissolve.
+- `aquascape.ts` — rock, driftwood and plant layout shared by the renderer (geometry) and
+  the school (obstacles).
+- `timeOfDay.ts` — `lightingAt(hour)` returns sun direction/colour, sky colours, the
+  evening lamp, the tank LED schedule (09:00–21:00), moonlight and fish activity.
+- `random.ts` — seeded PRNG; all layouts and the sim are deterministic for a seed.
 
-> [!IMPORTANT]
-> **Golden Rule**: Physics is the imperative source of truth for ALL entities.
->
-> - Never manually update `entity.position` in Systems.
-> - Systems MUST NOT call Rapier methods (e.g., `applyImpulse`, `addForce`, `setLinvel`) directly. Doing so risks WASM re-entrancy and unsafe aliasing errors.
-> - Queue forces/impulses on the ECS entity instead.
+`src/scene/fish/simulation.ts` holds the single running school and food pool.
+`FishView` steps them on a fixed 60 Hz clock.
 
-## 🧩 Entity Component System (Miniplex)
+## The daylight loop
 
-- **Store**: Defined in `src/store.ts`. `world` is the raw Miniplex world; `ECS` is the React binding.
-- **Entities**: Plain JS objects typed as `Entity`.
-- **Systems**: Implemented as React components. Fixed-step simulation systems (for example, `BoidsSystem`) register callbacks with `fixedScheduler`; `SchedulerSystem` advances those callbacks from Rapier's before-step boundary. Render-only systems use `useFrame`.
-- **Queries**: Use `world.with('tag', ...)` to query entities in loops.
+`DaylightDriver` runs first each frame (`useFrame` priority −1). It works out the hour
+(live clock, a 6-minute "day cycle", or the manual slider), samples `lightingAt` five times
+a second, and eases the shared mutable `daylight` object (`src/scene/daylight.ts`) towards
+it. Lights, the sky, the lamp shade, the tank LED and `waterUniforms` read `daylight` in their
+own `useFrame`. Nothing re-renders through React for lighting changes.
 
-## 🐟 Fish Species
+## Under water
 
-- Species identity lives in `src/domain/species/`. Each species exports a `SpeciesDefinition` (id, name, preferred render model, spawn weight, and `SpeciesParams`). `SPECIES_REGISTRY` fixes the species order.
-- A fish carries `speciesId` (flocking identity) and `modelIndex` (render model) as **independent** fields. `getInitialFishSpawn` uses a deterministic weighted mix for species and defaults the model to that species' `preferredModel`, but either can change without touching the other.
-- The worker receives a per-fish `speciesIndices` buffer plus the ordered `species` params array; `simulateStep` selects params by species index. `SPECIES_CONFIG` in `src/config/constants.ts` is derived from the registry for compatibility.
-- Adding a species means adding a config module and appending it to `SPECIES_REGISTRY`; existing indices stay stable.
+`makeUnderwater(material, options)` (`src/scene/tank/underwater.ts`) patches a built-in lit
+material:
 
-## 🖥️ UI State
+- **Absorption**: the fragment intersects the camera ray with the water box and blends towards
+  the water colour per channel (red fades first). This is what makes the tank read as water.
+- **Caustics** (opt-in): a cheap procedural pattern added on upward-facing surfaces, scaled by
+  the tank LED.
+- **Vertex deform** (opt-in): used for plant sway and the fish tail wave (`aSwim` instance
+  attribute: phase, amplitude).
 
-We plan to use **Zustand** for UI state management. For now, keep UI state separate from the ECS simulation state where possible.
+## Camera
+
+`CameraRig` wraps drei `CameraControls`, bounded to the room. Viewpoints (Sofa, Tank, Up close,
+Room) are `setLookAt` presets; "Follow a fish" re-targets every frame from outside the front
+glass. The rig publishes a focus point that `Effects` uses for depth of field.

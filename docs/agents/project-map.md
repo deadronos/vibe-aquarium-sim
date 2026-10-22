@@ -1,20 +1,30 @@
 # Project Map
 
-## 📂 Key Directories
-
-- `src/systems/`: Simulation logic (Boids, WaterResistance, etc.). These should be lean and only update ECS data.
-- `src/components/`: Visual and Physics representations. This is where React-Three-Fiber and Rapier `RigidBody` components live.
-- `src/components/materials/`: WebGPU-compatible node materials (`GlassNodeMaterial`, `WaterNodeMaterial`, etc.) using Three.js TSL. These are the WebGPU counterparts to the GLSL `shaderMaterial` variants used on WebGL.
-- `src/performance/`: Adaptive quality management (`AdaptiveQualityManager`, `qualityPresets`, `qualityStore`, `VisualQualityContext`). Controls DPR scaling, shadow map sizing, and feature toggles based on FPS and device capability.
-- `src/store.ts`: The "Source of Truth" for the ECS. Defines the `world` and `Entity` types.
-- `src/domain/`: Shared domain types and registries. `src/domain/species/` defines per-species flocking configs (`tetra`, `goldfish`, `betta`) and the ordered `SPECIES_REGISTRY`; a fish's `speciesId` (flocking identity) is independent of its `modelIndex` (render model).
-- `src/shaders/`: Custom GLSL shaders (e.g., the water surface, caustics). Used only on WebGL; WebGPU uses TSL node materials instead.
-- `src/utils/`: Shared utilities and simulation helpers like `FixedStepScheduler`, `rendererUtils`.
-
-## 📍 Starting Points
-
-- `src/store.ts`: Defines what data exists.
-- `src/components/Fish.tsx`: The best example of ECS <-> Physics synchronization.
-- `src/systems/BoidsSystem.tsx`: The best example of a complex logic loop with vector reuse.
-- `src/performance/qualityPresets.ts`: Quality level definitions and their effect on rendering features.
-- `src/components/materials/`: Example of the WebGPU/WebGL dual-material pattern.
+```
+src/
+  App.tsx               Canvas + HUD
+  config/scene.ts       Room, cabinet, tank dimensions (metres), substrate shape, palette
+  sim/                  Pure simulation: school, food, species, aquascape, timeOfDay, random
+  state/store.ts        zustand: clock mode, viewpoint, quality, sound, feed requests
+  scene/
+    Experience.tsx      Scene composition
+    DaylightDriver.tsx  Clock → eased `daylight` state + water uniforms
+    daylight.ts         Shared mutable lighting state
+    Lights.tsx          Sun (shadowed), window skylight, lamp, reflection environment
+    CameraRig.tsx       Viewpoints and fish follow-cam
+    Effects.tsx         Depth of field, bloom, vignette, tone mapping
+    focus.ts            Focus point shared by camera and DoF
+    textures.ts         Procedural canvas textures (wood, plaster, fabric, rug, sand, bark, art)
+    room/Room.tsx       Walls, window, sky, curtains, baseboards
+    room/Furniture.tsx  Cabinet, sofa, coffee table, rug, floor lamp, plant, bookshelf, art
+    tank/Tank.tsx       Glass, water surface, LED fixture and spots, pipes, click-to-feed
+    tank/Aquascape.tsx  Substrate, rocks, driftwood, plants
+    tank/WaterFx.tsx    Bubbles, suspended particles, light shafts
+    tank/underwater.ts  Water uniforms and the `makeUnderwater` material patch
+    fish/FishView.tsx   GLB loading, instanced fish and food, fixed-step sim loop
+    fish/simulation.ts  The running school + food pool
+  ui/Hud.tsx            Clock, viewpoints, feed/sound/quality controls, keyboard shortcuts
+  audio/ambience.ts     Procedural WebAudio filter hum, trickle and bubbles
+public/                 Fish GLBs (clownfish, blue tang, angelfish)
+tests/                  Vitest unit tests for src/sim; tests/e2e Playwright smoke test
+```

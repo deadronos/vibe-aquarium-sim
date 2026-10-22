@@ -15,9 +15,7 @@
     "test:smoke": "playwright test",
     "test:watch": "vitest --watch",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tests": "tsc -p tsconfig.vitest.json --noEmit",
-    "typecheck:issue141": "tsc -p tsconfig.issue141.json --noEmit",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.vitest.json --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview"
@@ -26,11 +24,8 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
-    "@react-three/rapier": "^2.2.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/three": "^0.184.1",
-    "miniplex": "^2.0.0",
-    "miniplex-react": "^2.0.1",
     "postprocessing": "^6.39.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -66,5 +61,6 @@
     "typescript-eslint": "^8.61.1",
     "vite": "^8.0.16",
     "vitest": "^4.1.9"
-  }
+  },
+  "description": "A cozy living-room aquarium simulation built with React Three Fiber."
 }
