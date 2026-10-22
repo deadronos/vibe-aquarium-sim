@@ -10,17 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  # The tag normally points at a commit that already passed the full suite in
-  # ci.yml on main - including the renderer-heavy visual-quality and mobile-ux
-  # specs, which run there under Xvfb with the software Vulkan stack. Repeating
-  # that suite here cost ~6-9 minutes of software rasterization per release and
-  # failed deterministically on v0.1.9 (the failure reproduced exactly on a
-  # re-run): this workflow never installed libvulkan1/mesa-vulkan-drivers/xvfb,
-  # so Chromium was launched with playwright.config's linux GPU flags against a
-  # runner stripped of the GPU stack, and an input event in mobile-ux.spec.ts
-  # hung until its 60s timeout while build/deploy were skipped.
-  # This job therefore keeps only what a deploy gate needs: the tagged commit is
-  # on main, and the built artifact boots.
+  # The tag normally points at a commit that already passed ci.yml on main, so
+  # this job keeps only what a deploy gate needs: the tagged commit is on main,
+  # and the built artifact boots. The boot check runs the one smoke spec under
+  # the same Xvfb + software Vulkan stack as ci.yml; without that stack,
+  # Chromium is launched with playwright.config's Linux GPU flags against a
+  # runner that cannot honour them (this hung the v0.1.9 deploy).
   boot-check:
     runs-on: ubuntu-latest
     steps:
@@ -56,11 +51,15 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      - name: Install software Vulkan and virtual display
+        # The smoke spec renders real frames, so it needs the same software GPU
+        # stack and Xvfb display that ci.yml uses (see playwright.config.ts).
+        run: sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb xauth
+
       - name: Boot check
-        # One existing spec: the shell renders, the canvas mounts, the renderer
-        # reports a backend, there are no page errors and no 404s, and the fish
-        # model is served with the expected content type. Seconds, not minutes.
-        run: npx playwright test tests/e2e/smoke.spec.ts --grep "boots the aquarium shell"
+        # The single smoke spec: the room boots, the fish load, feeding and the
+        # viewpoint/clock controls respond, and the page logs no errors.
+        run: xvfb-run --auto-servernum npx playwright test tests/e2e/smoke.spec.ts --headed
 
   build:
     needs: boot-check
