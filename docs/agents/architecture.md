@@ -50,5 +50,12 @@ material:
 ## Camera
 
 `CameraRig` wraps drei `CameraControls`, bounded to the room. Viewpoints (Sofa, Tank, Up close,
-Room) are `setLookAt` presets; "Follow a fish" re-targets every frame from outside the front
-glass. The rig publishes a focus point that `Effects` uses for depth of field.
+Room) are `setLookAt` presets in `shots.ts`; "Follow a fish" re-targets every frame from outside
+the front glass. The rig publishes a focus point that `Effects` uses for depth of field.
+
+Shots are authored for landscape. On narrower screens `frameShot` (`framing.ts`, pure maths and
+unit-tested) dollies each shot back along its own line of sight until the cabinet, plus the
+shot's `fit` padding, fits across the screen. It stops at the room boundary and then widens the
+vertical FOV (up to 75°) for what is left. Shots that already fit are returned unchanged, so 16:9
+and wider screens keep the authored framing. The rig re-frames on resize only when the framing
+actually changes, which means a landscape resize never undoes the visitor's orbiting.
