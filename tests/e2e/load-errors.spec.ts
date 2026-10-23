@@ -78,10 +78,13 @@ test('switching to High survives a missing post-processing chunk', async ({ page
   await blockPostStack(page);
   await page.goto('./?quality=lite');
   await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
+  await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
 
-  // The quality control sits in the fixed bar. Playwright's scroll-into-view check reports it
-  // outside the viewport because the page itself does not scroll, so click at its box.
-  const quality = page.getByRole('button', { name: 'Lite' });
-  await quality.click({ force: true });
+  // The control is on screen, but the page does not scroll and Playwright will not click it.
+  await page.evaluate(() => {
+    const button = document.querySelector('button[title="Rendering quality"]');
+    if (!(button instanceof HTMLButtonElement)) throw new Error('quality button missing');
+    button.click();
+  });
   await expectRoomKeptDrawing(page);
 });
