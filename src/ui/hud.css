@@ -28,12 +28,22 @@
 
 .hud[data-idle='true'] .hud__title,
 .hud[data-idle='true'] .hud__bar,
-.hud[data-idle='true'] .hud__hint {
+.hud[data-idle='true'] .hud__hint,
+.hud[data-hidden='true'] .hud__title,
+.hud[data-hidden='true'] .hud__bar,
+.hud[data-hidden='true'] .hud__hint {
   opacity: 0;
   transform: translateY(6px);
 }
 
-.hud[data-idle='true'] .hud__bar {
+/* An idle bar still catches the first tap, so it wakes the HUD instead of feeding the fish or
+   orbiting the camera, but its controls ignore that tap so nothing invisible gets toggled. */
+.hud[data-idle='true'] .hud__bar > * {
+  pointer-events: none;
+}
+
+/* A bar hidden with H is out of the way on purpose: clicks go through to the scene. */
+.hud[data-hidden='true'] .hud__bar {
   pointer-events: none;
 }
 

@@ -73,7 +73,7 @@ export const Hud = () => {
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
 
   return (
-    <div className="hud" data-idle={idle || hidden} data-hidden={hidden}>
+    <div className="hud" data-idle={idle} data-hidden={hidden}>
       <div className={`loading ${state.ready ? 'loading--done' : ''}`} aria-hidden={state.ready}>
         <div className="loading__ripple" />
         <p>Filling the tank…</p>
