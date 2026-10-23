@@ -12,6 +12,8 @@ src/
     daylight.ts         Shared mutable lighting state
     Lights.tsx          Sun (shadowed), window skylight, lamp, reflection environment
     CameraRig.tsx       Viewpoints and fish follow-cam
+    shots.ts            Viewpoint shots and the cabinet each one keeps on screen
+    framing.ts          Aspect-aware framing: dolly back, then widen FOV, on narrow screens
     Effects.tsx         Depth of field, bloom, vignette, tone mapping
     focus.ts            Focus point shared by camera and DoF
     textures.ts         Procedural canvas textures (wood, plaster, fabric, rug, sand, bark, art)
