@@ -1,9 +1,9 @@
 import { PerformanceMonitor } from '@react-three/drei';
+import { lazy, Suspense } from 'react';
 import { useAquarium } from '../state/store';
 import { CameraRig } from './CameraRig';
 import { ContextWatcher } from './ContextWatcher';
 import { DaylightDriver } from './DaylightDriver';
-import { Effects } from './Effects';
 import { FishLoader } from './fish/FishLoader';
 import { Lights } from './Lights';
 import { Furniture } from './room/Furniture';
@@ -11,6 +11,9 @@ import { Room } from './room/Room';
 import { Aquascape } from './tank/Aquascape';
 import { Tank } from './tank/Tank';
 import { WaterFx } from './tank/WaterFx';
+
+/** High-quality post stack. Loaded only after quality resolves to High, so Lite never fetches it. */
+const Effects = lazy(() => import('./Effects').then((module) => ({ default: module.Effects })));
 
 export const Experience = () => {
   const quality = useAquarium((state) => state.quality);
@@ -28,7 +31,11 @@ export const Experience = () => {
       <FishLoader />
       <WaterFx />
       <Tank />
-      {quality === 'high' && <Effects />}
+      {quality === 'high' && (
+        <Suspense fallback={null}>
+          <Effects />
+        </Suspense>
+      )}
     </>
   );
 };

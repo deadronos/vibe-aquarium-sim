@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test('the living room boots, renders and feeds the fish', async ({ page }) => {
   const errors: string[] = [];
+  const scriptPaths: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.endsWith('.js')) scriptPaths.push(pathname);
+  });
   page.on('console', (message) => {
     // Surface browser warnings in the CI log so a stalled boot is diagnosable.
     if (message.type() === 'warning' || message.type() === 'error') {
@@ -59,5 +64,9 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   await room.click();
   await expect(room).toHaveAttribute('aria-checked', 'true');
 
+  // Lite never mounts the post stack, so those chunks must stay unrequested for the whole visit.
+  expect(
+    scriptPaths.filter((pathname) => /\/(postprocessing|Effects)-[^/]+\.js$/.test(pathname))
+  ).toEqual([]);
   expect(errors).toEqual([]);
 });
