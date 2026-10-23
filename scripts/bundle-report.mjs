@@ -104,6 +104,7 @@ export function formatBundleReport(report) {
 - glTF Transform 4.5.0
 - meshoptimizer 0.23.0
 - sharp 0.35.4
+- Simplify: weld + meshoptimizer simplifier, 1,500 triangles per fish, error limit 1%
 - Meshopt compression level: high
 - WebP quality: 82; effort: 6
 
