@@ -11,6 +11,8 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
     if (message.type() === 'error') errors.push(message.text());
   });
 
+  // A controllable clock lets the HUD idle timer be skipped instead of waited out.
+  await page.clock.install();
   // Lite skips the post-processing shaders, which software GL on CI compiles very slowly.
   await page.goto('./?quality=lite');
   await expect(page.locator('canvas')).toBeVisible();
@@ -28,6 +30,34 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
     'aria-checked',
     'true'
   );
+
+  // Let the HUD go idle without waiting the real seven seconds. The pointer is parked on the
+  // Room button first so the tap below arrives without a pointermove, like a finger on glass.
+  const hud = page.locator('.hud');
+  const room = page.getByRole('radio', { name: /Room/ });
+  const box = await room.boundingBox();
+  if (!box) throw new Error('Room viewpoint button has no box');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.clock.fastForward(8000);
+  await expect(hud).toHaveAttribute('data-idle', 'true');
+
+  // The first tap on the faded bar only wakes it: it lands on the bar, not the canvas, and does
+  // not press the control underneath.
+  const hitsBar = await page.evaluate(
+    ([px, py]) => Boolean(document.elementFromPoint(px, py)?.closest('.hud__bar')),
+    [x, y]
+  );
+  expect(hitsBar).toBe(true);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(hud).toHaveAttribute('data-idle', 'false');
+  await expect(room).toHaveAttribute('aria-checked', 'false');
+
+  // Awake again, the same control works.
+  await room.click();
+  await expect(room).toHaveAttribute('aria-checked', 'true');
 
   expect(errors).toEqual([]);
 });
