@@ -27,3 +27,5 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 ## Budgets
 
 `npm run check:bundle` enforces JS gzip and fish-model byte budgets after `npm run build`.
+`npm run assets:optimize` simplifies each fish to 1,500 triangles before compressing it, and
+`npm run assets:verify` fails if a shipped fish GLB goes over that.

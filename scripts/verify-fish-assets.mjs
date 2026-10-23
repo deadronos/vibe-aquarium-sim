@@ -18,6 +18,8 @@ const GLB_MAGIC = 0x46546c67;
 const GLB_VERSION = 2;
 const JSON_CHUNK_TYPE = 0x4e4f534a;
 const MAX_TOTAL_BYTES = 2_921_368;
+// Matches TARGET_TRIANGLES in optimize-fish-assets.mjs: fish are a third of a frame's triangles.
+const MAX_TRIANGLES_PER_FISH = 1_500;
 
 const io = new NodeIO()
   .registerExtensions([EXTMeshoptCompression, EXTTextureWebP, KHRMeshQuantization])
@@ -100,6 +102,17 @@ async function validateParsedDocument(filePath) {
   if (meshes.length === 0 || !meshes.some((mesh) => mesh.listPrimitives().length > 0)) {
     throw new Error('loader found no renderable meshes');
   }
+  let triangles = 0;
+  for (const mesh of meshes) {
+    for (const primitive of mesh.listPrimitives()) {
+      triangles += (primitive.getIndices() ?? primitive.getAttribute('POSITION')).getCount() / 3;
+    }
+  }
+  if (triangles > MAX_TRIANGLES_PER_FISH) {
+    throw new Error(
+      `${triangles.toLocaleString('en-US')} triangles exceeds the ${MAX_TRIANGLES_PER_FISH.toLocaleString('en-US')} budget`
+    );
+  }
   for (const accessor of accessors) {
     const array = accessor.getArray();
     if (!array || array.length !== accessor.getCount() * accessor.getElementSize()) {
@@ -120,6 +133,7 @@ async function validateParsedDocument(filePath) {
     }
     await sharp(image).raw().toBuffer();
   }
+  return triangles;
 }
 
 async function verifyFishAssets() {
@@ -136,9 +150,11 @@ async function verifyFishAssets() {
       const bytes = new Uint8Array(file.buffer, file.byteOffset, file.byteLength);
       const document = readGlbJson(filePath, bytes);
       validateDocument(document);
-      await validateParsedDocument(filePath);
+      const triangles = await validateParsedDocument(filePath);
       totalBytes += bytes.byteLength;
-      console.log(`${assetName}: valid (${formatBytes(bytes.byteLength)})`);
+      console.log(
+        `${assetName}: valid (${formatBytes(bytes.byteLength)}, ${triangles.toLocaleString('en-US')} triangles)`
+      );
     } catch (error) {
       hasFailure = true;
       console.error(
