@@ -1,6 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 // Failure paths stay out of smoke.spec.ts, which gates the Pages deploy and should stay quick.
+
+/** Stale deploys and dropped responses 404 the hashed post-processing chunks. */
+const blockPostStack = (page: Page) =>
+  page.route(/\/(Effects|postprocessing)-[^/]+\.js$/, (route) =>
+    route.fulfill({ status: 404, contentType: 'text/plain', body: 'missing chunk' })
+  );
+
+/** The room finished drawing and the crash veil did not replace it. */
+const expectRoomKeptDrawing = async (page: Page) => {
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
+  await expect(page.getByText(/\d+ fish/)).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
+};
 
 test('a failed fish download shows an error with a working Retry', async ({ page }) => {
   let blocked = true;
@@ -51,4 +66,22 @@ test('a lost graphics context is explained and recovers on restore', async ({ pa
   );
   await expect(page.getByRole('alert')).toBeHidden();
   await expect(page.locator('.loading')).toHaveClass(/loading--done/);
+});
+
+test('a missing post-processing chunk on boot falls back to Lite', async ({ page }) => {
+  await blockPostStack(page);
+  await page.goto('./');
+  await expectRoomKeptDrawing(page);
+});
+
+test('switching to High survives a missing post-processing chunk', async ({ page }) => {
+  await blockPostStack(page);
+  await page.goto('./?quality=lite');
+  await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
+
+  // The quality control sits in the fixed bar. Playwright's scroll-into-view check reports it
+  // outside the viewport because the page itself does not scroll, so click at its box.
+  const quality = page.getByRole('button', { name: 'Lite' });
+  await quality.click({ force: true });
+  await expectRoomKeptDrawing(page);
 });

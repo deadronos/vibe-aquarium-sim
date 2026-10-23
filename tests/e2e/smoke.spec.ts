@@ -70,3 +70,18 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   ).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('high quality loads the post stack and keeps the room', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  const postStack = page.waitForResponse((response) =>
+    /\/(postprocessing|Effects)-[^/]+\.js$/.test(new URL(response.url()).pathname)
+  );
+  await page.goto('./');
+  expect((await postStack).ok()).toBe(true);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'High quality' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
