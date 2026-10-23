@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
 import { formatHour, useAquarium } from '../state/store';
-import type { Viewpoint } from '../state/store';
+import type { LoadError, Viewpoint } from '../state/store';
 import './hud.css';
 
 const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
@@ -15,6 +15,45 @@ const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
 
 const ambience = new Ambience();
 const IDLE_MS = 7000;
+
+const reload = () => window.location.reload();
+
+const LOAD_ERRORS: Record<
+  LoadError,
+  { title: string; body: string; action: string; retry: 'remount' | 'reload'; busy?: boolean }
+> = {
+  webgl: {
+    title: 'This aquarium needs WebGL',
+    body: 'Your browser could not start WebGL, which draws the room and the fish. Turning on hardware acceleration in the browser settings, or opening the page in another browser, usually helps.',
+    action: 'Reload',
+    retry: 'reload',
+  },
+  assets: {
+    title: 'The fish did not arrive',
+    body: 'Their models failed to download. Check your connection and try again.',
+    action: 'Retry',
+    retry: 'remount',
+  },
+  timeout: {
+    title: 'The fish are taking a while',
+    body: 'Their models are still not here after 25 seconds. The connection may be slow or stuck.',
+    action: 'Retry',
+    retry: 'remount',
+  },
+  'context-lost': {
+    title: 'The graphics were reset',
+    body: 'The graphics card dropped the scene. Recovering… If the room does not come back, reload the page.',
+    action: 'Reload',
+    retry: 'reload',
+    busy: true,
+  },
+  crash: {
+    title: 'Something went wrong drawing the room',
+    body: 'Reloading the page usually brings it back.',
+    action: 'Reload',
+    retry: 'reload',
+  },
+};
 
 const periodOfDay = (hour: number) => {
   if (hour < 5) return 'Night';
@@ -70,13 +109,28 @@ export const Hud = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  const loadError = state.loadError ? LOAD_ERRORS[state.loadError] : null;
+  const veiled = !state.ready || loadError !== null;
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
 
   return (
     <div className="hud" data-idle={idle} data-hidden={hidden}>
-      <div className={`loading ${state.ready ? 'loading--done' : ''}`} aria-hidden={state.ready}>
-        <div className="loading__ripple" />
-        <p>Filling the tank…</p>
+      <div className={`loading ${veiled ? '' : 'loading--done'}`} aria-hidden={!veiled}>
+        {(!loadError || loadError.busy) && <div className="loading__ripple" />}
+        {loadError ? (
+          <div className="loading__error" role="alert">
+            <h2>{loadError.title}</h2>
+            <p>{loadError.body}</p>
+            <button
+              className="button button--primary"
+              onClick={loadError.retry === 'remount' ? state.retryLoad : reload}
+            >
+              {loadError.action}
+            </button>
+          </div>
+        ) : (
+          <p>Filling the tank…</p>
+        )}
       </div>
 
       <header className="hud__title">

@@ -1,10 +1,10 @@
 import { PerformanceMonitor } from '@react-three/drei';
-import { Suspense } from 'react';
 import { useAquarium } from '../state/store';
 import { CameraRig } from './CameraRig';
+import { ContextWatcher } from './ContextWatcher';
 import { DaylightDriver } from './DaylightDriver';
 import { Effects } from './Effects';
-import { FishView } from './fish/FishView';
+import { FishLoader } from './fish/FishLoader';
 import { Lights } from './Lights';
 import { Furniture } from './room/Furniture';
 import { Room } from './room/Room';
@@ -17,6 +17,7 @@ export const Experience = () => {
   const setQuality = useAquarium((state) => state.setQuality);
   return (
     <>
+      <ContextWatcher />
       <DaylightDriver />
       <PerformanceMonitor onDecline={() => setQuality('low')} />
       <CameraRig />
@@ -24,9 +25,7 @@ export const Experience = () => {
       <Room />
       <Furniture />
       <Aquascape />
-      <Suspense fallback={null}>
-        <FishView />
-      </Suspense>
+      <FishLoader />
       <WaterFx />
       <Tank />
       {quality === 'high' && <Effects />}

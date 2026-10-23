@@ -3,6 +3,11 @@ import { create } from 'zustand';
 export type ClockMode = 'live' | 'cycle' | 'manual';
 export type Viewpoint = 'sofa' | 'tank' | 'glass' | 'room' | 'follow';
 export type Quality = 'high' | 'low';
+/**
+ * Why the room is not showing: no WebGL, the fish failed or took too long to load, the GPU
+ * dropped the context, or something inside the canvas crashed.
+ */
+export type LoadError = 'webgl' | 'assets' | 'timeout' | 'context-lost' | 'crash';
 
 interface AquariumState {
   clockMode: ClockMode;
@@ -17,6 +22,9 @@ interface AquariumState {
   feedRequest: number;
   fishCount: number;
   ready: boolean;
+  loadError: LoadError | null;
+  /** Bumped by Retry so the scene remounts the fish loader. */
+  loadAttempt: number;
   setClockMode: (mode: ClockMode) => void;
   setManualHour: (hour: number) => void;
   setDisplayHour: (hour: number) => void;
@@ -26,6 +34,8 @@ interface AquariumState {
   requestFeed: () => void;
   setFishCount: (count: number) => void;
   setReady: () => void;
+  setLoadError: (error: LoadError | null) => void;
+  retryLoad: () => void;
 }
 
 /** `?quality=lite` starts without post-processing (handy on weak GPUs and in CI). */
@@ -34,6 +44,20 @@ const initialQuality = (): Quality =>
   new URLSearchParams(window.location.search).get('quality') === 'lite'
     ? 'low'
     : 'high';
+
+/** Probes for WebGL once at startup; outside a browser (unit tests) it is assumed present. */
+const detectWebGL = () => {
+  if (typeof document === 'undefined') return true;
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+    // Hand the probe context back so it does not count against the browser's context limit.
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return gl !== null;
+  } catch {
+    return false;
+  }
+};
 
 export const useAquarium = create<AquariumState>((set) => ({
   clockMode: 'live',
@@ -45,6 +69,8 @@ export const useAquarium = create<AquariumState>((set) => ({
   feedRequest: 0,
   fishCount: 0,
   ready: false,
+  loadError: detectWebGL() ? null : 'webgl',
+  loadAttempt: 0,
   setClockMode: (clockMode) =>
     set((state) => ({
       clockMode,
@@ -58,7 +84,19 @@ export const useAquarium = create<AquariumState>((set) => ({
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
   setFishCount: (fishCount) => set({ fishCount }),
-  setReady: () => set({ ready: true }),
+  // Fish that arrive after a timeout still lift the veil.
+  setReady: () =>
+    set((state) => ({
+      ready: true,
+      loadError: state.loadError === 'timeout' ? null : state.loadError,
+    })),
+  // Missing WebGL is permanent for this page, so nothing overrides it.
+  setLoadError: (loadError) => set((state) => (state.loadError === 'webgl' ? {} : { loadError })),
+  retryLoad: () =>
+    set((state) => ({
+      loadError: state.loadError === 'webgl' ? 'webgl' : null,
+      loadAttempt: state.loadAttempt + 1,
+    })),
 }));
 
 export const formatHour = (hour: number) => {
