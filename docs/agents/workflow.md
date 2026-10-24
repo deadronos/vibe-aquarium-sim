@@ -45,8 +45,15 @@ check every viewpoint at a day hour and a night hour (drag the time slider).
 
 ## 🚢 Releases
 
-1. Merge to `main` with CI green.
-2. Tag the tip of `main` and push the tag: `git tag -a v0.2.1 -m "…" && git push origin v0.2.1`.
-3. `deploy-pages.yml` checks that the tag is on `main`, runs `tests/e2e/smoke.spec.ts` against the
+The `v*` git tag is the source of truth for the release version. `package.json` mirrors it so the
+two never disagree:
+
+1. In the release PR, bump the version without tagging: `npm version 0.2.4 --no-git-tag-version`
+   (updates `package.json` and `package-lock.json`). Use semver: patch for fixes, minor for
+   features, major once the app is past 0.x and something breaks.
+2. Merge to `main` with CI green.
+3. Tag the tip of `main` with the same version and push the tag:
+   `git tag -a v0.2.4 -m "…" && git push origin v0.2.4`.
+4. `deploy-pages.yml` checks that the tag is on `main`, runs `tests/e2e/smoke.spec.ts` against the
    build under Xvfb + software Vulkan, then deploys to GitHub Pages. If you rename or split the
    smoke test, check that workflow's command still selects it.
