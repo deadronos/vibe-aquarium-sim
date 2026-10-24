@@ -21,19 +21,21 @@ const SWAY = /* glsl */ `
 {
   vec3 swayBase = instanceMatrix[3].xyz;
   float swayH = position.y;
-  float swayK = swayH * swayH * SWAY_AMOUNT;
+  float swayK = swayH * swayH * uSway;
   transformed.x += sin(uTime * 0.9 + swayBase.x * 9.0 + swayBase.z * 5.0 + swayH * 2.4) * swayK;
   transformed.z += (cos(uTime * 0.7 + swayBase.x * 6.0 + swayH * 2.0) * 0.6 + 0.4) * swayK;
 }
 `;
 
-const plantMaterial = (key: string, sway: number) =>
+// The sway amount is a uniform, so every plant kind and the anemone share one program.
+const plantMaterial = (sway: number) =>
   makeUnderwater(
     new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.65 }),
     {
-      key: `plant-${key}`,
       caustics: true,
-      vertexDeform: SWAY.replace('SWAY_AMOUNT', sway.toFixed(3)),
+      vertexHead: 'uniform float uSway;',
+      vertexDeform: SWAY,
+      uniforms: { uSway: { value: sway } },
     }
   );
 
@@ -43,11 +45,7 @@ const PlantClumpView = ({ clump, index }: { clump: PlantClump; index: number }) 
   const geometry = useMemo(() => PLANT_GEOMETRY[clump.kind](), [clump.kind]);
   useDispose(geometry);
   const material = useMemo(
-    () =>
-      plantMaterial(
-        clump.kind,
-        clump.kind === 'ribbon' ? 0.09 : clump.kind === 'sword' ? 0.03 : 0.12
-      ),
+    () => plantMaterial(clump.kind === 'ribbon' ? 0.09 : clump.kind === 'sword' ? 0.03 : 0.12),
     [clump.kind]
   );
   useDispose(material);
@@ -87,10 +85,10 @@ const Anemone = () => {
     () => ({
       tentacle: buildAnemoneTentacle(),
       column: new THREE.CylinderGeometry(0.034, 0.03, ANEMONE.height * 0.5, 14),
-      tentacleMaterial: plantMaterial('anemone', 0.18),
+      tentacleMaterial: plantMaterial(0.18),
       columnMaterial: makeUnderwater(
         new THREE.MeshStandardMaterial({ color: '#c98a6a', roughness: 0.7 }),
-        { key: 'anemone-column', caustics: true }
+        { caustics: true }
       ),
     }),
     []
@@ -134,21 +132,18 @@ export const Aquascape = () => {
   const assets = useMemo(() => {
     const sand = makeUnderwater(
       new THREE.MeshStandardMaterial({ map: sandTexture(), roughness: 1, color: '#e6d6bc' }),
-      {
-        key: 'sand',
-        caustics: true,
-      }
+      { caustics: true }
     );
     const stone = makeUnderwater(
       new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 }),
-      { key: 'stone', caustics: true }
+      { caustics: true }
     );
     const bark = barkTexture().clone();
     bark.repeat.set(2, 1);
     bark.needsUpdate = true;
     const wood = makeUnderwater(
       new THREE.MeshStandardMaterial({ map: bark, roughness: 0.9, color: '#b38f72' }),
-      { key: 'wood', caustics: true }
+      { caustics: true }
     );
     return {
       substrate: buildSubstrate(),

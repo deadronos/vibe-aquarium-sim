@@ -95,16 +95,34 @@ export interface UnderwaterOptions {
   vertexHead?: string;
   /** GLSL run right after `transformed` is set up, to deform geometry. */
   vertexDeform?: string;
-  /** Extra uniforms for the deform code. */
+  /** Extra uniforms for the deform code. Per material, so materials can share one program. */
   uniforms?: Record<string, THREE.IUniform>;
-  key: string;
 }
+
+/** One id per distinct patch, so the program cache key stays short. */
+const patchIds = new Map<string, number>();
+
+/**
+ * Program cache key for a patch. It is built from the injected GLSL itself, so materials whose
+ * patches match share one compiled program (three adds its own defines, such as maps or vertex
+ * colours, on top) and different patches never share one.
+ */
+const patchKey = ({ caustics = false, vertexHead = '', vertexDeform = '' }: UnderwaterOptions) => {
+  const patch = `${caustics ? 'caustics' : 'plain'}\0${vertexHead}\0${vertexDeform}`;
+  let id = patchIds.get(patch);
+  if (id === undefined) {
+    id = patchIds.size;
+    patchIds.set(patch, id);
+  }
+  return `underwater-${id}`;
+};
 
 /** Patches a built-in lit material so it is tinted by the water between it and the camera. */
 export const makeUnderwater = <T extends THREE.Material>(
   material: T,
-  options: UnderwaterOptions
+  options: UnderwaterOptions = {}
 ): T => {
+  const key = patchKey(options);
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, waterUniforms, options.uniforms);
     shader.vertexShader = shader.vertexShader
@@ -118,6 +136,6 @@ export const makeUnderwater = <T extends THREE.Material>(
       .replace('#include <common>', `#include <common>\n${FRAGMENT_HEAD}`)
       .replace('#include <opaque_fragment>', FRAGMENT_APPLY(options.caustics ?? false));
   };
-  material.customProgramCacheKey = () => `underwater-${options.key}`;
+  material.customProgramCacheKey = () => key;
   return material;
 };

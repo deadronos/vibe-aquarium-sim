@@ -34,7 +34,7 @@ export default function App() {
         <ErrorBoundary onError={onSceneCrash}>
           <Canvas
             shadows="percentage"
-            dpr={quality === 'high' ? [1, 1.75] : 1}
+            dpr={quality === 'low' ? 1 : [1, 1.5]}
             camera={{ fov: BASE_FOV, near: 0.03, far: 40, position: [0.55, 1.38, 2.3] }}
             gl={createRenderer}
             onCreated={({ gl }) => {

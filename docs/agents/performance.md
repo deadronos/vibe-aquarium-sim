@@ -18,16 +18,31 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **Shadows render on demand.** `gl.shadowMap.autoUpdate` is off; `Lights` sets `needsUpdate`
   for 2 frames at start-up and then only when the sun has moved. Only the room and furniture cast
   shadows. Tank contents don't.
+- **Shaders compile before the veil lifts.** Once the fish mount, `precompile`
+  (`src/scene/precompile.ts`) runs `renderer.compileAsync` (parallel where
+  `KHR_parallel_shader_compile` exists) and only then marks the scene ready. Without
+  `compileAsync` it compiles synchronously; a failure or a compile still running after 15 s
+  lifts the veil anyway. The post stack loads later and compiles on its own.
+- **Few lights, few programs.** One tank spot covers day and moonlight (colour and intensity
+  follow `daylight`). Every extra light costs every lit fragment; every distinct material
+  variant costs a program. Expect about 38 programs in Lite after boot (High adds the post stack).
 
 ## Quality modes
 
-- **High**: DPR up to 1.75, `EffectComposer` with depth of field, bloom, vignette and AgX tone
-  mapping.
-- **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
-- drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines, through
-  `autoDowngrade` in the store. It is remounted per quality (Lite samples never count against
-  High), ignored for `QUALITY_GRACE_MS` after any quality choice and again after the post stack
-  mounts, fires at most once per manual choice, and shows "Switched to Lite for performance".
+- **High**: DPR up to 1.5, `EffectComposer` (2x multisampling) with depth of field, bloom,
+  vignette and AgX tone mapping. Depth of field runs every pass at half the composer's size
+  (`HalfResDepthOfField` in `Effects.tsx`).
+- **High without DoF** (`'medium'` in the store, `?quality=medium`): the same, minus depth of
+  field. Only the performance monitor picks it; the HUD still shows it as High.
+- **Lite**: DPR 1, no post-processing (the renderer applies AgX itself). The post-processing
+  chunk is only requested above Lite.
+- drei `PerformanceMonitor` steps one level at a time through `stepQuality` in the store:
+  `onDecline` steps down, `onIncline` steps back up, never above the user's choice. It is
+  remounted per level (samples at one level never count against another), ignored for
+  `QUALITY_GRACE_MS` after any step or quality choice and again after the post stack mounts.
+  Hysteresis: a step up waits `QUALITY_RECOVER_MS` after the first drop, twice as long after each
+  further drop, and stops for good after `QUALITY_MAX_DROPS` drops until the next manual choice.
+  Only reaching Lite shows "Switched to Lite for performance".
 - A failed post-processing chunk download also drops to Lite. That failure stays inside the
   effects boundary, so the room keeps drawing. The browser keeps that failed URL, so the next
   switch to High loads the same file with a new query instead of repeating the rejected import.

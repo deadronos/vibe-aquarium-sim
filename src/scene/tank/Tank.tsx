@@ -23,8 +23,7 @@ export const Tank = () => {
           emissive: '#ffffff',
           emissiveMap: backdropTexture(),
           roughness: 1,
-        }),
-        { key: 'backdrop' }
+        })
       ),
     []
   );
