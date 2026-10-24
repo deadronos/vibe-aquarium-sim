@@ -1,25 +1,20 @@
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SWIM_BOUNDS, TANK_ORIGIN } from '../../config/scene';
-import { OBSTACLES } from '../../sim/aquascape';
+import { TANK_ORIGIN } from '../../config/scene';
 import { FOOD_CAPACITY } from '../../sim/food';
 import { SPECIES } from '../../sim/species';
-import { useAquarium } from '../../state/store';
-import { daylight } from '../daylight';
 import { makeUnderwater } from '../tank/underwater';
 import { FISH_URLS } from './assets';
 import { simulation } from './simulation';
 
-const FIXED_STEP = 1 / 60;
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 const quaternion = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const matrix = new THREE.Matrix4();
-const environment = { activity: 1, food: simulation.food, obstacles: OBSTACLES };
 
 /**
  * The source models are quantised, normal-less meshes with a node transform. Bake that into plain
@@ -70,10 +65,10 @@ interface SpeciesMesh {
   swim: THREE.InstancedBufferAttribute;
 }
 
+/** Draws the shared simulation's fish and food flakes; `SimulationDriver` advances it. */
 export const FishView = () => {
   const gltfs = useGLTF(FISH_URLS);
   const meshes = useRef<(SpeciesMesh | null)[]>([]);
-  const accumulator = useRef(0);
   const { school, food } = simulation;
 
   const assets = useMemo(
@@ -113,28 +108,7 @@ export const FishView = () => {
   );
   const foodMesh = useRef<THREE.InstancedMesh>(null);
 
-  useEffect(() => {
-    const { setFishCount, setReady } = useAquarium.getState();
-    setFishCount(school.count);
-    setReady();
-    return useAquarium.subscribe((state, previous) => {
-      if (state.feedRequest !== previous.feedRequest) {
-        const x =
-          SWIM_BOUNDS.minX + 0.15 + Math.random() * (SWIM_BOUNDS.maxX - SWIM_BOUNDS.minX - 0.3);
-        food.sprinkle(x, (Math.random() - 0.5) * 0.15);
-      }
-    });
-  }, [school, food]);
-
-  useFrame((state, delta) => {
-    accumulator.current = Math.min(accumulator.current + delta, FIXED_STEP * 5);
-    environment.activity = daylight.fishActivity;
-    while (accumulator.current >= FIXED_STEP) {
-      school.step(FIXED_STEP, environment);
-      food.step(FIXED_STEP, state.clock.elapsedTime);
-      accumulator.current -= FIXED_STEP;
-    }
-
+  useFrame(() => {
     // Fish instances: species are contiguous in the school, so a running offset maps them.
     let offset = 0;
     for (let s = 0; s < SPECIES.length; s++) {

@@ -44,6 +44,12 @@ export class FoodPool {
     }
   }
 
+  /** Sprinkles a pinch at a seeded spot along the front of the surface, as the feed button does. */
+  feed() {
+    const x = this.random.range(SWIM_BOUNDS.minX + 0.15, SWIM_BOUNDS.maxX - 0.15);
+    this.sprinkle(x, this.random.range(-0.075, 0.075));
+  }
+
   consume(i: number) {
     if (!this.active[i]) return;
     this.active[i] = 0;
