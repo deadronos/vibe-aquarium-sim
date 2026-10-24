@@ -336,15 +336,16 @@ export const Hud = () => {
           </button>
           <button
             className="button hud__quality"
-            onClick={() => state.setQuality(state.quality === 'high' ? 'low' : 'high')}
+            onClick={() => state.setQuality(state.quality === 'low' ? 'high' : 'low')}
             disabled={highBlocked && state.quality === 'low'}
             title="Rendering quality"
           >
-            {/* On phones the bar shows HQ in place of "High quality". */}
+            {/* On phones the bar shows HQ in place of "High quality". High without depth of field
+                is an automatic step, so it still reads as High. */}
             <span className="hud__icon" aria-hidden="true">
-              {state.quality === 'high' ? 'HQ' : 'Lite'}
+              {state.quality === 'low' ? 'Lite' : 'HQ'}
             </span>
-            <span className="hud__label">{state.quality === 'high' ? 'High quality' : 'Lite'}</span>
+            <span className="hud__label">{state.quality === 'low' ? 'Lite' : 'High quality'}</span>
           </button>
           {canFullscreen && (
             <button

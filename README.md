@@ -93,6 +93,8 @@ Releases & deployment
 Tips
 
 - Add `?quality=lite` to the URL to start without post-processing on slow machines.
+- `?quality=medium` starts on High without depth of field. On High, the room steps down to that
+  and then Lite when the frame rate drops, and back up once it recovers.
 - Keyboard: 1–5 viewpoints, F feed, M sound, H hide the HUD.
 
 Contributing

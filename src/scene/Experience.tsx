@@ -55,6 +55,7 @@ export const Experience = () => {
   const setQuality = useAquarium((state) => state.setQuality);
   const setEffectsNotice = useAquarium((state) => state.setEffectsNotice);
   const autoDowngrade = useAquarium((state) => state.autoDowngrade);
+  const autoUpgrade = useAquarium((state) => state.autoUpgrade);
   const [effectsLoad, setEffectsLoad] = useState(() => ({
     attempt: 0,
     chunkUrl: null as string | null,
@@ -95,8 +96,8 @@ export const Experience = () => {
     <>
       <ContextWatcher />
       <DaylightDriver />
-      {/* Remounted per quality so frames sampled in Lite never count against High. */}
-      <PerformanceMonitor key={quality} onDecline={autoDowngrade} />
+      {/* Remounted per quality so frames sampled at one level never count against another. */}
+      <PerformanceMonitor key={quality} onDecline={autoDowngrade} onIncline={autoUpgrade} />
       <CameraRig />
       <AmbientDirector />
       <Lights />
@@ -106,10 +107,10 @@ export const Experience = () => {
       <FishLoader />
       <WaterFx />
       <Tank />
-      {quality === 'high' && (
+      {quality !== 'low' && (
         <ErrorBoundary key={effectsLoad.attempt} onError={onEffectsError}>
           <Suspense fallback={null}>
-            <EffectsView />
+            <EffectsView depthOfField={quality === 'high'} />
             <HoldQuality />
           </Suspense>
         </ErrorBoundary>
