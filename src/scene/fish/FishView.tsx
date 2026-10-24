@@ -179,7 +179,7 @@ export const FishView = () => {
   });
 
   return (
-    <group position={TANK_ORIGIN as unknown as [number, number, number]}>
+    <group position={TANK_ORIGIN}>
       {assets.map((asset, s) => (
         <instancedMesh
           key={s}

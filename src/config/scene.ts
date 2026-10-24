@@ -27,12 +27,15 @@ export const TANK = {
   lidHeight: 0.035,
 } as const;
 
-/** World position of the tank's inner floor centre. */
-export const TANK_ORIGIN = [
+/**
+ * World position of the tank's inner floor centre. A plain mutable tuple (not `as const`) so it
+ * can be passed straight to a Three.js `position` prop; treat it as read-only.
+ */
+export const TANK_ORIGIN: [x: number, y: number, z: number] = [
   0,
   CABINET.height + 0.012,
   BACK_WALL_Z + 0.06 + CABINET.depth / 2,
-] as const;
+];
 
 /** Swimmable volume in tank-local coordinates (inset from glass, substrate and surface). */
 export const SWIM_BOUNDS = {

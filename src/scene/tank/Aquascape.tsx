@@ -324,7 +324,7 @@ export const Aquascape = () => {
   }, []);
 
   return (
-    <group position={TANK_ORIGIN as unknown as [number, number, number]}>
+    <group position={TANK_ORIGIN}>
       <mesh geometry={assets.substrate} material={assets.sand} />
       {ROCKS.map((r, i) => (
         <mesh
