@@ -22,8 +22,8 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
 - drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines.
 - A failed post-processing chunk download also drops to Lite. That failure stays inside the
-  effects boundary, so the room keeps drawing. The next switch to High mounts a new loader and
-  downloads the chunk again.
+  effects boundary, so the room keeps drawing. The browser keeps that failed URL, so the next
+  switch to High loads the same file with a new query instead of repeating the rejected import.
 - `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
   the post-processing shaders very slowly). The default (High) path is a separate, shorter smoke
   test that only checks the lazy chunk arrives and the room stays up.
