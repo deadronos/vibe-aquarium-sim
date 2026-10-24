@@ -21,11 +21,27 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
   mapping.
 - **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
 - drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines.
+- A failed post-processing chunk download also drops to Lite. That failure stays inside the
+  effects boundary, so the room keeps drawing. The browser keeps that failed URL, so the next
+  switch to High loads the same file with a new query instead of repeating the rejected import.
 - `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
-  the post-processing shaders very slowly).
+  the post-processing shaders very slowly). The default (High) path is a separate, shorter smoke
+  test that only checks the lazy chunk arrives and the room stays up.
 
 ## Budgets
 
-`npm run check:bundle` enforces JS gzip and fish-model byte budgets after `npm run build`.
+`npm run check:bundle` runs after `npm run build`. It enforces:
+
+- Total JavaScript gzip (`MAX_JS_GZIP_BYTES`, default 600,000).
+- First-paint JavaScript gzip (`MAX_FIRST_PAINT_JS_GZIP_BYTES`, default 570,000): the module
+  script and `modulepreload` links in `dist/index.html`, counted once. The post-processing chunks
+  are not in that set. Headroom over the current build is about 20%.
+- Chunk layout, from `dist/chunk-manifest.json` (package names, not minified source): `three`,
+  `react`, `r3f` and `postprocessing` do not contain each other's libraries, no two chunks import
+  each other, and the post stack is not preloaded. A new output chunk has to be added to
+  `CHUNK_PREFIXES` and `CHUNK_RULES` in `scripts/check-bundle-budget.mjs`, or the check reports
+  it as unexpected.
+- Fish-model byte budgets.
+
 `npm run assets:optimize` simplifies each fish to 1,500 triangles before compressing it, and
 `npm run assets:verify` fails if a shipped fish GLB goes over that.

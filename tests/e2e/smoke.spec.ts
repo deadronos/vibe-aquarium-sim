@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test('the living room boots, renders and feeds the fish', async ({ page }) => {
   const errors: string[] = [];
+  const scriptPaths: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.endsWith('.js')) scriptPaths.push(pathname);
+  });
   page.on('console', (message) => {
     // Surface browser warnings in the CI log so a stalled boot is diagnosable.
     if (message.type() === 'warning' || message.type() === 'error') {
@@ -19,6 +24,14 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   // The loading veil lifts once the fish models are in and the first frames have compiled.
   await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
   await expect(page.getByText(/\d+ fish/)).toBeVisible();
+
+  // Boot on software GL is longer than the HUD's 7s idle timer, and the click actionability
+  // check can be too. Once the bar is idle its controls ignore hits, so Playwright reports the
+  // bar itself as intercepting. Freeze the clock so the bar cannot fade again until the idle
+  // step below fast-forwards on purpose. The target is a little ahead: the fake clock keeps
+  // running until pauseAt lands, and pauseAt refuses a time in the past.
+  const pausedAt = (await page.evaluate(() => Date.now())) + 3000;
+  await page.clock.pauseAt(pausedAt);
 
   await page.mouse.move(400, 300);
   await page.getByRole('button', { name: 'Feed' }).click();
@@ -59,5 +72,24 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   await room.click();
   await expect(room).toHaveAttribute('aria-checked', 'true');
 
+  // Lite never mounts the post stack, so those chunks must stay unrequested for the whole visit.
+  expect(
+    scriptPaths.filter((pathname) => /\/(postprocessing|Effects)-[^/]+\.js$/.test(pathname))
+  ).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('high quality loads the post stack and keeps the room', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  const postStack = page.waitForResponse((response) =>
+    /\/(postprocessing|Effects)-[^/]+\.js$/.test(new URL(response.url()).pathname)
+  );
+  await page.goto('./');
+  expect((await postStack).ok()).toBe(true);
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'High quality' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
