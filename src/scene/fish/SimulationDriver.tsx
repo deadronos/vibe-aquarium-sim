@@ -1,10 +1,11 @@
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { SWIM_BOUNDS } from '../../config/scene';
 import { OBSTACLES } from '../../sim/aquascape';
 import { useAquarium } from '../../state/store';
 import { daylight } from '../daylight';
+import { precompile } from '../precompile';
 import { simulation } from './simulation';
 
 const FIXED_STEP = 1 / 60;
@@ -19,11 +20,18 @@ const environment = { activity: 1, food: simulation.food, obstacles: OBSTACLES, 
 export const SimulationDriver = () => {
   const accumulator = useRef(0);
   const { school, food } = simulation;
+  const getThree = useThree((state) => state.get);
 
   useEffect(() => {
     const { setFishCount, setReady, tickCare } = useAquarium.getState();
     setFishCount(school.count);
-    setReady();
+    // The fish are the last thing to mount, so the whole scene is there to compile. The veil
+    // lifts once its shaders are ready rather than hitching on the first frames.
+    let mounted = true;
+    const { gl, scene, camera } = getThree();
+    void precompile(gl, scene, camera).then(() => {
+      if (mounted) setReady();
+    });
     const careTimer = window.setInterval(() => tickCare(Date.now()), CARE_TICK_MS);
     const unsubscribe = useAquarium.subscribe((state, previous) => {
       if (state.feedRequest !== previous.feedRequest) food.feed();
@@ -34,10 +42,11 @@ export const SimulationDriver = () => {
       }
     });
     return () => {
+      mounted = false;
       window.clearInterval(careTimer);
       unsubscribe();
     };
-  }, [school, food]);
+  }, [school, food, getThree]);
 
   useFrame((state, delta) => {
     accumulator.current = Math.min(accumulator.current + delta, FIXED_STEP * 5);

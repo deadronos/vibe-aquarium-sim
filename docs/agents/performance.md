@@ -14,6 +14,14 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **Shadows render on demand.** `gl.shadowMap.autoUpdate` is off; `Lights` sets `needsUpdate`
   for 2 frames at start-up and then only when the sun has moved. Only the room and furniture cast
   shadows. Tank contents don't.
+- **Shaders compile before the veil lifts.** Once the fish mount, `precompile`
+  (`src/scene/precompile.ts`) runs `renderer.compileAsync` (parallel where
+  `KHR_parallel_shader_compile` exists) and only then marks the scene ready. Without
+  `compileAsync` it compiles synchronously; a failure or a compile still running after 15 s
+  lifts the veil anyway. The post stack loads later and compiles on its own.
+- **Few lights, few programs.** One tank spot covers day and moonlight (colour and intensity
+  follow `daylight`). Every extra light costs every lit fragment; every distinct material
+  variant costs a program. Expect about 38 programs in Lite after boot (High adds the post stack).
 
 ## Quality modes
 

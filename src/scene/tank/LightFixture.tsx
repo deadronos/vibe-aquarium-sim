@@ -1,24 +1,28 @@
 import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import { TANK, TANK_ORIGIN } from '../../config/scene';
 import { daylight } from '../daylight';
 
 const { width: W, height: H } = TANK;
 const FIXTURE_Y = H + 0.13;
 
-/** Slim LED fixture on legs, with the day and moonlight spots that light the tank. */
+// One spot plays both the white day LEDs and the blue moonlight, so every lit fragment shades
+// one tank light instead of two (the moon spot used to run at zero all day). Light adds linearly,
+// so mixing the two colours by their intensities matches the two spots; the cone eases too.
+const DAY = { color: new THREE.Color('#eef7ff'), intensity: 9, angle: 1.05, penumbra: 0.9 };
+const MOON = { color: new THREE.Color('#4a6dff'), intensity: 1.2, angle: 1.0, penumbra: 1 };
+
+/** Slim LED fixture on legs, with the spot that lights the tank by day and by moonlight. */
 export const LightFixture = () => {
   const fixtureGlow = useRef<THREE.MeshBasicMaterial>(null);
   const spot = useRef<THREE.SpotLight>(null);
-  const moonSpot = useRef<THREE.SpotLight>(null);
 
   useLayoutEffect(() => {
-    // Spot targets are not in the scene graph, so their (world) matrices are set once by hand.
-    for (const light of [spot.current!, moonSpot.current!]) {
-      light.target.position.set(TANK_ORIGIN[0], TANK_ORIGIN[1] - 1, TANK_ORIGIN[2]);
-      light.target.updateMatrixWorld();
-    }
+    // The spot target is not in the scene graph, so its (world) matrix is set once by hand.
+    const { target } = spot.current!;
+    target.position.set(TANK_ORIGIN[0], TANK_ORIGIN[1] - 1, TANK_ORIGIN[2]);
+    target.updateMatrixWorld();
   }, []);
 
   useFrame(() => {
@@ -27,8 +31,14 @@ export const LightFixture = () => {
     fixtureGlow
       .current!.color.setRGB(0.9 * t + 0.08 * m, 0.95 * t + 0.16 * m, 1 * t + 0.6 * m)
       .multiplyScalar(4);
-    spot.current!.intensity = t * 9;
-    moonSpot.current!.intensity = m * 1.2;
+    const light = spot.current!;
+    const day = t * DAY.intensity;
+    const moon = m * MOON.intensity;
+    light.intensity = day + moon;
+    const mix = light.intensity > 0 ? moon / light.intensity : 0;
+    light.color.lerpColors(DAY.color, MOON.color, mix);
+    light.angle = DAY.angle + (MOON.angle - DAY.angle) * mix;
+    light.penumbra = DAY.penumbra + (MOON.penumbra - DAY.penumbra) * mix;
   });
 
   return (
@@ -53,24 +63,7 @@ export const LightFixture = () => {
           </mesh>
         ))
       )}
-      <spotLight
-        ref={spot}
-        position={[0, -0.01, 0]}
-        angle={1.05}
-        penumbra={0.9}
-        distance={1.4}
-        decay={1.6}
-        color="#eef7ff"
-      />
-      <spotLight
-        ref={moonSpot}
-        position={[0, -0.01, 0]}
-        angle={1.0}
-        penumbra={1}
-        distance={1.4}
-        decay={1.6}
-        color="#4a6dff"
-      />
+      <spotLight ref={spot} position={[0, -0.01, 0]} distance={1.4} decay={1.6} />
     </group>
   );
 };

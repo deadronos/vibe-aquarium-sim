@@ -56,6 +56,10 @@ material:
 - **Vertex deform** (opt-in): used for plant sway and the fish tail wave (`aSwim` instance
   attribute: phase, amplitude).
 
+The program cache key comes from the injected GLSL, so materials with the same patch share one
+compiled program. Keep per-material values (such as the plant sway amount) in `uniforms`, not
+baked into the GLSL, or each value compiles its own program.
+
 ## Camera
 
 `CameraRig` wraps drei `CameraControls`, bounded to the room. Viewpoints (Sofa, Tank, Up close,

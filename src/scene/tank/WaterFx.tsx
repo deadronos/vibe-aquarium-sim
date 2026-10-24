@@ -32,8 +32,7 @@ const Bubbles = () => {
           opacity: 0.6,
           emissive: '#bfe7ef',
           emissiveIntensity: 0.25,
-        }),
-        { key: 'bubble' }
+        })
       ),
     []
   );
