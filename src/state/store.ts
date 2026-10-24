@@ -9,6 +9,12 @@ export type Quality = 'high' | 'low';
  */
 export type LoadError = 'webgl' | 'assets' | 'timeout' | 'context-lost' | 'crash';
 
+/**
+ * How long a switch to High, or the post stack appearing, is shielded from the performance
+ * monitor. Covers the chunk download, shader compiles and the first few frames after them.
+ */
+export const QUALITY_GRACE_MS = 5000;
+
 interface AquariumState {
   clockMode: ClockMode;
   /** Hour shown in manual mode (0..24). */
@@ -17,6 +23,12 @@ interface AquariumState {
   displayHour: number;
   viewpoint: Viewpoint;
   quality: Quality;
+  /** `performance.now()` before which `autoDowngrade` is ignored. */
+  qualityGraceUntil: number;
+  /** Set once the monitor has dropped to Lite; cleared by the next manual quality choice. */
+  autoDowngraded: boolean;
+  /** Shows "Switched to Lite for performance" until dismissed or quality is chosen again. */
+  qualityNotice: boolean;
   sound: boolean;
   /** Incremented to ask the scene to sprinkle food at a random spot. */
   feedRequest: number;
@@ -29,7 +41,13 @@ interface AquariumState {
   setManualHour: (hour: number) => void;
   setDisplayHour: (hour: number) => void;
   setViewpoint: (viewpoint: Viewpoint) => void;
+  /** A choice made by the user (or the app on their behalf); restarts the grace period. */
   setQuality: (quality: Quality) => void;
+  /** Starts a fresh grace period, e.g. once the post stack has mounted. */
+  holdQuality: () => void;
+  /** The performance monitor asks for Lite. Allowed once per manual choice, outside the grace. */
+  autoDowngrade: () => void;
+  dismissQualityNotice: () => void;
   toggleSound: () => void;
   requestFeed: () => void;
   setFishCount: (count: number) => void;
@@ -59,12 +77,17 @@ const detectWebGL = () => {
   }
 };
 
+const graceFromNow = () => performance.now() + QUALITY_GRACE_MS;
+
 export const useAquarium = create<AquariumState>((set) => ({
   clockMode: 'live',
   manualHour: 14,
   displayHour: 12,
   viewpoint: 'sofa',
   quality: initialQuality(),
+  qualityGraceUntil: graceFromNow(),
+  autoDowngraded: false,
+  qualityNotice: false,
   sound: false,
   feedRequest: 0,
   fishCount: 0,
@@ -80,7 +103,24 @@ export const useAquarium = create<AquariumState>((set) => ({
   setManualHour: (manualHour) => set({ manualHour, clockMode: 'manual' }),
   setDisplayHour: (displayHour) => set({ displayHour }),
   setViewpoint: (viewpoint) => set({ viewpoint }),
-  setQuality: (quality) => set({ quality }),
+  setQuality: (quality) =>
+    set({
+      quality,
+      qualityGraceUntil: graceFromNow(),
+      autoDowngraded: false,
+      qualityNotice: false,
+    }),
+  holdQuality: () =>
+    set((state) => ({ qualityGraceUntil: Math.max(state.qualityGraceUntil, graceFromNow()) })),
+  autoDowngrade: () =>
+    set((state) =>
+      state.quality !== 'high' ||
+      state.autoDowngraded ||
+      performance.now() < state.qualityGraceUntil
+        ? {}
+        : { quality: 'low', autoDowngraded: true, qualityNotice: true }
+    ),
+  dismissQualityNotice: () => set({ qualityNotice: false }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
   setFishCount: (fishCount) => set({ fishCount }),
