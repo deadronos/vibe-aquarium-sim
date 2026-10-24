@@ -36,6 +36,13 @@ describe('page flags', () => {
     expect((await loadPage('?quality=lite')).quality).toBe('low');
   });
 
+  it('starts without depth of field with ?quality=medium', async () => {
+    expect(await loadPage('?quality=medium')).toMatchObject({
+      quality: 'medium',
+      qualityCeiling: 'medium',
+    });
+  });
+
   it('ignores other quality values', async () => {
     expect((await loadPage('?quality=ultra')).quality).toBe('high');
     expect((await loadPage('')).quality).toBe('high');
@@ -115,9 +122,9 @@ describe('quality and post-stack notices', () => {
   beforeEach(() => useAquarium.setState(initial, true));
 
   it('switches quality and clears any downgrade notice', () => {
-    useAquarium.setState({ quality: 'low', autoDowngraded: true, qualityNotice: true });
+    useAquarium.setState({ quality: 'low', qualityDrops: 2, qualityNotice: true });
     store().setQuality('high');
-    expect(store()).toMatchObject({ quality: 'high', autoDowngraded: false, qualityNotice: false });
+    expect(store()).toMatchObject({ quality: 'high', qualityDrops: 0, qualityNotice: false });
   });
 
   it.each(['reload', 'update'] as const)('refuses High once the post stack is %s-blocked', (n) => {

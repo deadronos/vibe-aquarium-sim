@@ -4,7 +4,8 @@ import type { CareState, CareStorage } from '../sim/care';
 
 export type ClockMode = 'live' | 'cycle' | 'manual';
 export type Viewpoint = 'sofa' | 'tank' | 'glass' | 'room' | 'follow';
-export type Quality = 'high' | 'low';
+/** High, High without depth of field ("medium"), and Lite (no post-processing). */
+export type Quality = 'high' | 'medium' | 'low';
 /**
  * Why the room is not showing: no WebGL, the fish failed or took too long to load, the GPU
  * dropped the context, or something inside the canvas crashed.
@@ -26,7 +27,65 @@ export const effectsBlocked = (notice: EffectsNotice | null) =>
  */
 export const QUALITY_GRACE_MS = 5000;
 
-interface AquariumState {
+/** Cheapest first, so a step down is one index lower. */
+const QUALITY_LEVELS: readonly Quality[] = ['low', 'medium', 'high'];
+
+/**
+ * How long the monitor must wait after its first step down before it may step back up. Each
+ * further step down since the last manual choice doubles the wait, so a device that keeps
+ * slowing down again settles instead of flipping between levels.
+ */
+export const QUALITY_RECOVER_MS = 15000;
+
+/** After this many steps down since the last manual choice, the monitor stops stepping up. */
+export const QUALITY_MAX_DROPS = 4;
+
+/** The part of the store the performance monitor steps through. */
+export interface QualityAuto {
+  /** The level being rendered. */
+  quality: Quality;
+  /** The level the user chose: the monitor never steps above it. */
+  qualityCeiling: Quality;
+  /** `performance.now()` before which the monitor is ignored. */
+  qualityGraceUntil: number;
+  /** Steps down since the last manual choice. */
+  qualityDrops: number;
+  /** `performance.now()` before which the monitor may not step up. */
+  qualityRecoverAt: number;
+}
+
+/**
+ * One performance-monitor step, `down` on a frame-rate decline and `up` on an incline. Returns
+ * the changed fields, or null when the step is refused: inside a grace period, already at the
+ * bottom or at the user's choice, too soon after a step down, or after too many of them.
+ */
+export const stepQuality = (
+  state: QualityAuto,
+  direction: 'down' | 'up',
+  now: number
+): Partial<QualityAuto> | null => {
+  if (now < state.qualityGraceUntil) return null;
+  const level = QUALITY_LEVELS.indexOf(state.quality);
+  if (direction === 'down') {
+    if (level === 0) return null;
+    return {
+      quality: QUALITY_LEVELS[level - 1],
+      qualityGraceUntil: now + QUALITY_GRACE_MS,
+      qualityDrops: state.qualityDrops + 1,
+      qualityRecoverAt: now + QUALITY_RECOVER_MS * 2 ** state.qualityDrops,
+    };
+  }
+  if (
+    level >= QUALITY_LEVELS.indexOf(state.qualityCeiling) ||
+    state.qualityDrops >= QUALITY_MAX_DROPS ||
+    now < state.qualityRecoverAt
+  ) {
+    return null;
+  }
+  return { quality: QUALITY_LEVELS[level + 1], qualityGraceUntil: now + QUALITY_GRACE_MS };
+};
+
+interface AquariumState extends QualityAuto {
   clockMode: ClockMode;
   /** Hour shown in manual mode (0..24). */
   manualHour: number;
@@ -35,11 +94,6 @@ interface AquariumState {
   viewpoint: Viewpoint;
   /** Ambient mode: the camera moves through the shots on its own. */
   ambient: boolean;
-  quality: Quality;
-  /** `performance.now()` before which `autoDowngrade` is ignored. */
-  qualityGraceUntil: number;
-  /** Set once the monitor has dropped to Lite; cleared by the next manual quality choice. */
-  autoDowngraded: boolean;
   /** Shows "Switched to Lite for performance" until dismissed or quality is chosen again. */
   qualityNotice: boolean;
   sound: boolean;
@@ -70,8 +124,10 @@ interface AquariumState {
   setQuality: (quality: Quality) => void;
   /** Starts a fresh grace period, e.g. once the post stack has mounted. */
   holdQuality: () => void;
-  /** The performance monitor asks for Lite. Allowed once per manual choice, outside the grace. */
+  /** The frame rate declined: one level down, through `stepQuality`. */
   autoDowngrade: () => void;
+  /** The frame rate recovered: one level back up towards the user's choice, if `stepQuality` allows. */
+  autoUpgrade: () => void;
   dismissQualityNotice: () => void;
   toggleSound: () => void;
   requestFeed: () => void;
@@ -89,12 +145,15 @@ interface AquariumState {
   setEffectsNotice: (notice: EffectsNotice | null) => void;
 }
 
-/** `?quality=lite` starts without post-processing (handy on weak GPUs and in CI). */
-const initialQuality = (): Quality =>
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).get('quality') === 'lite'
-    ? 'low'
-    : 'high';
+/**
+ * `?quality=lite` starts without post-processing (handy on weak GPUs and in CI), and
+ * `?quality=medium` without depth of field.
+ */
+const initialQuality = (): Quality => {
+  if (typeof window === 'undefined') return 'high';
+  const flag = new URLSearchParams(window.location.search).get('quality');
+  return flag === 'lite' ? 'low' : flag === 'medium' ? 'medium' : 'high';
+};
 
 /** `?ambient` starts in ambient mode, for a screen that is left running. */
 const initialAmbient = () =>
@@ -127,15 +186,19 @@ const startedAt = Date.now();
 
 const graceFromNow = () => performance.now() + QUALITY_GRACE_MS;
 
+const startQuality = initialQuality();
+
 export const useAquarium = create<AquariumState>((set) => ({
   clockMode: 'live',
   manualHour: 14,
   displayHour: 12,
   viewpoint: 'sofa',
   ambient: initialAmbient(),
-  quality: initialQuality(),
+  quality: startQuality,
+  qualityCeiling: startQuality,
   qualityGraceUntil: graceFromNow(),
-  autoDowngraded: false,
+  qualityDrops: 0,
+  qualityRecoverAt: 0,
   qualityNotice: false,
   sound: false,
   feedRequest: 0,
@@ -162,25 +225,32 @@ export const useAquarium = create<AquariumState>((set) => ({
   // High would only fail again once the post stack is known to be unreachable.
   setQuality: (quality) =>
     set((state) =>
-      quality === 'high' && effectsBlocked(state.effectsNotice)
+      quality !== 'low' && effectsBlocked(state.effectsNotice)
         ? {}
         : {
             quality,
+            qualityCeiling: quality,
             qualityGraceUntil: graceFromNow(),
-            autoDowngraded: false,
+            qualityDrops: 0,
+            qualityRecoverAt: 0,
             qualityNotice: false,
           }
     ),
   holdQuality: () =>
     set((state) => ({ qualityGraceUntil: Math.max(state.qualityGraceUntil, graceFromNow()) })),
+  // Only reaching Lite is announced; dropping depth of field alone is a quiet change.
   autoDowngrade: () =>
-    set((state) =>
-      state.quality !== 'high' ||
-      state.autoDowngraded ||
-      performance.now() < state.qualityGraceUntil
-        ? {}
-        : { quality: 'low', autoDowngraded: true, qualityNotice: true }
-    ),
+    set((state) => {
+      const step = stepQuality(state, 'down', performance.now());
+      return step ? { ...step, qualityNotice: step.quality === 'low' || state.qualityNotice } : {};
+    }),
+  // Leaving Lite takes the notice away with it. A post-stack failure sets the choice to Lite,
+  // so the monitor never climbs back into a broken post stack.
+  autoUpgrade: () =>
+    set((state) => {
+      const step = stepQuality(state, 'up', performance.now());
+      return step ? { ...step, qualityNotice: false } : {};
+    }),
   dismissQualityNotice: () => set({ qualityNotice: false }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
