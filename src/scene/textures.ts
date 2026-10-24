@@ -345,25 +345,27 @@ export const algaeTexture = () =>
     const h = 256;
     const { canvas, ctx } = canvas2d(w, h);
     const random = createRandom(42);
-    ctx.filter = 'blur(5px)';
+    // Soft blobs are radial gradients, not a blur filter: blurring hundreds of shapes stalls a
+    // software GPU (SwiftShader in CI) for long enough to lose the WebGL context.
     for (let i = 0; i < 700; i++) {
       const x = random.range(0, w);
       // Biased towards the bottom edge and the two sides.
       const y = h * (1 - Math.pow(random.next(), 1.8));
       const edge = Math.min(x, w - x) / (w / 2);
-      const r = random.range(6, 26) * (1.3 - edge * 0.5);
+      const r = random.range(6, 26) * (1.3 - edge * 0.5) * 1.4;
       const a = random.range(0.14, 0.32) * (1.25 - edge * 0.55) * (0.3 + (0.7 * y) / h);
-      ctx.fillStyle = hsl(
-        88 + random.range(-14, 14),
-        random.range(30, 55),
-        random.range(28, 46),
-        a
-      );
-      ctx.beginPath();
-      ctx.ellipse(x, y, r, r * random.range(0.6, 1), random.range(0, 3), 0, Math.PI * 2);
-      ctx.fill();
+      const hue = 88 + random.range(-14, 14);
+      const sat = random.range(30, 55);
+      const light = random.range(28, 46);
+      const blob = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      blob.addColorStop(0, hsl(hue, sat, light, a));
+      blob.addColorStop(1, hsl(hue, sat, light, 0));
+      ctx.setTransform(1, 0, 0, random.range(0.6, 1), x, y);
+      ctx.rotate(random.range(0, 3));
+      ctx.fillStyle = blob;
+      ctx.fillRect(-r, -r, r * 2, r * 2);
     }
-    ctx.filter = 'none';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (let i = 0; i < 2600; i++) {
       ctx.fillStyle = hsl(
         95 + random.range(-10, 10),
