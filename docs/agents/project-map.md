@@ -17,15 +17,23 @@ src/
     CameraRig.tsx       Viewpoints and fish follow-cam
     AmbientDirector.tsx Ambient mode: cycles the shots with a slow drift, pauses on user input
     ambient.ts          Pure shot-cycle and drift logic (unit-tested)
-    shots.ts            Viewpoint shots and the cabinet each one keeps on screen
+    shots.ts            Viewpoint shots, the cabinet each one keeps on screen, follow-cam position
     framing.ts          Aspect-aware framing: dolly back, then widen FOV, on narrow screens
     Effects.tsx         Depth of field, bloom, vignette, tone mapping
     focus.ts            Focus point shared by camera and DoF
     textures.ts         Procedural canvas textures (wood, plaster, fabric, rug, sand, bark, art)
     room/Room.tsx       Walls, window, sky, curtains, baseboards
-    room/Furniture.tsx  Cabinet, sofa, coffee table, rug, floor lamp, plant, bookshelf, art
-    tank/Tank.tsx       Glass, water surface, LED fixture and spots, pipes, click-to-feed
+    room/Furniture.tsx  Composes the furniture pieces around one shared material set
+    room/furniture/     One file per piece (Cabinet, Sofa, CoffeeTable, Rug, FloorLamp,
+                        PottedPlant, Bookshelf, WallArt); materials.ts holds the shared materials
+    tank/Tank.tsx       Composes the tank parts at TANK_ORIGIN; owns the backlit rear panel
+    tank/TankGlass.tsx  Glass panes, green edges, meniscus line
+    tank/WaterSurface.tsx  Water surface shader (sheen above, mirror below)
+    tank/FilterPipes.tsx   Filter intake and outflow pipes, heater and its glow
+    tank/LightFixture.tsx  LED fixture on legs, day and moonlight spots
+    tank/FeedTarget.tsx    Invisible click target over the water: click-to-feed
     tank/Aquascape.tsx  Substrate, rocks, driftwood, plants
+    tank/aquascapeGeometry.ts  Pure geometry builders for the aquascape (unit-tested)
     tank/WaterFx.tsx    Bubbles, suspended particles, light shafts
     tank/underwater.ts  Water uniforms and the `makeUnderwater` material patch
     fish/FishLoader.tsx Error boundary, download timeout and Retry remount around FishView

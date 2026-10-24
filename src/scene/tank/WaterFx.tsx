@@ -204,7 +204,7 @@ const LightShafts = () => {
 };
 
 export const WaterFx = () => (
-  <group position={TANK_ORIGIN as unknown as [number, number, number]}>
+  <group position={TANK_ORIGIN}>
     <Bubbles />
     <Motes />
     <LightShafts />

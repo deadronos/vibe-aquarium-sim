@@ -85,7 +85,9 @@ Releases & deployment
 - `deploy-pages.yml` runs when a `v*` tag is pushed (or manually). It checks that the tagged
   commit is on `main`, boots the built app with the smoke test, then deploys `dist/` to
   [GitHub Pages](https://deadronos.github.io/vibe-aquarium-sim/). To release, tag the tip of
-  `main` (for example `git tag -a v0.2.1 -m "…" && git push origin v0.2.1`).
+  `main` (for example `git tag -a v0.2.4 -m "…" && git push origin v0.2.4`). Tags are the source
+  of truth for the version; bump `package.json` to match in the release PR (see
+  [docs/agents/workflow.md](./docs/agents/workflow.md#-releases)).
 - Vite's `base` is `/vibe-aquarium-sim/` for production builds (see `vite.config.ts`).
 
 Tips
@@ -102,4 +104,4 @@ Contributing
 
 License
 
-- The repository has no license file yet.
+- [MIT](./LICENSE).

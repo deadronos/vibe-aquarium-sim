@@ -4,6 +4,7 @@ import { useAquarium } from '../../state/store';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { FISH_URLS } from './assets';
 import { FishView } from './FishView';
+import { SimulationDriver } from './SimulationDriver';
 
 /** How long the fish models may take to download before the HUD offers a retry. */
 const LOAD_TIMEOUT_MS = 25_000;
@@ -34,6 +35,7 @@ export const FishLoader = () => {
   return (
     <ErrorBoundary key={attempt} onError={onFishError}>
       <Suspense fallback={<LoadTimeout />}>
+        <SimulationDriver />
         <FishView />
       </Suspense>
     </ErrorBoundary>
