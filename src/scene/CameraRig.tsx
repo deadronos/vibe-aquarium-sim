@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { TANK, TANK_ORIGIN } from '../config/scene';
+import { prefersReducedMotion } from '../state/motion';
 import { useAquarium } from '../state/store';
 import type { Viewpoint } from '../state/store';
 import { simulation } from './fish/simulation';
@@ -17,6 +18,10 @@ const FRONT_GLASS_Z = TZ + TANK.depth / 2;
 const fishWorld = new THREE.Vector3();
 const desired = new THREE.Vector3();
 const lookAt = new THREE.Vector3();
+const heldOn = new THREE.Vector3();
+
+/** With reduced motion the follow cam holds still and cuts again once the fish strays this far. */
+const FOLLOW_RECUT = 0.18;
 
 export const CameraRig = () => {
   const controls = useRef<CameraControls>(null);
@@ -25,16 +30,20 @@ export const CameraRig = () => {
   const framed = useRef<Framing | null>(null);
   const aspect = useThree((state) => state.size.width / state.size.height);
   const aspectNow = useRef(aspect);
+  const followHeld = useRef(false);
 
   useEffect(() => {
     const c = controls.current!;
     c.setBoundary(new THREE.Box3(new THREE.Vector3(...REACH.min), new THREE.Vector3(...REACH.max)));
     c.boundaryEnclosesCamera = true;
 
-    const go = (viewpoint: Viewpoint, animate: boolean) => {
+    // Reduced motion turns every camera move into a cut.
+    const go = (viewpoint: Viewpoint, transition: boolean) => {
+      const animate = transition && !prefersReducedMotion();
       fov.current.snap = !animate;
       if (viewpoint === 'follow') {
         followIndex.current = Math.floor(Math.random() * simulation.school.count);
+        followHeld.current = false;
         c.smoothTime = 0.45;
         fov.current.target = BASE_FOV;
         framed.current = null;
@@ -64,9 +73,10 @@ export const CameraRig = () => {
     const framing = frameFor(shot, aspect);
     const moved = framing.position.some((v, i) => Math.abs(v - previous.position[i]!) > 1e-3);
     if (!moved && Math.abs(framing.fov - previous.fov) < 0.05) return;
-    fov.current = { target: framing.fov, snap: false };
+    const animate = !prefersReducedMotion();
+    fov.current = { target: framing.fov, snap: !animate };
     framed.current = framing;
-    void controls.current?.setLookAt(...framing.position, ...shot.target, true);
+    void controls.current?.setLookAt(...framing.position, ...shot.target, animate);
   }, [aspect]);
 
   useFrame((state, delta) => {
@@ -91,15 +101,22 @@ export const CameraRig = () => {
         fishWorld.y + 0.06,
         Math.max(fishWorld.z + 0.5, FRONT_GLASS_Z + 0.2)
       );
-      void c.setLookAt(
-        desired.x,
-        desired.y,
-        desired.z,
-        fishWorld.x,
-        fishWorld.y,
-        fishWorld.z,
-        true
-      );
+      // Without reduced motion the camera drifts after the fish every frame. With it, the shot
+      // holds still and cuts to the fish again only once it swims out of the middle of the frame.
+      const reduced = prefersReducedMotion();
+      if (!reduced || !followHeld.current || fishWorld.distanceTo(heldOn) > FOLLOW_RECUT) {
+        followHeld.current = reduced;
+        heldOn.copy(fishWorld);
+        void c.setLookAt(
+          desired.x,
+          desired.y,
+          desired.z,
+          fishWorld.x,
+          fishWorld.y,
+          fishWorld.z,
+          !reduced
+        );
+      }
       focus.point.copy(fishWorld);
       focus.range = 0.25;
       focus.bokeh = 3.5;

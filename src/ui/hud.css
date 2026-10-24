@@ -23,7 +23,7 @@
 .hud__hint {
   transition:
     opacity 1.2s ease,
-    transform 1.2s ease;
+    translate 1.2s ease;
 }
 
 .hud[data-idle='true'] .hud__title,
@@ -33,7 +33,21 @@
 .hud[data-hidden='true'] .hud__bar,
 .hud[data-hidden='true'] .hud__hint {
   opacity: 0;
-  transform: translateY(6px);
+  /* `translate`, not `transform`, so the bar and hint keep their centring transform. */
+  translate: 0 6px;
+}
+
+/* Reduced motion: the HUD appears and disappears at once, without sliding. */
+.hud[data-motion='reduced'] .hud__title,
+.hud[data-motion='reduced'] .hud__bar,
+.hud[data-motion='reduced'] .hud__hint,
+.hud[data-motion='reduced'] .loading {
+  transition: none;
+  translate: none;
+}
+
+.hud[data-motion='reduced'] .loading__ripple {
+  animation: none;
 }
 
 /* An idle bar still catches the first tap, so it wakes the HUD instead of feeding the fish or
@@ -360,8 +374,150 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .loading__ripple {
-    animation: none;
+/* Icons stand in for the labels only in the compact phone bar below. */
+.hud__icon {
+  display: none;
+}
+
+/* Phones: a two-row bar of icons with 44px touch targets. The clock and quality take the top
+   row; the viewpoints, Feed and Sound the bottom one. */
+@media (max-width: 640px) {
+  .hud__bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-areas:
+      'clock clock quality'
+      'views feed sound';
+    gap: 4px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    transform: none;
+    max-width: none;
+    padding: 4px;
+    border-radius: 14px;
+  }
+
+  .hud__group {
+    padding: 0;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .hud__clock {
+    grid-area: clock;
+    padding-left: 6px;
+  }
+
+  .hud__time {
+    min-width: 0;
+  }
+
+  .hud__hour {
+    font-size: 20px;
+  }
+
+  .hud__period {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .hud__clock-controls {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .hud__slider {
+    flex: 1;
+    width: auto;
+    min-width: 56px;
+    height: 44px;
+    margin: 0;
+  }
+
+  .hud__views {
+    grid-area: views;
+  }
+
+  .segmented--views {
+    flex: 1;
+    flex-wrap: nowrap;
+  }
+
+  /* Feed, Sound and quality become cells of the bar's grid. */
+  .hud__actions {
+    display: contents;
+  }
+
+  .hud__feed {
+    grid-area: feed;
+  }
+
+  .hud__sound {
+    grid-area: sound;
+  }
+
+  .hud__quality {
+    grid-area: quality;
+  }
+
+  .segmented button,
+  .hud__bar .button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+  }
+
+  .hud__bar .button {
+    padding: 0;
+  }
+
+  /* Below 375px wide the five viewpoints share what is left, a little under 44px each. */
+  .segmented--views button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .hud__icon {
+    display: block;
+  }
+
+  .hud__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* The smallest phones: tighten the padding so both rows still fit. Heights stay at 44px. */
+@media (max-width: 359px) {
+  .hud__clock {
+    gap: 4px;
+    padding-left: 4px;
+  }
+
+  .hud__hour {
+    font-size: 18px;
+  }
+
+  .hud__clock .segmented button {
+    padding: 0 6px;
+  }
+
+  .hud__slider {
+    min-width: 40px;
+  }
+
+  .segmented--views button {
+    padding: 0;
   }
 }

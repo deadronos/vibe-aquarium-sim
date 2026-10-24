@@ -53,6 +53,14 @@ material:
 Room) are `setLookAt` presets in `shots.ts`; "Follow a fish" re-targets every frame from outside
 the front glass. The rig publishes a focus point that `Effects` uses for depth of field.
 
+### Reduced motion
+
+`src/state/motion.ts` is the one source for `prefers-reduced-motion`: `prefersReducedMotion()`
+for frame loops and handlers (no allocation), `useReducedMotion()` for components. With it on,
+`CameraRig` cuts between viewpoints instead of flying, and the follow cam holds a still shot
+that cuts to the fish again once it strays; `Effects` drops depth of field; the HUD sets
+`data-motion="reduced"` so its fade and loading ripple become instant.
+
 Shots are authored for landscape. On narrower screens `frameShot` (`framing.ts`, pure maths and
 unit-tested) dollies each shot back along its own line of sight until the cabinet, plus the
 shot's `fit` padding, fits across the screen. It stops at the room boundary and then widens the

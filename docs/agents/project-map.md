@@ -6,6 +6,7 @@ src/
   config/scene.ts       Room, cabinet, tank dimensions (metres), substrate shape, palette
   sim/                  Pure simulation: school, food, species, aquascape, timeOfDay, random
   state/store.ts        zustand: clock mode, viewpoint, quality, sound, feed requests, load errors
+  state/motion.ts       prefers-reduced-motion: prefersReducedMotion() and useReducedMotion()
   scene/
     Experience.tsx      Scene composition
     ErrorBoundary.tsx   Catches render errors and reports them to the store
@@ -30,6 +31,7 @@ src/
     fish/assets.ts      Fish GLB URLs
     fish/simulation.ts  The running school + food pool
   ui/Hud.tsx            Clock, viewpoints, feed/sound/quality controls, keyboard shortcuts
+  ui/icons.tsx          Inline SVG icons for the compact two-row phone bar
   audio/ambience.ts     Procedural WebAudio filter hum, trickle and bubbles
 public/                 Fish GLBs (clownfish, blue tang, angelfish)
 tests/                  Vitest unit tests for src/sim and the store; tests/e2e Playwright smoke test + load-error spec
