@@ -71,3 +71,15 @@ export const frameFor = (shot: Shot, aspect: number): Framing =>
   shot.fit === undefined
     ? { position: [...shot.position], fov: BASE_FOV }
     : frameShot(shot.position, shot.target, shotSubject(shot.fit), aspect, REACH, shot.margin);
+
+const FRONT_GLASS_Z = TZ + TANK.depth / 2;
+
+type Point = { x: number; y: number; z: number };
+
+/** Follow cam: just in front of the glass, a little above the fish, pulled towards the middle. */
+export const followPosition = (fish: Point, out: Point) => {
+  out.x = fish.x * 0.7 + TX * 0.3;
+  out.y = fish.y + 0.06;
+  out.z = Math.max(fish.z + 0.5, FRONT_GLASS_Z + 0.2);
+  return out;
+};

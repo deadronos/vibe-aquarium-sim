@@ -17,7 +17,7 @@ src/
     CameraRig.tsx       Viewpoints and fish follow-cam
     AmbientDirector.tsx Ambient mode: cycles the shots with a slow drift, pauses on user input
     ambient.ts          Pure shot-cycle and drift logic (unit-tested)
-    shots.ts            Viewpoint shots and the cabinet each one keeps on screen
+    shots.ts            Viewpoint shots, the cabinet each one keeps on screen, follow-cam position
     framing.ts          Aspect-aware framing: dolly back, then widen FOV, on narrow screens
     Effects.tsx         Depth of field, bloom, vignette, tone mapping
     focus.ts            Focus point shared by camera and DoF
@@ -33,6 +33,7 @@ src/
     tank/LightFixture.tsx  LED fixture on legs, day and moonlight spots
     tank/FeedTarget.tsx    Invisible click target over the water: click-to-feed
     tank/Aquascape.tsx  Substrate, rocks, driftwood, plants
+    tank/aquascapeGeometry.ts  Pure geometry builders for the aquascape (unit-tested)
     tank/WaterFx.tsx    Bubbles, suspended particles, light shafts
     tank/underwater.ts  Water uniforms and the `makeUnderwater` material patch
     fish/FishLoader.tsx Error boundary, download timeout and Retry remount around FishView
