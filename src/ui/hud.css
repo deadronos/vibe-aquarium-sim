@@ -81,6 +81,26 @@
   white-space: nowrap;
 }
 
+.hud__notice {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+}
+
+.hud__notice-text {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
 .hud__hint--gone {
   opacity: 0 !important;
 }
@@ -299,6 +319,10 @@
   .hud__title {
     top: 14px;
     left: 16px;
+  }
+
+  .hud__notice {
+    top: 76px;
   }
 }
 

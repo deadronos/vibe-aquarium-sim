@@ -15,6 +15,7 @@ const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
 
 const ambience = new Ambience();
 const IDLE_MS = 7000;
+const NOTICE_MS = 8000;
 
 const reload = () => window.location.reload();
 
@@ -155,6 +156,13 @@ export const Hud = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // The Lite notice clears itself; the Lite label on the quality button stays as the record.
+  useEffect(() => {
+    if (!state.qualityNotice) return;
+    const timer = window.setTimeout(useAquarium.getState().dismissQualityNotice, NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [state.qualityNotice]);
+
   const loadError = state.loadError ? LOAD_ERRORS[state.loadError] : null;
   const veiled = !state.ready || loadError !== null;
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
@@ -191,6 +199,18 @@ export const Hud = () => {
       <p className={`hud__hint ${hint && state.ready ? '' : 'hud__hint--gone'}`}>
         Click the water to feed · drag to look around · scroll to zoom · H hides this panel
       </p>
+
+      <div className="hud__notice" role="status">
+        {state.qualityNotice && (
+          <button
+            className="hud__notice-text"
+            onClick={state.dismissQualityNotice}
+            title="The frame rate stayed low, so post-processing is off. Dismiss"
+          >
+            Switched to Lite for performance
+          </button>
+        )}
+      </div>
 
       <nav className="hud__bar" aria-label="Aquarium controls" ref={barRef}>
         <section className="hud__group hud__clock">
