@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+// A desktop with a touchscreen, so the HUD can be driven by both mouse hover and taps.
+test.use({ hasTouch: true });
+
 test('the living room boots, renders and feeds the fish', async ({ page }) => {
   const errors: string[] = [];
   const scriptPaths: string[] = [];
@@ -44,33 +47,50 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
     'true'
   );
 
-  // Let the HUD go idle without waiting the real seven seconds. The pointer is parked on the
-  // Room button first so the tap below arrives without a pointermove, like a finger on glass.
+  // The idle steps fast-forward past the HUD's seven seconds instead of waiting them out.
   const hud = page.locator('.hud');
+  const centre = async (name: RegExp) => {
+    const box = await page.getByRole('radio', { name }).boundingBox();
+    if (!box) throw new Error(`${name} viewpoint button has no box`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+
+  // A mouse resting on a bar button keeps the bar awake, so the next click presses it.
   const room = page.getByRole('radio', { name: /Room/ });
-  const box = await room.boundingBox();
-  if (!box) throw new Error('Room viewpoint button has no box');
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-  await page.mouse.move(x, y);
+  const roomAt = await centre(/Room/);
+  await page.mouse.move(roomAt.x, roomAt.y);
+  await page.clock.fastForward(8000);
+  await expect(hud).toHaveAttribute('data-idle', 'false');
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(room).toHaveAttribute('aria-checked', 'true');
+
+  // Keyboard focus inside the bar keeps it awake too, with the mouse off the bar.
+  await page.mouse.move(400, 300);
+  await room.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.clock.fastForward(8000);
+  await expect(hud).toHaveAttribute('data-idle', 'false');
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.clock.fastForward(8000);
   await expect(hud).toHaveAttribute('data-idle', 'true');
 
-  // The first tap on the faded bar only wakes it: it lands on the bar, not the canvas, and does
-  // not press the control underneath.
+  // Touch has no hover: the first tap on the faded bar only wakes it. It lands on the bar, not
+  // the canvas, and does not press the control underneath.
+  const close = page.getByRole('radio', { name: /Up close/ });
+  const closeAt = await centre(/Up close/);
   const hitsBar = await page.evaluate(
     ([px, py]) => Boolean(document.elementFromPoint(px, py)?.closest('.hud__bar')),
-    [x, y]
+    [closeAt.x, closeAt.y]
   );
   expect(hitsBar).toBe(true);
-  await page.mouse.down();
-  await page.mouse.up();
+  await page.touchscreen.tap(closeAt.x, closeAt.y);
   await expect(hud).toHaveAttribute('data-idle', 'false');
-  await expect(room).toHaveAttribute('aria-checked', 'false');
+  await expect(close).toHaveAttribute('aria-checked', 'false');
 
   // Awake again, the same control works.
-  await room.click();
-  await expect(room).toHaveAttribute('aria-checked', 'true');
+  await page.touchscreen.tap(closeAt.x, closeAt.y);
+  await expect(close).toHaveAttribute('aria-checked', 'true');
 
   // Lite never mounts the post stack, so those chunks must stay unrequested for the whole visit.
   expect(

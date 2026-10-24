@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
 import { formatHour, useAquarium } from '../state/store';
@@ -69,6 +69,7 @@ export const Hud = () => {
   const [idle, setIdle] = useState(false);
   const [hint, setHint] = useState(true);
   const [hidden, setHidden] = useState(false);
+  const barRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (state.sound) ambience.start();
@@ -76,22 +77,67 @@ export const Hud = () => {
   }, [state.sound]);
 
   useEffect(() => {
-    let timer = window.setTimeout(() => setIdle(true), IDLE_MS);
+    const bar = barRef.current;
+    // A mouse or pen resting on the bar, or keyboard focus inside it, keeps the HUD awake: an
+    // idle bar would swallow the click that is about to come. Touch has no hover, so a faded bar
+    // still takes one tap to wake.
+    let hovered = false;
+    const heldAwake = () => hovered || bar?.querySelector(':focus-visible') != null;
+    const sleep = () => {
+      if (!heldAwake()) setIdle(true);
+    };
+    let timer = window.setTimeout(sleep, IDLE_MS);
     const wake = () => {
       setIdle(false);
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => setIdle(true), IDLE_MS);
+      timer = window.setTimeout(sleep, IDLE_MS);
+    };
+    const enter = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') hovered = true;
+    };
+    // Leaving the bar or its focus re-arms the timer that a held bar skipped.
+    const leave = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      hovered = false;
+      wake();
+    };
+    // An idle bar's controls ignore hits, so a press that wakes it lands on the bar itself. A tap
+    // re-targets its click after that press has woken the bar, which would reach the control
+    // underneath, so drop that one click.
+    let swallowClick = false;
+    const press = (event: PointerEvent) => {
+      swallowClick = event.target === bar;
+    };
+    const click = (event: MouseEvent) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      event.stopPropagation();
+    };
+    const key = () => {
+      swallowClick = false;
     };
     const hintTimer = window.setTimeout(() => setHint(false), 9000);
     window.addEventListener('pointermove', wake);
     window.addEventListener('pointerdown', wake);
+    window.addEventListener('pointerdown', press);
     window.addEventListener('keydown', wake);
+    window.addEventListener('keydown', key);
+    bar?.addEventListener('pointerenter', enter);
+    bar?.addEventListener('pointerleave', leave);
+    bar?.addEventListener('focusout', wake);
+    bar?.addEventListener('click', click, true);
     return () => {
       window.clearTimeout(timer);
       window.clearTimeout(hintTimer);
       window.removeEventListener('pointermove', wake);
       window.removeEventListener('pointerdown', wake);
+      window.removeEventListener('pointerdown', press);
       window.removeEventListener('keydown', wake);
+      window.removeEventListener('keydown', key);
+      bar?.removeEventListener('pointerenter', enter);
+      bar?.removeEventListener('pointerleave', leave);
+      bar?.removeEventListener('focusout', wake);
+      bar?.removeEventListener('click', click, true);
     };
   }, []);
 
@@ -146,7 +192,7 @@ export const Hud = () => {
         Click the water to feed · drag to look around · scroll to zoom · H hides this panel
       </p>
 
-      <nav className="hud__bar" aria-label="Aquarium controls">
+      <nav className="hud__bar" aria-label="Aquarium controls" ref={barRef}>
         <section className="hud__group hud__clock">
           <div className="hud__time">
             <span className="hud__hour">{formatHour(state.displayHour)}</span>
