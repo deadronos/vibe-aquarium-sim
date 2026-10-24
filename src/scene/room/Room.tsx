@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { PALETTE, ROOM, WINDOW } from '../../config/scene';
 import { daylight } from '../daylight';
 import { fabricTexture, plasterTexture, treelineTexture, woodFloorTexture } from '../textures';
+import { useDispose } from '../dispose';
 
 const WALL = 0.14;
 const HALF_W = ROOM.width / 2;
@@ -49,6 +50,7 @@ const Curtain = ({ z }: { z: number }) => {
     geo.computeVertexNormals();
     return geo;
   }, []);
+  useDispose(geometry);
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
@@ -61,6 +63,7 @@ const Curtain = ({ z }: { z: number }) => {
       }),
     []
   );
+  useDispose(material);
   return (
     <mesh
       geometry={geometry}
@@ -128,6 +131,7 @@ export const Room = () => {
       }),
     };
   }, []);
+  useDispose(materials);
 
   useFrame(() => {
     materials.trees.color

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { BACK_WALL_Z } from '../../../config/scene';
 import { createRandom } from '../../../sim/random';
 import type { Materials } from './materials';
+import { useDispose } from '../../dispose';
 
 /** Fiddle-leaf fig in a ceramic pot. */
 export const PottedPlant = ({ m }: { m: Materials }) => {
@@ -23,6 +24,7 @@ export const PottedPlant = ({ m }: { m: Materials }) => {
     geo.computeVertexNormals();
     return geo;
   }, []);
+  useDispose(leafGeometry);
   const potGeometry = useMemo(() => {
     const profile = [
       new THREE.Vector2(0, 0),
@@ -35,6 +37,7 @@ export const PottedPlant = ({ m }: { m: Materials }) => {
     ];
     return new THREE.LatheGeometry(profile, 40);
   }, []);
+  useDispose(potGeometry);
 
   useLayoutEffect(() => {
     const random = createRandom(42);

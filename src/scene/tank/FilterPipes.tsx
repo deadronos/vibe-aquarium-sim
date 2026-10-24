@@ -3,6 +3,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { TANK } from '../../config/scene';
 import { makeUnderwater } from './underwater';
+import { useDispose } from '../dispose';
 
 const { height: H, depth: D, waterLevel: WL } = TANK;
 
@@ -56,6 +57,7 @@ export const FilterPipes = () => {
     );
     return { pipeGlass, intake, outflow };
   }, []);
+  useDispose(parts);
 
   useFrame(() => {
     heaterGlow

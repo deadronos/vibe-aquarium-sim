@@ -9,6 +9,7 @@ import { SPECIES } from '../../sim/species';
 import { makeUnderwater } from '../tank/underwater';
 import { FISH_URLS } from './assets';
 import { simulation } from './simulation';
+import { useDispose } from '../dispose';
 
 const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 const quaternion = new THREE.Quaternion();
@@ -91,6 +92,7 @@ export const FishView = () => {
       }),
     [gltfs]
   );
+  useDispose(assets);
 
   const foodMaterial = useMemo(
     () =>
@@ -106,6 +108,7 @@ export const FishView = () => {
       ),
     []
   );
+  useDispose(foodMaterial);
   const foodMesh = useRef<THREE.InstancedMesh>(null);
 
   useFrame(() => {

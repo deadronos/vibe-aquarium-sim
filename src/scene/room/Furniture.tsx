@@ -7,9 +7,11 @@ import { PottedPlant } from './furniture/PottedPlant';
 import { Rug } from './furniture/Rug';
 import { Sofa } from './furniture/Sofa';
 import { WallArt } from './furniture/WallArt';
+import { useDispose } from '../dispose';
 
 export const Furniture = () => {
   const m = useMaterials();
+  useDispose(m);
   return (
     <>
       <Cabinet m={m} />

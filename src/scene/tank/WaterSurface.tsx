@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { TANK } from '../../config/scene';
 import { waterUniforms } from './underwater';
+import { useDispose } from '../dispose';
 
 const { width: W, depth: D, waterLevel: WL } = TANK;
 
@@ -67,6 +68,7 @@ export const WaterSurface = () => {
       }),
     []
   );
+  useDispose(surface);
   return (
     <mesh position-y={WL} rotation-x={-Math.PI / 2} material={surface} renderOrder={5}>
       <planeGeometry args={[W - 0.002, D - 0.002]} />

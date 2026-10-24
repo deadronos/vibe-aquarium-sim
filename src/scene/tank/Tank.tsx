@@ -10,6 +10,7 @@ import { LightFixture } from './LightFixture';
 import { TankGlass } from './TankGlass';
 import { makeUnderwater } from './underwater';
 import { WaterSurface } from './WaterSurface';
+import { useDispose } from '../dispose';
 
 const { width: W, height: H, depth: D } = TANK;
 
@@ -27,6 +28,7 @@ export const Tank = () => {
       ),
     []
   );
+  useDispose(backdrop);
 
   useFrame(() => {
     backdrop.emissiveIntensity = 0.06 + daylight.tankLight * 0.55 + daylight.moonLight * 0.05;

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { TANK } from '../../config/scene';
+import { useDispose } from '../dispose';
 
 const { width: W, height: H, depth: D, glass: G, waterLevel: WL } = TANK;
 
@@ -28,6 +29,7 @@ const edgeMaterial = () =>
 /** Glass panes, drawn after everything inside. */
 export const TankGlass = () => {
   const parts = useMemo(() => ({ glass: glassMaterial(), edge: edgeMaterial() }), []);
+  useDispose(parts);
   return (
     <group renderOrder={10}>
       <mesh position={[0, H / 2 - G / 2, D / 2 - G / 2]} material={parts.glass} renderOrder={10}>
