@@ -46,7 +46,7 @@ const expectRoomKeptDrawing = async (page: Page) => {
 
 /** The fallback to Lite is announced, not silent. */
 const expectEffectsNotice = (page: Page, text: RegExp) =>
-  expect(page.getByRole('status')).toContainText(text, { timeout: 30_000 });
+  expect(page.locator('.hud__notice[role="status"]')).toContainText(text, { timeout: 30_000 });
 
 test('a failed fish download shows an error with a working Retry', async ({ page }) => {
   // The failed fetch is reported within a couple of seconds, but software GL can block the
@@ -176,7 +176,7 @@ test('a later switch to High retries the post-processing download', async ({ pag
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
   // A successful load clears the earlier notice.
-  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('.hud__notice[role="status"]')).toHaveCount(0);
 });
 
 test('a missing chunk after a new deploy asks for a reload instead of retrying', async ({
@@ -199,7 +199,9 @@ test('a missing chunk after a new deploy asks for a reload instead of retrying',
   await switchQuality(page);
   expect((await missing).status()).toBe(404);
   await expectEffectsNotice(page, /new version/);
-  await expect(page.getByRole('status').getByRole('button', { name: 'Reload' })).toBeVisible();
+  await expect(
+    page.locator('.hud__notice[role="status"]').getByRole('button', { name: 'Reload' })
+  ).toBeVisible();
 
   // High stays off, so clicks do not keep requesting a chunk that no longer exists.
   const hits = blocked.hits();

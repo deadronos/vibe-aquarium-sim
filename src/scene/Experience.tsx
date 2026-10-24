@@ -1,5 +1,5 @@
 import { PerformanceMonitor } from '@react-three/drei';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAquarium } from '../state/store';
 import { CameraRig } from './CameraRig';
 import { ContextWatcher } from './ContextWatcher';
@@ -42,10 +42,18 @@ const createEffects = (attempt: number, chunkUrl: string | null) =>
     return { default: view };
   });
 
+/** Rendered next to the post stack, so it mounts once the chunk has arrived. */
+const HoldQuality = () => {
+  const holdQuality = useAquarium((state) => state.holdQuality);
+  useEffect(() => holdQuality(), [holdQuality]);
+  return null;
+};
+
 export const Experience = () => {
   const quality = useAquarium((state) => state.quality);
   const setQuality = useAquarium((state) => state.setQuality);
   const setEffectsNotice = useAquarium((state) => state.setEffectsNotice);
+  const autoDowngrade = useAquarium((state) => state.autoDowngrade);
   const [effectsLoad, setEffectsLoad] = useState(() => ({
     attempt: 0,
     chunkUrl: null as string | null,
@@ -86,7 +94,8 @@ export const Experience = () => {
     <>
       <ContextWatcher />
       <DaylightDriver />
-      <PerformanceMonitor onDecline={() => setQuality('low')} />
+      {/* Remounted per quality so frames sampled in Lite never count against High. */}
+      <PerformanceMonitor key={quality} onDecline={autoDowngrade} />
       <CameraRig />
       <Lights />
       <Room />
@@ -99,6 +108,7 @@ export const Experience = () => {
         <ErrorBoundary key={effectsLoad.attempt} onError={onEffectsError}>
           <Suspense fallback={null}>
             <EffectsView />
+            <HoldQuality />
           </Suspense>
         </ErrorBoundary>
       )}

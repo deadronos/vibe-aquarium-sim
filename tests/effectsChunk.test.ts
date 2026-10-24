@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   EffectsChunkError,
   effectsChunkUrl,
+  importEffectsModule,
   isEffectsChunkError,
   rewriteEffectsChunkSource,
 } from '../src/scene/effectsChunk';
@@ -85,6 +86,17 @@ describe('effects chunk retry', () => {
       false
     );
     expect(isEffectsChunkError(new Error('Failed to compile shader'))).toBe(false);
+  });
+
+  it('reports a retry that cannot reach the network as a retryable download failure', async () => {
+    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+    try {
+      const error: unknown = await importEffectsModule(2, chunkUrl.href).catch((e: unknown) => e);
+      expect(isEffectsChunkError(error)).toBe(true);
+      expect(error).toMatchObject({ retryable: true });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

@@ -67,7 +67,13 @@ export const effectsChunkUrl = (error?: unknown) => {
 
 export const importEffectsModule = async (attempt: number, chunkUrl: string) => {
   const url = new URL(chunkUrl);
-  const response = await fetch(`${url.href}?retry=${attempt}`, { cache: 'no-store' });
+  // A network failure rejects with a plain TypeError ("Failed to fetch", "Load failed"), which
+  // `isEffectsChunkError` cannot tell from a runtime error, so name it a download failure here.
+  const response = await fetch(`${url.href}?retry=${attempt}`, { cache: 'no-store' }).catch(
+    (error: unknown) => {
+      throw new EffectsChunkError(`Effects chunk did not download: ${String(error)}`, true);
+    }
+  );
   if (!response.ok) {
     throw new EffectsChunkError(`Effects chunk responded ${response.status}`, true);
   }
