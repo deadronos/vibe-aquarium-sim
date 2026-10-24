@@ -123,19 +123,27 @@ test('a later switch to High retries the post-processing download', async ({ pag
   await page.goto('./?quality=lite');
   await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
 
-  const missing = page.waitForResponse(postChunkResponse(404));
+  const missingEffects = page.waitForResponse(
+    (response) =>
+      postChunkResponse(404)(response) && new URL(response.url()).pathname.includes('/Effects-')
+  );
+  const missingPost = page.waitForResponse(
+    (response) =>
+      postChunkResponse(404)(response) &&
+      new URL(response.url()).pathname.includes('/postprocessing-')
+  );
   await switchQuality(page);
-  await missing;
+  expect((await missingEffects).status()).toBe(404);
+  expect((await missingPost).status()).toBe(404);
   await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
 
   await blocked.unblock();
-  const effects = page.waitForResponse(
-    (response) => isPostChunk(response.url()) && /\/Effects-/.test(new URL(response.url()).pathname)
-  );
-  const post = page.waitForResponse(
-    (response) =>
-      isPostChunk(response.url()) && /\/postprocessing-/.test(new URL(response.url()).pathname)
-  );
+  const retried = (file: 'Effects' | 'postprocessing') => (response: Response) => {
+    const url = new URL(response.url());
+    return response.ok() && url.searchParams.has('retry') && url.pathname.includes(`/${file}-`);
+  };
+  const effects = page.waitForResponse(retried('Effects'));
+  const post = page.waitForResponse(retried('postprocessing'));
   await switchQuality(page);
   expect((await effects).ok()).toBe(true);
   expect((await post).ok()).toBe(true);
