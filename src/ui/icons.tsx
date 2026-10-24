@@ -76,3 +76,22 @@ export const SoundIcon = ({ on }: { on: boolean }) => (
     )}
   </Icon>
 );
+
+export const AmbientIcon = () => (
+  <Icon>
+    <path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5" />
+    <path d="M20 4v4.5h-4.5" />
+    <path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5" />
+    <path d="M4 20v-4.5h4.5" />
+  </Icon>
+);
+
+export const FullscreenIcon = ({ on }: { on: boolean }) => (
+  <Icon>
+    {on ? (
+      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+    ) : (
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+    )}
+  </Icon>
+);

@@ -1,6 +1,7 @@
 import { PerformanceMonitor } from '@react-three/drei';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAquarium } from '../state/store';
+import { AmbientDirector } from './AmbientDirector';
 import { CameraRig } from './CameraRig';
 import { ContextWatcher } from './ContextWatcher';
 import { DaylightDriver } from './DaylightDriver';
@@ -97,6 +98,7 @@ export const Experience = () => {
       {/* Remounted per quality so frames sampled in Lite never count against High. */}
       <PerformanceMonitor key={quality} onDecline={autoDowngrade} />
       <CameraRig />
+      <AmbientDirector />
       <Lights />
       <Room />
       <Furniture />

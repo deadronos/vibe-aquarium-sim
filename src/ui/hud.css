@@ -384,10 +384,10 @@
 @media (max-width: 640px) {
   .hud__bar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    grid-template-columns: minmax(0, 1fr) 44px 44px 44px;
     grid-template-areas:
-      'clock clock quality'
-      'views feed sound';
+      'clock ambient fullscreen quality'
+      'views views feed sound';
     gap: 4px;
     left: 8px;
     right: 8px;
@@ -437,11 +437,13 @@
     margin: 0;
   }
 
+  /* Ambient sits in the clock row, so the viewpoints keep five 44px targets. */
   .hud__views {
-    grid-area: views;
+    display: contents;
   }
 
   .segmented--views {
+    grid-area: views;
     flex: 1;
     flex-wrap: nowrap;
   }
@@ -461,6 +463,14 @@
 
   .hud__quality {
     grid-area: quality;
+  }
+
+  .hud__ambient {
+    grid-area: ambient;
+  }
+
+  .hud__fullscreen {
+    grid-area: fullscreen;
   }
 
   .segmented button,
