@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
 import { useReducedMotion } from '../state/motion';
-import { effectsBlocked, formatHour, useAquarium } from '../state/store';
+import { useShallow } from 'zustand/react/shallow';
+import { effectsBlocked, useAquarium } from '../state/store';
 import type { EffectsNotice, LoadError, Viewpoint } from '../state/store';
 import {
   AmbientIcon,
@@ -16,6 +17,7 @@ import {
   SoundIcon,
   TankIcon,
 } from './icons';
+import { Clock } from './Clock';
 import { fullscreenSupported, toggleFullscreen, useFullscreen } from './fullscreen';
 import './hud.css';
 
@@ -79,17 +81,30 @@ const EFFECTS_NOTICES: Record<EffectsNotice, string> = {
   crash: 'The High quality effects stopped working, so the room switched to Lite.',
 };
 
-const periodOfDay = (hour: number) => {
-  if (hour < 5) return 'Night';
-  if (hour < 9) return 'Morning';
-  if (hour < 12) return 'Late morning';
-  if (hour < 17) return 'Afternoon';
-  if (hour < 21) return 'Evening';
-  return 'Night';
-};
-
 export const Hud = () => {
-  const state = useAquarium();
+  // Picks only what the HUD shows; the clock reads `displayHour` on its own so Day cycle does not
+  // re-render the rest of the bar.
+  const state = useAquarium(
+    useShallow((s) => ({
+      ready: s.ready,
+      loadError: s.loadError,
+      effectsNotice: s.effectsNotice,
+      qualityNotice: s.qualityNotice,
+      fishCount: s.fishCount,
+      viewpoint: s.viewpoint,
+      ambient: s.ambient,
+      sound: s.sound,
+      quality: s.quality,
+      retryLoad: s.retryLoad,
+      setEffectsNotice: s.setEffectsNotice,
+      dismissQualityNotice: s.dismissQualityNotice,
+      setViewpoint: s.setViewpoint,
+      setAmbient: s.setAmbient,
+      requestFeed: s.requestFeed,
+      toggleSound: s.toggleSound,
+      setQuality: s.setQuality,
+    }))
+  );
   const [idle, setIdle] = useState(false);
   const [hint, setHint] = useState(true);
   const [hidden, setHidden] = useState(false);
@@ -266,40 +281,7 @@ export const Hud = () => {
       </div>
 
       <nav className="hud__bar" aria-label="Aquarium controls" ref={barRef}>
-        <section className="hud__group hud__clock">
-          <div className="hud__time">
-            <span className="hud__hour">{formatHour(state.displayHour)}</span>
-            <span className="hud__period">{periodOfDay(state.displayHour)}</span>
-          </div>
-          <div className="hud__clock-controls">
-            <div className="segmented" role="radiogroup" aria-label="Clock">
-              {(['live', 'cycle'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  role="radio"
-                  aria-checked={state.clockMode === mode}
-                  className={state.clockMode === mode ? 'is-active' : ''}
-                  onClick={() => state.setClockMode(mode)}
-                  title={
-                    mode === 'live' ? 'Follow your local time' : 'A full day every six minutes'
-                  }
-                >
-                  {mode === 'live' ? 'Live' : 'Day cycle'}
-                </button>
-              ))}
-            </div>
-            <input
-              className="hud__slider"
-              type="range"
-              min={0}
-              max={23.98}
-              step={0.02}
-              value={state.clockMode === 'manual' ? state.manualHour : state.displayHour}
-              onChange={(event) => state.setManualHour(Number(event.target.value))}
-              aria-label="Time of day"
-            />
-          </div>
-        </section>
+        <Clock />
 
         <section className="hud__group hud__views" aria-label="Viewpoint">
           <div className="segmented segmented--views" role="radiogroup">
