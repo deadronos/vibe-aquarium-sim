@@ -45,12 +45,15 @@ const expectRoomKeptDrawing = async (page: Page) => {
 };
 
 test('a failed fish download shows an error with a working Retry', async ({ page }) => {
+  // The failed fetch is reported within a couple of seconds, but software GL can block the
+  // main thread long enough that React commits the alert after a 30s expect has given up.
+  test.setTimeout(240_000);
   let blocked = true;
   await page.route('**/*.glb', (route) => (blocked ? route.abort() : route.continue()));
   await page.goto('./?quality=lite');
 
   const alert = page.getByRole('alert');
-  await expect(alert).toContainText('The fish did not arrive', { timeout: 30_000 });
+  await expect(alert).toContainText('The fish did not arrive', { timeout: 90_000 });
   await expect(page.locator('.loading')).not.toHaveClass(/loading--done/);
 
   blocked = false;
