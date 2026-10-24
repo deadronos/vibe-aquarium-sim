@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
+import { pwa } from './vite-pwa';
 
 const pathSeparator = /[\\/]/;
 
@@ -111,7 +112,7 @@ const chunkManifest = (): Plugin => ({
 export default defineConfig(({ command }) => ({
   // GitHub Pages serves from a sub-path in production; dev stays at the root so HMR works.
   base: command === 'build' ? '/vibe-aquarium-sim/' : '/',
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), chunkManifest()],
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), chunkManifest(), pwa()],
   build: {
     // Three's renderer is one large cached chunk. Stay above it so a clean build is quiet.
     chunkSizeWarningLimit: 1100,

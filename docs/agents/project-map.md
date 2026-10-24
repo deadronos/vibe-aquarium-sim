@@ -14,6 +14,8 @@ src/
     daylight.ts         Shared mutable lighting state
     Lights.tsx          Sun (shadowed), window skylight, lamp, reflection environment
     CameraRig.tsx       Viewpoints and fish follow-cam
+    AmbientDirector.tsx Ambient mode: cycles the shots with a slow drift, pauses on user input
+    ambient.ts          Pure shot-cycle and drift logic (unit-tested)
     shots.ts            Viewpoint shots and the cabinet each one keeps on screen
     framing.ts          Aspect-aware framing: dolly back, then widen FOV, on narrow screens
     Effects.tsx         Depth of field, bloom, vignette, tone mapping
@@ -29,8 +31,11 @@ src/
     fish/FishView.tsx   GLB loading, instanced fish and food, fixed-step sim loop
     fish/assets.ts      Fish GLB URLs
     fish/simulation.ts  The running school + food pool
-  ui/Hud.tsx            Clock, viewpoints, feed/sound/quality controls, keyboard shortcuts
+  ui/Hud.tsx            Clock, viewpoints, ambient, feed/sound/quality/fullscreen, keyboard shortcuts
+  ui/fullscreen.ts      Fullscreen API toggle and `fullscreenchange` hook
   audio/ambience.ts     Procedural WebAudio filter hum, trickle and bubbles
-public/                 Fish GLBs (clownfish, blue tang, angelfish)
-tests/                  Vitest unit tests for src/sim and the store; tests/e2e Playwright smoke test + load-error spec
+public/                 Fish GLBs (clownfish, blue tang, angelfish), favicon.svg
+pwa/service-worker.js   Hand-written service worker; vite-pwa.ts fills in the precache list
+vite-pwa.ts             Manifest, icons rasterised from favicon.svg, service worker (build time)
+tests/                  Vitest unit tests for src/sim and the store; tests/e2e Playwright smoke test, load-error and PWA specs
 ```
