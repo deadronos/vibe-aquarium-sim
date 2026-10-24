@@ -222,6 +222,23 @@ export const buildBlade = (
   return geo;
 };
 
+/** One anemone tentacle: a thin open tube from y = 0 to y = 1, pale at the tip. */
+export const buildAnemoneTentacle = () => {
+  const geo = new THREE.CylinderGeometry(0.06, 0.11, 1, 6, 5, true);
+  geo.translate(0, 0.5, 0);
+  const position = geo.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  const base = new THREE.Color('#a8607e');
+  const tip = new THREE.Color('#f4cfe0');
+  const c = new THREE.Color();
+  for (let i = 0; i < position.count; i++) {
+    c.copy(base).lerp(tip, Math.pow(position.getY(i), 1.6));
+    colors.set([c.r, c.g, c.b], i * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geo;
+};
+
 export const PLANT_GEOMETRY = {
   ribbon: () => buildBlade(10, 0.012, (t) => 1 - t * 0.5, 0.05, '#2d5a2a', '#7fae4f'),
   sword: () =>

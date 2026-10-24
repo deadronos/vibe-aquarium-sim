@@ -15,6 +15,10 @@ export interface Species {
   preferredHeight: number;
   /** Tail beats per metre travelled, relative to body length. */
   tailBeat: number;
+  /** Lives in the anemone: stays near it by day and sleeps in it at night. */
+  hostsAnemone: boolean;
+  /** How readily it comes to the front glass when someone is close or it wants feeding (0..1). */
+  curiosity: number;
 }
 
 export const SPECIES: readonly Species[] = [
@@ -29,6 +33,8 @@ export const SPECIES: readonly Species[] = [
     schooling: 1,
     preferredHeight: 0.35,
     tailBeat: 1.4,
+    hostsAnemone: true,
+    curiosity: 0.8,
   },
   {
     id: 'tang',
@@ -41,6 +47,8 @@ export const SPECIES: readonly Species[] = [
     schooling: 0.45,
     preferredHeight: 0.6,
     tailBeat: 1,
+    hostsAnemone: false,
+    curiosity: 0.6,
   },
   {
     id: 'angelfish',
@@ -53,5 +61,7 @@ export const SPECIES: readonly Species[] = [
     schooling: 0.7,
     preferredHeight: 0.55,
     tailBeat: 0.8,
+    hostsAnemone: false,
+    curiosity: 1,
   },
 ];

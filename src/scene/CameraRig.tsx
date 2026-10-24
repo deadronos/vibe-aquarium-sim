@@ -40,14 +40,18 @@ export const CameraRig = () => {
     const go = (viewpoint: Viewpoint, transition: boolean) => {
       const animate = transition && !prefersReducedMotion();
       fov.current.snap = !animate;
+      const { setFollowedFish, setHoveredFish } = useAquarium.getState();
+      setHoveredFish(null);
       if (viewpoint === 'follow') {
         followIndex.current = Math.floor(Math.random() * simulation.school.count);
+        setFollowedFish(followIndex.current);
         followHeld.current = false;
         c.smoothTime = 0.45;
         fov.current.target = BASE_FOV;
         framed.current = null;
         return;
       }
+      setFollowedFish(null);
       const shot = SHOTS[viewpoint];
       const framing = frameFor(shot, aspectNow.current);
       c.smoothTime = 0.9;

@@ -16,10 +16,19 @@ src/ui/      DOM HUD driven by the zustand store in src/state/store.ts
   alignment/cohesion (same species) + soft walls, substrate, rocks and driftwood
   (`aquascape.ts` obstacles) + food seeking. It also smooths yaw/pitch/roll and the
   tail-beat phase, so the renderer only composes matrices.
+  Behaviours on top of the boids: clownfish (`hostsAnemone`) stay near the anemone by day and
+  huddle in it at night; the others settle at `REST_SPOTS` among the plants once `restWeight`
+  of the activity rises; curious fish come to the front glass when `env.viewer` is up (the Up
+  close view) or when they are hungry (`hungerSlump`, which also tilts them nose-down and the
+  renderer dulls their colour); `startle(x, y, z)` sends nearby fish darting away from a tap.
+- `care.ts` — the gentle care loop. Only `{ since, wipedAt, nameSeed }` is saved (in
+  `localStorage`, via the store); algae on the glass, plant height and fish size are pure
+  functions of the clock that ease towards a capped steady state, so an ignored tank never gets
+  worse than a soft green haze. Fish names are a seeded shuffle, one per school index.
 - `food.ts` — fixed-capacity `FoodPool`: flakes float, sink in a spiral, settle on the
   sand and dissolve.
-- `aquascape.ts` — rock, driftwood and plant layout shared by the renderer (geometry) and
-  the school (obstacles).
+- `aquascape.ts` — rock, driftwood, plant and anemone layout shared by the renderer (geometry)
+  and the school (obstacles, the anemone and night rest spots).
 - `timeOfDay.ts` — `lightingAt(hour)` returns sun direction/colour, sky colours, the
   evening lamp, the tank LED schedule (09:00–21:00), moonlight and fish activity.
 - `random.ts` — seeded PRNG; all layouts and the sim are deterministic for a seed.
