@@ -12,10 +12,13 @@ src/ui/      DOM HUD driven by the zustand store in src/state/store.ts
 ## Simulation (`src/sim/`)
 
 - `school.ts` — `FishSchool`, a struct-of-arrays boids school in **tank-local space**
-  (origin at the centre of the inner tank floor). Wander + separation (all fish) +
-  alignment/cohesion (same species) + soft walls, substrate, rocks and driftwood
-  (`aquascape.ts` obstacles) + food seeking. It also smooths yaw/pitch/roll and the
-  tail-beat phase, so the renderer only composes matrices.
+  (origin at the centre of the inner tank floor). Wander + separation (the 6 closest fish) +
+  alignment/cohesion (the 9 nearest mates of the same species, within 6 body lengths) + soft
+  walls, substrate, rocks and driftwood (`aquascape.ts` obstacles) + food seeking. It also
+  smooths yaw/pitch/roll and the tail-beat phase, so the renderer only composes matrices.
+  From 200 fish the neighbours come from a uniform grid (`NeighbourGrid`, counting sort into
+  preallocated typed arrays) rather than a check of every pair; both find the same fish, ties
+  going to the lower index, so the result does not depend on which search ran.
   Behaviours on top of the boids: clownfish (`hostsAnemone`) stay near the anemone by day and
   huddle in it at night; the others settle at `REST_SPOTS` among the plants once `restWeight`
   of the activity rises; curious fish come to the front glass when `env.viewer` is up (the Up

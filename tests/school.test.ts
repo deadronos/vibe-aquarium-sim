@@ -33,6 +33,17 @@ const ofSpecies = (school: FishSchool, id: string) =>
     (i) => school.speciesList[school.species[i]!]!.id === id
   );
 
+/** The default species mix, scaled to `total` fish. */
+const crowd = (total: number) => {
+  const usual = SPECIES.reduce((n, s) => n + s.count, 0);
+  let left = total;
+  return SPECIES.map((s, k) => {
+    const count = k === SPECIES.length - 1 ? left : Math.round((s.count * total) / usual);
+    left -= count;
+    return { ...s, count };
+  });
+};
+
 const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
 
 const anemoneTop = { x: ANEMONE.x, y: ANEMONE.y + ANEMONE.height, z: ANEMONE.z };
@@ -269,6 +280,58 @@ describe('FishSchool', () => {
         return pitch / samples;
       };
       expect(posture(1)).toBeGreaterThan(posture(0) + 0.05);
+    });
+  });
+
+  describe('neighbour search', () => {
+    it('checks every pair in the default tank', () => {
+      expect(new FishSchool(SPECIES, createRandom(1)).usesGrid).toBe(false);
+      expect(new FishSchool(crowd(250), createRandom(1)).usesGrid).toBe(true);
+    });
+
+    it('finds the same neighbours through the grid as by checking every pair', () => {
+      const swim = (gridFrom: number) => {
+        const school = new FishSchool(crowd(250), createRandom(8), { gridFrom });
+        const food = new FoodPool(createRandom(9));
+        const env = { activity: 1, food, obstacles: OBSTACLES, viewer: 0 };
+        food.sprinkle(0, 0, 10);
+        run(school, env, 1.5);
+        school.startle(0, 0.25, SWIM_BOUNDS.maxZ);
+        run(school, env, 1.5);
+        return school;
+      };
+      const grid = swim(0);
+      const pairs = swim(Infinity);
+      expect(grid.usesGrid).toBe(true);
+      expect(pairs.usesGrid).toBe(false);
+      expect(Array.from(grid.pos)).toEqual(Array.from(pairs.pos));
+      expect(Array.from(grid.vel)).toEqual(Array.from(pairs.vel));
+      expect(Array.from(grid.yaw)).toEqual(Array.from(pairs.yaw));
+    });
+
+    it('checks about the same number of pairs per fish as the school grows', () => {
+      const perFish = (total: number) => {
+        const school = new FishSchool(crowd(total), createRandom(3), { gridFrom: 0 });
+        const env = {
+          activity: 1,
+          food: new FoodPool(createRandom(4)),
+          obstacles: OBSTACLES,
+          viewer: 0,
+        };
+        run(school, env, 5);
+        let checks = 0;
+        for (let k = 0; k < 60; k++) {
+          school.step(STEP, env);
+          checks += school.pairChecks;
+        }
+        expect(Array.from(school.pos).every(Number.isFinite)).toBe(true);
+        return checks / 60 / total;
+      };
+      const small = perFish(100);
+      const large = perFish(500);
+      // Checking every pair would cost 5 times as much per fish at 500 fish as at 100.
+      expect(large / small).toBeLessThan(2.5);
+      expect(large).toBeLessThan(0.25 * 499);
     });
   });
 });
