@@ -28,8 +28,10 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   // Boot on software GL is longer than the HUD's 7s idle timer, and the click actionability
   // check can be too. Once the bar is idle its controls ignore hits, so Playwright reports the
   // bar itself as intercepting. Freeze the clock so the bar cannot fade again until the idle
-  // step below fast-forwards on purpose. `Date.now` here is the fake clock.
-  await page.clock.pauseAt(await page.evaluate(() => Date.now()));
+  // step below fast-forwards on purpose. The target is a little ahead: the fake clock keeps
+  // running until pauseAt lands, and pauseAt refuses a time in the past.
+  const pausedAt = (await page.evaluate(() => Date.now())) + 3000;
+  await page.clock.pauseAt(pausedAt);
 
   await page.mouse.move(400, 300);
   await page.getByRole('button', { name: 'Feed' }).click();
