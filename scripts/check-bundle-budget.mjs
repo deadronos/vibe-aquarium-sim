@@ -19,7 +19,11 @@ const maxFirstPaintGzipBytes = parseThreshold('MAX_FIRST_PAINT_JS_GZIP_BYTES', 5
 const maxModelBytes = parseThreshold('MAX_MODEL_BYTES', 2_921_368);
 const maxCriticalModelBytes = parseThreshold('MAX_CRITICAL_MODEL_BYTES', 960_000);
 
-/** Names Vite puts in front of the content hash. Longer names first so `react` does not eat another prefix. */
+/**
+ * Chunk names Vite emits, without the content hash. The hash itself can contain hyphens
+ * (`react-Dboqm-dD.js`), so this matches a known name instead of splitting on `-`.
+ * A name that is a prefix of another has to be listed after the longer one.
+ */
 const CHUNK_PREFIXES = [
   'rolldown-runtime',
   'postprocessing',
@@ -138,7 +142,9 @@ function firstPaintJavaScriptGzip(distDirectory, files) {
 }
 
 function staticImports(source) {
-  return [...source.matchAll(/from\s*["']\.\/([^"']+\.js)["']/g)].map((match) => match[1]);
+  return [...source.matchAll(/(?:from|import)\s*["']\.\/([^"']+\.js)["']/g)].map(
+    (match) => match[1]
+  );
 }
 
 /** The named vendor chunks have to contain the libraries their names claim, and the post stack stays off the first-paint graph. */

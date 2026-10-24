@@ -22,7 +22,8 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **Lite**: DPR 1, no post-processing (the renderer applies AgX itself).
 - drei `PerformanceMonitor` drops to Lite automatically if the frame rate declines.
 - A failed post-processing chunk download also drops to Lite. That failure stays inside the
-  effects boundary, so the room keeps drawing.
+  effects boundary, so the room keeps drawing. The next switch to High mounts a new loader and
+  downloads the chunk again.
 - `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
   the post-processing shaders very slowly). The default (High) path is a separate, shorter smoke
   test that only checks the lazy chunk arrives and the room stays up.
@@ -37,7 +38,9 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
   are not in that set. Headroom over the current build is about 20%.
 - Chunk layout, from `dist/chunk-manifest.json` (package names, not minified source): `three`,
   `react`, `r3f` and `postprocessing` do not contain each other's libraries, no two chunks import
-  each other, and the post stack is not preloaded.
+  each other, and the post stack is not preloaded. A new output chunk has to be added to
+  `CHUNK_PREFIXES` and `CHUNK_RULES` in `scripts/check-bundle-budget.mjs`, or the check reports
+  it as unexpected.
 - Fish-model byte budgets.
 
 `npm run assets:optimize` simplifies each fish to 1,500 triangles before compressing it, and
