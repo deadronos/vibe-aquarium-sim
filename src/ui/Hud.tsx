@@ -3,6 +3,7 @@ import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
 import { effectsBlocked, formatHour, useAquarium } from '../state/store';
 import type { EffectsNotice, LoadError, Viewpoint } from '../state/store';
+import { fullscreenSupported, toggleFullscreen, useFullscreen } from './fullscreen';
 import './hud.css';
 
 const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
@@ -80,6 +81,8 @@ export const Hud = () => {
   const [hint, setHint] = useState(true);
   const [hidden, setHidden] = useState(false);
   const barRef = useRef<HTMLElement>(null);
+  const fullscreen = useFullscreen();
+  const [canFullscreen] = useState(fullscreenSupported);
 
   useEffect(() => {
     if (state.sound) ambience.start();
@@ -154,10 +157,14 @@ export const Hud = () => {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement) return;
+      // Browser shortcuts (Ctrl/Cmd+F and friends) are not ours.
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const store = useAquarium.getState();
       const view = VIEWS.find((v) => v.key === event.key);
       if (view) store.setViewpoint(view.id);
       else if (event.key === 'f') store.requestFeed();
+      else if (event.key === 'F') toggleFullscreen();
+      else if (event.key === 'a') store.setAmbient(!store.ambient);
       else if (event.key === 'h') setHidden((value) => !value);
       else if (event.key === 'm') store.toggleSound();
     };
@@ -290,6 +297,14 @@ export const Hud = () => {
               </button>
             ))}
           </div>
+          <button
+            className={`button ${state.ambient ? 'is-active' : ''}`}
+            onClick={() => state.setAmbient(!state.ambient)}
+            aria-pressed={state.ambient}
+            title="Ambient mode: drift through the shots on its own (A)"
+          >
+            Ambient
+          </button>
         </section>
 
         <section className="hud__group hud__actions">
@@ -312,6 +327,16 @@ export const Hud = () => {
           >
             {state.quality === 'high' ? 'High quality' : 'Lite'}
           </button>
+          {canFullscreen && (
+            <button
+              className={`button ${fullscreen ? 'is-active' : ''}`}
+              onClick={toggleFullscreen}
+              aria-pressed={fullscreen}
+              title="Fullscreen (Shift+F)"
+            >
+              Fullscreen
+            </button>
+          )}
         </section>
       </nav>
     </div>

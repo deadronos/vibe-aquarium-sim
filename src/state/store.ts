@@ -31,6 +31,8 @@ interface AquariumState {
   /** Hour currently rendered, published by the scene a few times per second. */
   displayHour: number;
   viewpoint: Viewpoint;
+  /** Ambient mode: the camera moves through the shots on its own. */
+  ambient: boolean;
   quality: Quality;
   /** `performance.now()` before which `autoDowngrade` is ignored. */
   qualityGraceUntil: number;
@@ -51,6 +53,7 @@ interface AquariumState {
   setManualHour: (hour: number) => void;
   setDisplayHour: (hour: number) => void;
   setViewpoint: (viewpoint: Viewpoint) => void;
+  setAmbient: (ambient: boolean) => void;
   /** A choice made by the user (or the app on their behalf); restarts the grace period. */
   setQuality: (quality: Quality) => void;
   /** Starts a fresh grace period, e.g. once the post stack has mounted. */
@@ -74,6 +77,10 @@ const initialQuality = (): Quality =>
     ? 'low'
     : 'high';
 
+/** `?ambient` starts in ambient mode, for a screen that is left running. */
+const initialAmbient = () =>
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('ambient');
+
 /** Probes for WebGL once at startup; outside a browser (unit tests) it is assumed present. */
 const detectWebGL = () => {
   if (typeof document === 'undefined') return true;
@@ -95,6 +102,7 @@ export const useAquarium = create<AquariumState>((set) => ({
   manualHour: 14,
   displayHour: 12,
   viewpoint: 'sofa',
+  ambient: initialAmbient(),
   quality: initialQuality(),
   qualityGraceUntil: graceFromNow(),
   autoDowngraded: false,
@@ -115,6 +123,7 @@ export const useAquarium = create<AquariumState>((set) => ({
   setManualHour: (manualHour) => set({ manualHour, clockMode: 'manual' }),
   setDisplayHour: (displayHour) => set({ displayHour }),
   setViewpoint: (viewpoint) => set({ viewpoint }),
+  setAmbient: (ambient) => set({ ambient }),
   // High would only fail again once the post stack is known to be unreachable.
   setQuality: (quality) =>
     set((state) =>

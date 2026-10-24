@@ -27,6 +27,9 @@ export default defineConfig({
           : [],
     },
     trace: 'retain-on-failure',
+    // The production build registers a service worker. Requests it answers bypass page.route and
+    // its cache would carry state between tests, so specs opt in (pwa.spec.ts) instead.
+    serviceWorkers: 'block',
   },
   webServer: {
     command: 'node scripts/serve-dist-with-base.js',
