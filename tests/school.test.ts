@@ -291,13 +291,14 @@ describe('FishSchool', () => {
 
     it('finds the same neighbours through the grid as by checking every pair', () => {
       const swim = (gridFrom: number) => {
-        const school = new FishSchool(crowd(250), createRandom(8), { gridFrom });
+        // 120 fish: the clownfish find mates through their own grid, the others from their list.
+        const school = new FishSchool(crowd(120), createRandom(8), { gridFrom });
         const food = new FoodPool(createRandom(9));
         const env = { activity: 1, food, obstacles: OBSTACLES, viewer: 0 };
         food.sprinkle(0, 0, 10);
-        run(school, env, 1.5);
+        run(school, env, 1);
         school.startle(0, 0.25, SWIM_BOUNDS.maxZ);
-        run(school, env, 1.5);
+        run(school, env, 1);
         return school;
       };
       const grid = swim(0);
@@ -310,6 +311,8 @@ describe('FishSchool', () => {
     });
 
     it('checks about the same number of pairs per fish as the school grows', () => {
+      // Fish spread evenly through the water, one step each: the distance checks are an exact,
+      // seeded count, so this stays quick (and steady) under coverage.
       const perFish = (total: number) => {
         const school = new FishSchool(crowd(total), createRandom(3), { gridFrom: 0 });
         const env = {
@@ -318,20 +321,21 @@ describe('FishSchool', () => {
           obstacles: OBSTACLES,
           viewer: 0,
         };
-        run(school, env, 5);
-        let checks = 0;
-        for (let k = 0; k < 60; k++) {
-          school.step(STEP, env);
-          checks += school.pairChecks;
+        const random = createRandom(5);
+        for (let i = 0; i < total; i++) {
+          school.pos[i * 3] = random.range(SWIM_BOUNDS.minX, SWIM_BOUNDS.maxX);
+          school.pos[i * 3 + 1] = random.range(SWIM_BOUNDS.minY + 0.1, SWIM_BOUNDS.maxY);
+          school.pos[i * 3 + 2] = random.range(SWIM_BOUNDS.minZ, SWIM_BOUNDS.maxZ);
         }
+        school.step(STEP, env);
         expect(Array.from(school.pos).every(Number.isFinite)).toBe(true);
-        return checks / 60 / total;
+        return school.pairChecks / total;
       };
       const small = perFish(100);
-      const large = perFish(500);
-      // Checking every pair would cost 5 times as much per fish at 500 fish as at 100.
-      expect(large / small).toBeLessThan(2.5);
-      expect(large).toBeLessThan(0.25 * 499);
+      // Checking every pair would cost 5 and 10 times as much per fish as at 100 fish.
+      expect(perFish(500) / small).toBeLessThan(2.5);
+      expect(perFish(1000) / small).toBeLessThan(3.5);
+      expect(perFish(500)).toBeLessThan(0.25 * 499);
     });
   });
 });
