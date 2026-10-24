@@ -8,6 +8,15 @@ export type Quality = 'high' | 'low';
  * dropped the context, or something inside the canvas crashed.
  */
 export type LoadError = 'webgl' | 'assets' | 'timeout' | 'context-lost' | 'crash';
+/**
+ * Why High quality fell back to Lite: the post stack did not download but may next time,
+ * cannot be retried without a reload, was replaced by a newer deploy, or crashed after loading.
+ */
+export type EffectsNotice = 'retry' | 'reload' | 'update' | 'crash';
+
+/** These notices mean another High attempt cannot succeed on this page. */
+export const effectsBlocked = (notice: EffectsNotice | null) =>
+  notice === 'reload' || notice === 'update';
 
 interface AquariumState {
   clockMode: ClockMode;
@@ -25,6 +34,7 @@ interface AquariumState {
   loadError: LoadError | null;
   /** Bumped by Retry so the scene remounts the fish loader. */
   loadAttempt: number;
+  effectsNotice: EffectsNotice | null;
   setClockMode: (mode: ClockMode) => void;
   setManualHour: (hour: number) => void;
   setDisplayHour: (hour: number) => void;
@@ -36,6 +46,7 @@ interface AquariumState {
   setReady: () => void;
   setLoadError: (error: LoadError | null) => void;
   retryLoad: () => void;
+  setEffectsNotice: (notice: EffectsNotice | null) => void;
 }
 
 /** `?quality=lite` starts without post-processing (handy on weak GPUs and in CI). */
@@ -71,6 +82,7 @@ export const useAquarium = create<AquariumState>((set) => ({
   ready: false,
   loadError: detectWebGL() ? null : 'webgl',
   loadAttempt: 0,
+  effectsNotice: null,
   setClockMode: (clockMode) =>
     set((state) => ({
       clockMode,
@@ -80,7 +92,9 @@ export const useAquarium = create<AquariumState>((set) => ({
   setManualHour: (manualHour) => set({ manualHour, clockMode: 'manual' }),
   setDisplayHour: (displayHour) => set({ displayHour }),
   setViewpoint: (viewpoint) => set({ viewpoint }),
-  setQuality: (quality) => set({ quality }),
+  // High would only fail again once the post stack is known to be unreachable.
+  setQuality: (quality) =>
+    set((state) => (quality === 'high' && effectsBlocked(state.effectsNotice) ? {} : { quality })),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
   setFishCount: (fishCount) => set({ fishCount }),
@@ -97,6 +111,11 @@ export const useAquarium = create<AquariumState>((set) => ({
       loadError: state.loadError === 'webgl' ? 'webgl' : null,
       loadAttempt: state.loadAttempt + 1,
     })),
+  // A blocking notice stays: only a reload clears it.
+  setEffectsNotice: (effectsNotice) =>
+    set((state) =>
+      effectsBlocked(state.effectsNotice) && effectsNotice !== 'update' ? {} : { effectsNotice }
+    ),
 }));
 
 export const formatHour = (hour: number) => {

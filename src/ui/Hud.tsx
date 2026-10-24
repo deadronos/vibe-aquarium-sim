@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
-import { formatHour, useAquarium } from '../state/store';
-import type { LoadError, Viewpoint } from '../state/store';
+import { effectsBlocked, formatHour, useAquarium } from '../state/store';
+import type { EffectsNotice, LoadError, Viewpoint } from '../state/store';
 import './hud.css';
 
 const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
@@ -53,6 +53,15 @@ const LOAD_ERRORS: Record<
     action: 'Reload',
     retry: 'reload',
   },
+};
+
+/** Shown when High quality fell back to Lite, so the switch is never silent. */
+const EFFECTS_NOTICES: Record<EffectsNotice, string> = {
+  retry:
+    'The High quality effects did not download, so the room is on Lite. Choose High quality to try again.',
+  reload: 'The High quality effects did not download. Reload the page to try again.',
+  update: 'A new version of the aquarium is available. Reload to get High quality back.',
+  crash: 'The High quality effects stopped working, so the room switched to Lite.',
 };
 
 const periodOfDay = (hour: number) => {
@@ -110,6 +119,8 @@ export const Hud = () => {
   }, []);
 
   const loadError = state.loadError ? LOAD_ERRORS[state.loadError] : null;
+  const effectsNotice = state.effectsNotice;
+  const highBlocked = effectsBlocked(effectsNotice);
   const veiled = !state.ready || loadError !== null;
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
 
@@ -141,6 +152,21 @@ export const Hud = () => {
           </p>
         )}
       </header>
+
+      {effectsNotice && (
+        <div className="hud__notice" role="status">
+          <p>{EFFECTS_NOTICES[effectsNotice]}</p>
+          {highBlocked ? (
+            <button className="button button--primary" onClick={reload}>
+              Reload
+            </button>
+          ) : (
+            <button className="button" onClick={() => state.setEffectsNotice(null)}>
+              Dismiss
+            </button>
+          )}
+        </div>
+      )}
 
       <p className={`hud__hint ${hint && state.ready ? '' : 'hud__hint--gone'}`}>
         Click the water to feed · drag to look around · scroll to zoom · H hides this panel
@@ -214,6 +240,7 @@ export const Hud = () => {
           <button
             className="button"
             onClick={() => state.setQuality(state.quality === 'high' ? 'low' : 'high')}
+            disabled={highBlocked && state.quality === 'low'}
             title="Rendering quality"
           >
             {state.quality === 'high' ? 'High quality' : 'Lite'}

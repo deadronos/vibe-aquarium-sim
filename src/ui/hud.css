@@ -85,6 +85,27 @@
   opacity: 0 !important;
 }
 
+.hud__notice {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 48px));
+  padding: 10px 10px 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+}
+
+.hud__notice p {
+  margin: 0;
+  line-height: 1.4;
+}
+
 .hud__bar {
   position: absolute;
   left: 50%;
@@ -172,8 +193,13 @@
   white-space: nowrap;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .segmented button:hover,
-.button:hover {
+.button:hover:not(:disabled) {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -299,6 +325,14 @@
   .hud__title {
     top: 14px;
     left: 16px;
+  }
+
+  .hud__notice {
+    /* Below the title, which owns the top-left corner on narrow screens. */
+    top: 72px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
   }
 }
 
