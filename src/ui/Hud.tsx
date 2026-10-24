@@ -1,17 +1,30 @@
+import type { ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Ambience } from '../audio/ambience';
 import { SPECIES } from '../sim/species';
+import { useReducedMotion } from '../state/motion';
 import { effectsBlocked, formatHour, useAquarium } from '../state/store';
 import type { EffectsNotice, LoadError, Viewpoint } from '../state/store';
+import {
+  AmbientIcon,
+  CloseUpIcon,
+  FeedIcon,
+  FollowIcon,
+  FullscreenIcon,
+  RoomIcon,
+  SofaIcon,
+  SoundIcon,
+  TankIcon,
+} from './icons';
 import { fullscreenSupported, toggleFullscreen, useFullscreen } from './fullscreen';
 import './hud.css';
 
-const VIEWS: { id: Viewpoint; label: string; key: string }[] = [
-  { id: 'sofa', label: 'Sofa', key: '1' },
-  { id: 'tank', label: 'Tank', key: '2' },
-  { id: 'glass', label: 'Up close', key: '3' },
-  { id: 'room', label: 'Room', key: '4' },
-  { id: 'follow', label: 'Follow a fish', key: '5' },
+const VIEWS: { id: Viewpoint; label: string; key: string; Icon: ComponentType }[] = [
+  { id: 'sofa', label: 'Sofa', key: '1', Icon: SofaIcon },
+  { id: 'tank', label: 'Tank', key: '2', Icon: TankIcon },
+  { id: 'glass', label: 'Up close', key: '3', Icon: CloseUpIcon },
+  { id: 'room', label: 'Room', key: '4', Icon: RoomIcon },
+  { id: 'follow', label: 'Follow a fish', key: '5', Icon: FollowIcon },
 ];
 
 const ambience = new Ambience();
@@ -81,6 +94,7 @@ export const Hud = () => {
   const [hint, setHint] = useState(true);
   const [hidden, setHidden] = useState(false);
   const barRef = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
   const fullscreen = useFullscreen();
   const [canFullscreen] = useState(fullscreenSupported);
 
@@ -186,7 +200,12 @@ export const Hud = () => {
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
 
   return (
-    <div className="hud" data-idle={idle} data-hidden={hidden}>
+    <div
+      className="hud"
+      data-idle={idle}
+      data-hidden={hidden}
+      data-motion={reducedMotion ? 'reduced' : 'full'}
+    >
       <div className={`loading ${veiled ? '' : 'loading--done'}`} aria-hidden={!veiled}>
         {(!loadError || loadError.busy) && <div className="loading__ripple" />}
         {loadError ? (
@@ -282,7 +301,7 @@ export const Hud = () => {
           </div>
         </section>
 
-        <section className="hud__group" aria-label="Viewpoint">
+        <section className="hud__group hud__views" aria-label="Viewpoint">
           <div className="segmented segmented--views" role="radiogroup">
             {VIEWS.map((view) => (
               <button
@@ -293,48 +312,61 @@ export const Hud = () => {
                 onClick={() => state.setViewpoint(view.id)}
                 title={`${view.label} (${view.key})`}
               >
-                {view.label}
+                <view.Icon />
+                <span className="hud__label">{view.label}</span>
               </button>
             ))}
           </div>
           <button
-            className={`button ${state.ambient ? 'is-active' : ''}`}
+            className={`button hud__ambient ${state.ambient ? 'is-active' : ''}`}
             onClick={() => state.setAmbient(!state.ambient)}
             aria-pressed={state.ambient}
             title="Ambient mode: drift through the shots on its own (A)"
           >
-            Ambient
+            <AmbientIcon />
+            <span className="hud__label">Ambient</span>
           </button>
         </section>
 
         <section className="hud__group hud__actions">
-          <button className="button button--primary" onClick={state.requestFeed} title="Feed (F)">
-            Feed
+          <button
+            className="button button--primary hud__feed"
+            onClick={state.requestFeed}
+            title="Feed (F)"
+          >
+            <FeedIcon />
+            <span className="hud__label">Feed</span>
           </button>
           <button
-            className={`button ${state.sound ? 'is-active' : ''}`}
+            className={`button hud__sound ${state.sound ? 'is-active' : ''}`}
             onClick={state.toggleSound}
             aria-pressed={state.sound}
             title="Ambient sound (M)"
           >
-            {state.sound ? 'Sound on' : 'Sound off'}
+            <SoundIcon on={state.sound} />
+            <span className="hud__label">{state.sound ? 'Sound on' : 'Sound off'}</span>
           </button>
           <button
-            className="button"
+            className="button hud__quality"
             onClick={() => state.setQuality(state.quality === 'high' ? 'low' : 'high')}
             disabled={highBlocked && state.quality === 'low'}
             title="Rendering quality"
           >
-            {state.quality === 'high' ? 'High quality' : 'Lite'}
+            {/* On phones the bar shows HQ in place of "High quality". */}
+            <span className="hud__icon" aria-hidden="true">
+              {state.quality === 'high' ? 'HQ' : 'Lite'}
+            </span>
+            <span className="hud__label">{state.quality === 'high' ? 'High quality' : 'Lite'}</span>
           </button>
           {canFullscreen && (
             <button
-              className={`button ${fullscreen ? 'is-active' : ''}`}
+              className={`button hud__fullscreen ${fullscreen ? 'is-active' : ''}`}
               onClick={toggleFullscreen}
               aria-pressed={fullscreen}
               title="Fullscreen (Shift+F)"
             >
-              Fullscreen
+              <FullscreenIcon on={fullscreen} />
+              <span className="hud__label">Fullscreen</span>
             </button>
           )}
         </section>
