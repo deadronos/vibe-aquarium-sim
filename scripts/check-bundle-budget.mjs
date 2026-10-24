@@ -150,9 +150,9 @@ function staticImports(source) {
 /** The named vendor chunks have to contain the libraries their names claim, and the post stack stays off the first-paint graph. */
 function chunkLayoutMatchesNames(distDirectory, files) {
   const problems = [];
-  const manifestPath = path.join(distDirectory, 'chunk-manifest.json');
+  const manifestPath = path.join(distDirectory, '.vite', 'chunk-manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    console.error('Chunk layout check failed: dist/chunk-manifest.json is missing.');
+    console.error('Chunk layout check failed: dist/.vite/chunk-manifest.json is missing.');
     return false;
   }
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -206,6 +206,19 @@ function chunkLayoutMatchesNames(distDirectory, files) {
     if (prefix === 'postprocessing' || prefix === 'Effects')
       problems.push(`first paint preloads ${name}`);
   }
+  // A shared helper package in the postprocessing group (today only `maath`) pulls the whole
+  // post chunk into first paint as soon as eager code imports it. Name the importer and the fix.
+  for (const [importer, imported] of firstPaintImporters(initialScripts, imports)) {
+    if (chunkPrefix(imported) !== 'postprocessing' || chunkPrefix(importer) === 'Effects') continue;
+    const shared = (packagesByPrefix.get('postprocessing') ?? []).filter(
+      (name) => !['postprocessing', '@react-three/postprocessing'].includes(name)
+    );
+    problems.push(
+      `${importer} statically imports ${imported}, so first paint downloads the post stack. ` +
+        `If app, Fiber or Drei code now imports ${shared.join(', ') || 'a package in that group'}, ` +
+        'move it to the r3f group in vite.config.ts.'
+    );
+  }
   if (!initialScripts.some((name) => chunkPrefix(name) === 'three')) {
     problems.push('first paint does not load the three chunk');
   }
@@ -220,6 +233,23 @@ function chunkLayoutMatchesNames(distDirectory, files) {
     'Chunk layout: three, react, r3f and postprocessing match their names; no chunk import cycles; the post stack is not preloaded.'
   );
   return true;
+}
+
+/** Every [importer, imported] edge reachable through static imports from the first-paint scripts. */
+function firstPaintImporters(entries, imports) {
+  const edges = [];
+  const seen = new Set();
+  const queue = [...entries];
+  while (queue.length > 0) {
+    const name = queue.shift();
+    if (seen.has(name)) continue;
+    seen.add(name);
+    for (const imported of imports.get(name) ?? []) {
+      edges.push([name, imported]);
+      queue.push(imported);
+    }
+  }
+  return edges;
 }
 
 /** Directed cycles in the static chunk import graph. */
