@@ -43,8 +43,7 @@ const algaeMaterial = () =>
       opacity: 0,
       depthWrite: false,
       side: THREE.DoubleSide,
-    }),
-    { key: 'algae' }
+    })
   );
 
 /** Algae film on the inside of the front and side panes; it fades out when the glass is wiped. */

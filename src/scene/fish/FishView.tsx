@@ -95,7 +95,6 @@ export const FishView = () => {
         const material = makeUnderwater(
           new THREE.MeshStandardMaterial({ map, roughness: 0.42, metalness: 0 }),
           {
-            key: 'fish',
             caustics: true,
             vertexHead: SWIM_HEAD,
             vertexDeform: SWIM_DEFORM,
@@ -114,10 +113,7 @@ export const FishView = () => {
           color: '#c46a2c',
           roughness: 0.8,
           side: THREE.DoubleSide,
-        }),
-        {
-          key: 'food',
-        }
+        })
       ),
     []
   );

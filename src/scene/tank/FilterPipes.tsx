@@ -32,8 +32,7 @@ export const FilterPipes = () => {
         transparent: true,
         opacity: 0.35,
         depthWrite: false,
-      }),
-      { key: 'pipe' }
+      })
     );
     const intake = pipe(
       [

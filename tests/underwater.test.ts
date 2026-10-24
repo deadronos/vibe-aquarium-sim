@@ -30,7 +30,7 @@ describe('underwater material patch', () => {
   });
 
   it('adds depth absorption and shares the water uniforms', () => {
-    const material = makeUnderwater(new THREE.MeshStandardMaterial(), { key: 'test' });
+    const material = makeUnderwater(new THREE.MeshStandardMaterial());
     const shader = compile(material);
     expect(shader.vertexShader).toContain('varying vec3 vUwWorld;');
     expect(shader.vertexShader).toContain('vUwWorld = (modelMatrix * uwWorld).xyz;');
@@ -49,9 +49,7 @@ describe('underwater material patch', () => {
   });
 
   it('adds caustics only when asked', () => {
-    const shader = compile(
-      makeUnderwater(new THREE.MeshStandardMaterial(), { key: 'lit', caustics: true })
-    );
+    const shader = compile(makeUnderwater(new THREE.MeshStandardMaterial(), { caustics: true }));
     expect(shader.fragmentShader).toContain('uwCaustic(vUwWorld.xz, uTime * 0.8)');
     expect(shader.fragmentShader).toContain(TANK.waterLevel.toFixed(3));
   });
@@ -60,7 +58,6 @@ describe('underwater material patch', () => {
     const uSway = { value: 0.5 };
     const shader = compile(
       makeUnderwater(new THREE.MeshStandardMaterial(), {
-        key: 'deform',
         vertexHead: 'uniform float uSway;',
         vertexDeform: 'transformed.x += uSway;',
         uniforms: { uSway },
@@ -77,10 +74,22 @@ describe('underwater material patch', () => {
     expect(shader.uniforms.uSway).toBe(uSway);
   });
 
-  it('gives each variant its own program cache key and returns the same material', () => {
+  it('shares a program between matching patches and returns the same material', () => {
+    const key = (options?: Parameters<typeof makeUnderwater>[1]) =>
+      makeUnderwater(new THREE.MeshStandardMaterial(), options).customProgramCacheKey();
     const material = new THREE.MeshStandardMaterial();
-    expect(makeUnderwater(material, { key: 'sand' })).toBe(material);
-    expect(material.customProgramCacheKey()).toBe('underwater-sand');
+    expect(makeUnderwater(material)).toBe(material);
+    // Per-material uniforms do not change the GLSL, so they do not split the program.
+    const sway = { vertexHead: 'uniform float uSway;', vertexDeform: 'transformed.x += uSway;' };
+    expect(key({ ...sway, uniforms: { uSway: { value: 0.1 } } })).toBe(
+      key({ ...sway, uniforms: { uSway: { value: 0.2 } } })
+    );
+    expect(key({ caustics: true })).toBe(key({ caustics: true }));
+    // Different GLSL never shares a program.
+    expect(key()).not.toBe(key({ caustics: true }));
+    expect(key(sway)).not.toBe(key());
+    expect(key(sway)).not.toBe(key({ ...sway, vertexDeform: 'transformed.y += uSway;' }));
+    expect(key({ vertexHead: 'a', vertexDeform: 'b' })).not.toBe(key({ vertexHead: 'ab' }));
   });
 
   it('bounds the water by the tank, from the inner floor to the surface', () => {
