@@ -98,3 +98,28 @@ export const scatter = (clump: PlantClump, seed: number) => {
   }
   return points;
 };
+
+/** The anemone the clownfish host in, planted in the open sand in front of the main stone. */
+export const ANEMONE = {
+  x: -0.13,
+  y: substrateHeight(-0.13, 0.09),
+  z: 0.09,
+  /** Spread of the tentacle crown. */
+  radius: 0.05,
+  height: 0.06,
+} as const;
+
+export interface RestSpot {
+  x: number;
+  y: number;
+  z: number;
+}
+
+const restSpot = (x: number, z: number): RestSpot => ({ x, y: substrateHeight(x, z) + 0.06, z });
+
+/** Low, sheltered spots in front of the tall ribbon plants, clear of the stones, for the night. */
+export const REST_SPOTS: readonly RestSpot[] = [
+  restSpot(-0.5, 0),
+  restSpot(0, -0.13),
+  restSpot(0.47, -0.09),
+];

@@ -1,4 +1,5 @@
 import { SWIM_BOUNDS, substrateHeight } from '../config/scene';
+import { ANEMONE, REST_SPOTS } from './aquascape';
 import type { Obstacle } from './aquascape';
 import type { FoodPool } from './food';
 import { FOOD_CAPACITY } from './food';
@@ -7,13 +8,27 @@ import type { Species } from './species';
 
 const TAU = Math.PI * 2;
 const EDGE_MARGIN = 0.07;
+/** How far from the anemone clownfish roam by day. */
+const HOST_RANGE = 0.22;
+/** How long a full-strength startle lasts, in seconds. */
+const STARTLE_TIME = 1.4;
+/** Fish further than this from a tap on the glass do not react. */
+const STARTLE_REACH = 0.7;
 
 export interface SchoolEnvironment {
   /** 0..1 — fish slow down and settle low at night. */
   activity: number;
   food: FoodPool;
   obstacles: readonly Obstacle[];
+  /** 0..1 — someone is close to the front glass (the Up close view); curious fish come over. */
+  viewer: number;
 }
+
+/** 0..1 — how visibly hungry a fish is: it begs at the glass, droops and looks duller. */
+export const hungerSlump = (hunger: number) => clamp((hunger - 0.6) / 0.4, 0, 1);
+
+/** 0..1 — how settled in for the night the school is, from the tank's activity level. */
+export const restWeight = (activity: number) => clamp((0.6 - activity) / 0.3, 0, 1);
 
 /**
  * Struct-of-arrays boids school in tank-local space. Every per-frame path is allocation-free.
@@ -33,6 +48,11 @@ export class FishSchool {
   /** 0..1 tail-beat strength, higher when accelerating. */
   readonly effort: Float32Array;
   readonly hunger: Float32Array;
+  /** Seconds of startle left; fish dart along `flee` while it runs down. */
+  readonly startled: Float32Array;
+  private readonly flee: Float32Array;
+  /** Index into `REST_SPOTS` where a fish that does not host the anemone sleeps. */
+  private readonly restSpot: Uint8Array;
   private readonly wanderYaw: Float32Array;
   private readonly wanderPitch: Float32Array;
   readonly speciesList: readonly Species[];
@@ -53,6 +73,9 @@ export class FishSchool {
     this.phase = new Float32Array(n);
     this.effort = new Float32Array(n);
     this.hunger = new Float32Array(n);
+    this.startled = new Float32Array(n);
+    this.flee = new Float32Array(n * 3);
+    this.restSpot = new Uint8Array(n);
     this.wanderYaw = new Float32Array(n);
     this.wanderPitch = new Float32Array(n);
 
@@ -76,14 +99,34 @@ export class FishSchool {
         this.scale[i] = species.length * random.range(0.85, 1.12);
         this.phase[i] = random.range(0, TAU);
         this.hunger[i] = random.range(0.3, 1);
+        this.restSpot[i] = i % REST_SPOTS.length;
       }
     });
+  }
+
+  /** The glass was tapped at (x, y, z): nearby fish dart away, distant ones barely flinch. */
+  startle(x: number, y: number, z: number) {
+    const { pos } = this;
+    for (let i = 0; i < this.count; i++) {
+      const o = i * 3;
+      const dx = pos[o]! - x;
+      const dy = (pos[o + 1]! - y) * 0.5;
+      const dz = pos[o + 2]! - z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-5;
+      const strength = 1 - d / STARTLE_REACH;
+      if (strength <= 0) continue;
+      this.startled[i] = Math.max(this.startled[i]!, STARTLE_TIME * (0.4 + 0.6 * strength));
+      this.flee[o] = dx / d;
+      this.flee[o + 1] = dy / d;
+      this.flee[o + 2] = dz / d;
+    }
   }
 
   step(dt: number, env: SchoolEnvironment) {
     const { pos, vel } = this;
     const activity = env.activity;
     const food = env.food;
+    const rest = restWeight(activity);
 
     for (let i = 0; i < this.count; i++) {
       const sp = this.speciesList[this.species[i]!]!;
@@ -94,7 +137,9 @@ export class FishSchool {
       const vx = vel[o]!;
       const vy = vel[o + 1]!;
       const vz = vel[o + 2]!;
-      const cruise = sp.cruiseSpeed * (0.35 + 0.65 * activity);
+      const cruise = sp.cruiseSpeed * (0.35 + 0.65 * activity) * (1 - 0.4 * rest);
+      const startled = this.startled[i]! / STARTLE_TIME;
+      const slump = hungerSlump(this.hunger[i]!);
       let ax = 0;
       let ay = 0;
       let az = 0;
@@ -162,12 +207,42 @@ export class FishSchool {
 
       // Preferred depth; at night everyone settles towards the lower third.
       const heightPref = sp.preferredHeight * (0.4 + 0.6 * activity);
-      ay += (lerp(SWIM_BOUNDS.minY, SWIM_BOUNDS.maxY, heightPref) - py) * 0.12;
+      ay += (lerp(SWIM_BOUNDS.minY, SWIM_BOUNDS.maxY, heightPref) - py) * 0.12 * (1 - rest);
 
-      // Food: hungry fish dart to the nearest flake.
-      if (food.activeCount > 0 && this.hunger[i]! > 0.25) {
+      // Home: clownfish stay within a short swim of their anemone and sleep in it; the others
+      // settle in among the plants for the night.
+      if (sp.hostsAnemone) {
+        const dx = ANEMONE.x - px;
+        const dy = ANEMONE.y + ANEMONE.height - py;
+        const dz = ANEMONE.z - pz;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-5;
+        const range = lerp(HOST_RANGE, ANEMONE.radius, rest);
+        if (d > range) {
+          const pull = Math.min(d - range, 0.3) * (0.5 + 1.5 * rest);
+          ax += (dx / d) * pull;
+          ay += (dy / d) * pull;
+          az += (dz / d) * pull;
+        }
+      } else if (rest > 0) {
+        const spot = REST_SPOTS[this.restSpot[i]!]!;
+        ax += (spot.x - px) * 0.6 * rest;
+        ay += (spot.y - py) * 0.6 * rest;
+        az += (spot.z - pz) * 0.6 * rest;
+      }
+
+      // The front glass: curious fish come to see a close viewer, and hungry ones beg there.
+      // Begging is a gentle pull, so an unfed tank still swims about rather than lining the glass.
+      const gather = Math.max(env.viewer, slump * 0.6) * sp.curiosity * (1 - rest) * (1 - startled);
+      if (gather > 0) {
+        az += (SWIM_BOUNDS.maxZ - 0.03 - pz) * 0.5 * gather;
+        ay += (lerp(SWIM_BOUNDS.minY, SWIM_BOUNDS.maxY, 0.7) - py) * 0.15 * slump;
+      }
+
+      // Food: hungry fish dart to the nearest flake, and the hungrier they are the further they see.
+      if (food.activeCount > 0 && this.hunger[i]! > 0.25 && startled === 0) {
         let best = -1;
-        let bestD2 = 0.5 * 0.5;
+        const sight = 0.3 + 0.5 * this.hunger[i]!;
+        let bestD2 = sight * sight;
         for (let f = 0; f < FOOD_CAPACITY; f++) {
           if (!food.active[f]) continue;
           const q = f * 3;
@@ -193,7 +268,8 @@ export class FishSchool {
           }
         }
       }
-      this.hunger[i] = Math.min(1, this.hunger[i]! + dt / 90);
+      // Appetite builds over a few minutes while awake; sleeping fish do not get hungrier.
+      this.hunger[i] = Math.min(1, this.hunger[i]! + (dt / 240) * (1 - rest));
 
       // Soft walls, substrate and water surface.
       const floor = Math.max(SWIM_BOUNDS.minY, substrateHeight(px, pz) + 0.035);
@@ -217,7 +293,16 @@ export class FishSchool {
         }
       }
 
-      const maxAccel = sp.maxSpeed * 2;
+      // Startle: a burst away from the tap that fades out over a second or so.
+      if (startled > 0) {
+        const dash = sp.maxSpeed * 1.5;
+        ax += (this.flee[o]! * dash - vx) * 5 * startled;
+        ay += (this.flee[o + 1]! * dash - vy) * 5 * startled;
+        az += (this.flee[o + 2]! * dash - vz) * 5 * startled;
+        this.startled[i] = Math.max(0, this.startled[i]! - dt);
+      }
+
+      const maxAccel = sp.maxSpeed * (2 + 6 * startled);
       const aLen = Math.sqrt(ax * ax + ay * ay + az * az);
       if (aLen > maxAccel) {
         const s = maxAccel / aLen;
@@ -235,7 +320,7 @@ export class FishSchool {
       nvy = clamp(nvy, -maxClimb, maxClimb);
       const speed = Math.sqrt(nvx * nvx + nvy * nvy + nvz * nvz) + 1e-6;
       const minSpeed = cruise * 0.35;
-      const targetSpeed = clamp(speed, minSpeed, sp.maxSpeed);
+      const targetSpeed = clamp(speed, minSpeed, sp.maxSpeed * (1 + 0.6 * startled));
       const sc = targetSpeed / speed;
       nvx *= sc;
       nvy *= sc;
@@ -253,7 +338,8 @@ export class FishSchool {
       const yawDelta = wrapAngle(targetYaw - this.yaw[i]!);
       const yawStep = yawDelta * Math.min(1, dt * 4);
       this.yaw[i] = wrapAngle(this.yaw[i]! + yawStep);
-      const targetPitch = -Math.asin(clamp(nvy / targetSpeed, -1, 1));
+      // A hungry fish swims a little nose-down.
+      const targetPitch = -Math.asin(clamp(nvy / targetSpeed, -1, 1)) + slump * 0.14;
       this.pitch[i] = this.pitch[i]! + (targetPitch - this.pitch[i]!) * Math.min(1, dt * 3);
       const yawRate = dt > 0 ? yawStep / dt : 0;
       const targetRoll = clamp(-yawRate * 0.18, -0.45, 0.45);

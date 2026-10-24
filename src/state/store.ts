@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { loadCare, saveCare, wipeGlass } from '../sim/care';
+import type { CareState, CareStorage } from '../sim/care';
 
 export type ClockMode = 'live' | 'cycle' | 'manual';
 export type Viewpoint = 'sofa' | 'tank' | 'glass' | 'room' | 'follow';
@@ -43,6 +45,16 @@ interface AquariumState {
   sound: boolean;
   /** Incremented to ask the scene to sprinkle food at a random spot. */
   feedRequest: number;
+  /** Incremented to ask the scene to tap the front glass (the fish startle). */
+  tapRequest: number;
+  /** Saved care state: algae, plant and fish growth, fish names. */
+  care: CareState;
+  /** Wall-clock time the care state is shown at, refreshed every minute or so. */
+  careNow: number;
+  /** School index of the fish the follow cam is on, or null outside Follow mode. */
+  followedFish: number | null;
+  /** School index of the fish under the pointer in Follow mode, or null. */
+  hoveredFish: number | null;
   fishCount: number;
   ready: boolean;
   loadError: LoadError | null;
@@ -63,6 +75,13 @@ interface AquariumState {
   dismissQualityNotice: () => void;
   toggleSound: () => void;
   requestFeed: () => void;
+  requestTap: () => void;
+  /** Moves the care clock on to `now`. */
+  tickCare: (now: number) => void;
+  /** Wipes the algae off the glass and saves it. */
+  wipeGlass: () => void;
+  setFollowedFish: (index: number | null) => void;
+  setHoveredFish: (index: number | null) => void;
   setFishCount: (count: number) => void;
   setReady: () => void;
   setLoadError: (error: LoadError | null) => void;
@@ -95,6 +114,17 @@ const detectWebGL = () => {
   }
 };
 
+/** `localStorage`, or null where there is none or it is blocked. */
+const careStorage = (): CareStorage | null => {
+  try {
+    return typeof window !== 'undefined' ? (window.localStorage ?? null) : null;
+  } catch {
+    return null;
+  }
+};
+
+const startedAt = Date.now();
+
 const graceFromNow = () => performance.now() + QUALITY_GRACE_MS;
 
 export const useAquarium = create<AquariumState>((set) => ({
@@ -109,6 +139,11 @@ export const useAquarium = create<AquariumState>((set) => ({
   qualityNotice: false,
   sound: false,
   feedRequest: 0,
+  tapRequest: 0,
+  care: loadCare(careStorage(), startedAt, Math.floor(Math.random() * 2 ** 32)),
+  careNow: startedAt,
+  followedFish: null,
+  hoveredFish: null,
   fishCount: 0,
   ready: false,
   loadError: detectWebGL() ? null : 'webgl',
@@ -149,6 +184,17 @@ export const useAquarium = create<AquariumState>((set) => ({
   dismissQualityNotice: () => set({ qualityNotice: false }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
   requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
+  requestTap: () => set((state) => ({ tapRequest: state.tapRequest + 1 })),
+  tickCare: (careNow) => set({ careNow }),
+  wipeGlass: () =>
+    set((state) => {
+      const careNow = Date.now();
+      const care = wipeGlass(state.care, careNow);
+      saveCare(careStorage(), care);
+      return { care, careNow };
+    }),
+  setFollowedFish: (followedFish) => set({ followedFish }),
+  setHoveredFish: (hoveredFish) => set({ hoveredFish }),
   setFishCount: (fishCount) => set({ fishCount }),
   // Fish that arrive after a timeout still lift the veil.
   setReady: () =>

@@ -1,11 +1,15 @@
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TANK_ORIGIN } from '../../config/scene';
+import { fishGrowth } from '../../sim/care';
 import { FOOD_CAPACITY } from '../../sim/food';
+import { hungerSlump } from '../../sim/school';
 import { SPECIES } from '../../sim/species';
+import { useAquarium } from '../../state/store';
 import { makeUnderwater } from '../tank/underwater';
 import { FISH_URLS } from './assets';
 import { simulation } from './simulation';
@@ -16,6 +20,15 @@ const quaternion = new THREE.Quaternion();
 const position = new THREE.Vector3();
 const scale = new THREE.Vector3();
 const matrix = new THREE.Matrix4();
+const tint = new THREE.Color();
+const FED = new THREE.Color(1, 1, 1);
+/** A hungry fish looks a little duller and greyer. */
+const HUNGRY = new THREE.Color(0.8, 0.82, 0.86);
+/**
+ * Instanced raycasting tests this sphere before any fish; three caches it from the first frame's
+ * instance positions, so give it one that covers the whole tank instead.
+ */
+const TANK_SPHERE = new THREE.Sphere(new THREE.Vector3(0, 0.25, 0), 0.8);
 
 /**
  * The source models are quantised, normal-less meshes with a node transform. Bake that into plain
@@ -110,8 +123,23 @@ export const FishView = () => {
   );
   useDispose(foodMaterial);
   const foodMesh = useRef<THREE.InstancedMesh>(null);
+  // Fish names show on hover only in Follow mode, so the fish are not raycast the rest of the time.
+  const following = useAquarium((state) => state.viewpoint === 'follow');
+  const offsets = useMemo(
+    () => SPECIES.map((_, s) => SPECIES.slice(0, s).reduce((n, sp) => n + sp.count, 0)),
+    []
+  );
+  const hover = (s: number) => (event: ThreeEvent<PointerEvent>) => {
+    if (event.instanceId === undefined) return;
+    event.stopPropagation();
+    const index = offsets[s]! + event.instanceId;
+    if (useAquarium.getState().hoveredFish !== index) useAquarium.getState().setHoveredFish(index);
+  };
+  const unhover = () => useAquarium.getState().setHoveredFish(null);
 
   useFrame(() => {
+    const { care, careNow } = useAquarium.getState();
+    const growth = fishGrowth(care, careNow);
     // Fish instances: species are contiguous in the school, so a running offset maps them.
     let offset = 0;
     for (let s = 0; s < SPECIES.length; s++) {
@@ -124,13 +152,15 @@ export const FishView = () => {
           position.set(school.pos[i * 3]!, school.pos[i * 3 + 1]!, school.pos[i * 3 + 2]!);
           euler.set(school.pitch[i]!, school.yaw[i]!, school.roll[i]!);
           quaternion.setFromEuler(euler);
-          scale.setScalar(school.scale[i]!);
+          scale.setScalar(school.scale[i]! * growth);
           matrix.compose(position, quaternion, scale);
           entry.mesh.setMatrixAt(k, matrix);
+          entry.mesh.setColorAt(k, tint.lerpColors(FED, HUNGRY, hungerSlump(school.hunger[i]!)));
           swim[k * 2] = school.phase[i]!;
           swim[k * 2 + 1] = 0.07 + school.effort[i]! * 0.09;
         }
         entry.mesh.instanceMatrix.needsUpdate = true;
+        entry.mesh.instanceColor!.needsUpdate = true;
         entry.swim.needsUpdate = true;
       }
       offset += count;
@@ -161,10 +191,17 @@ export const FishView = () => {
         <instancedMesh
           key={s}
           ref={(mesh) => {
+            if (mesh) {
+              mesh.boundingSphere = TANK_SPHERE;
+              // Create the colour buffer up front so the first frame's tint is not a recompile.
+              if (!mesh.instanceColor) mesh.setColorAt(0, FED);
+            }
             meshes.current[s] = mesh ? { mesh, swim: asset.swim } : null;
           }}
           args={[asset.geometry, asset.material, SPECIES[s]!.count]}
           frustumCulled={false}
+          onPointerMove={following ? hover(s) : undefined}
+          onPointerOut={following ? unhover : undefined}
         />
       ))}
       <instancedMesh

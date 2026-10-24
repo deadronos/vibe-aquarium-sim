@@ -1,7 +1,12 @@
+import { useFrame } from '@react-three/fiber';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { TANK } from '../../config/scene';
+import { algaeLevel } from '../../sim/care';
+import { useAquarium } from '../../state/store';
 import { useDispose } from '../dispose';
+import { algaeTexture } from '../textures';
+import { makeUnderwater } from './underwater';
 
 const { width: W, height: H, depth: D, glass: G, waterLevel: WL } = TANK;
 
@@ -26,12 +31,65 @@ const edgeMaterial = () =>
     depthWrite: false,
   });
 
+/** Algae level to film opacity; the texture's own alpha keeps the clear patches clear. */
+const ALGAE_OPACITY = 1.6;
+
+const algaeMaterial = () =>
+  makeUnderwater(
+    new THREE.MeshStandardMaterial({
+      map: algaeTexture(),
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+    { key: 'algae' }
+  );
+
+/** Algae film on the inside of the front and side panes; it fades out when the glass is wiped. */
+const AlgaeFilm = () => {
+  const material = useMemo(() => algaeMaterial(), []);
+  useDispose(material);
+  useFrame((_, delta) => {
+    const { care, careNow } = useAquarium.getState();
+    material.opacity = THREE.MathUtils.damp(
+      material.opacity,
+      algaeLevel(care, careNow) * ALGAE_OPACITY,
+      1.5,
+      delta
+    );
+    material.visible = material.opacity > 0.005;
+  });
+  const inset = G + 0.001;
+  const height = WL - 0.004;
+  return (
+    <group position-y={height / 2}>
+      <mesh position-z={D / 2 - inset} material={material} renderOrder={9}>
+        <planeGeometry args={[W - inset * 2, height]} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position-x={side * (W / 2 - inset)}
+          rotation-y={(side * Math.PI) / 2}
+          material={material}
+          renderOrder={9}
+        >
+          <planeGeometry args={[D - inset * 2, height]} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
 /** Glass panes, drawn after everything inside. */
 export const TankGlass = () => {
   const parts = useMemo(() => ({ glass: glassMaterial(), edge: edgeMaterial() }), []);
   useDispose(parts);
   return (
     <group renderOrder={10}>
+      <AlgaeFilm />
       <mesh position={[0, H / 2 - G / 2, D / 2 - G / 2]} material={parts.glass} renderOrder={10}>
         <boxGeometry args={[W, H + G, G]} />
       </mesh>

@@ -335,6 +335,47 @@ export const treelineTexture = () =>
     return finish(canvas, { srgb: false, repeat: false });
   });
 
+/**
+ * Algae film for the inside of the glass: transparent, with soft green patches gathering along
+ * the bottom and the corners, where real algae starts. Stretched across a whole pane.
+ */
+export const algaeTexture = () =>
+  memo('algae', () => {
+    const w = 512;
+    const h = 256;
+    const { canvas, ctx } = canvas2d(w, h);
+    const random = createRandom(42);
+    ctx.filter = 'blur(5px)';
+    for (let i = 0; i < 700; i++) {
+      const x = random.range(0, w);
+      // Biased towards the bottom edge and the two sides.
+      const y = h * (1 - Math.pow(random.next(), 1.8));
+      const edge = Math.min(x, w - x) / (w / 2);
+      const r = random.range(6, 26) * (1.3 - edge * 0.5);
+      const a = random.range(0.14, 0.32) * (1.25 - edge * 0.55) * (0.3 + (0.7 * y) / h);
+      ctx.fillStyle = hsl(
+        88 + random.range(-14, 14),
+        random.range(30, 55),
+        random.range(28, 46),
+        a
+      );
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r * random.range(0.6, 1), random.range(0, 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.filter = 'none';
+    for (let i = 0; i < 2600; i++) {
+      ctx.fillStyle = hsl(
+        95 + random.range(-10, 10),
+        40,
+        random.range(25, 45),
+        random.range(0.1, 0.3)
+      );
+      ctx.fillRect(random.range(0, w), h * (1 - Math.pow(random.next(), 1.4)), 1.5, 1.5);
+    }
+    return finish(canvas, { repeat: false });
+  });
+
 // Editing this module rebuilds the cache, so free the textures of the copy being replaced.
 import.meta.hot?.dispose(() => {
   for (const texture of cache.values()) texture.dispose();

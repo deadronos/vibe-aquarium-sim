@@ -17,6 +17,7 @@ import {
   SoundIcon,
   TankIcon,
 } from './icons';
+import { CareActions, FishName } from './Care';
 import { Clock } from './Clock';
 import { fullscreenSupported, toggleFullscreen, useFullscreen } from './fullscreen';
 import './hud.css';
@@ -192,6 +193,8 @@ export const Hud = () => {
       const view = VIEWS.find((v) => v.key === event.key);
       if (view) store.setViewpoint(view.id);
       else if (event.key === 'f') store.requestFeed();
+      else if (event.key === 't') store.requestTap();
+      else if (event.key === 'w') store.wipeGlass();
       else if (event.key === 'F') toggleFullscreen();
       else if (event.key === 'a') store.setAmbient(!store.ambient);
       else if (event.key === 'h') setHidden((value) => !value);
@@ -279,6 +282,9 @@ export const Hud = () => {
           </button>
         )}
       </div>
+
+      <FishName />
+      {state.ready && <CareActions />}
 
       <nav className="hud__bar" aria-label="Aquarium controls" ref={barRef}>
         <Clock />
