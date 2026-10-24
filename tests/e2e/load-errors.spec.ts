@@ -119,6 +119,13 @@ test('switching to High survives a missing post-processing chunk', async ({ page
 });
 
 test('a later switch to High retries the post-processing download', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
   const blocked = await blockPostStack(page);
   await page.goto('./?quality=lite');
   await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
@@ -144,10 +151,19 @@ test('a later switch to High retries the post-processing download', async ({ pag
   };
   const effects = page.waitForResponse(retried('Effects'));
   const post = page.waitForResponse(retried('postprocessing'));
+  // The retried responses are the proof. On a slow GPU, PerformanceMonitor can drop back
+  // to Lite once the post shaders compile, without another chunk error.
+  const becameHigh = page
+    .getByRole('button', { name: 'High quality' })
+    .waitFor({ timeout: 15_000 });
+  const consoleCount = consoleErrors.length;
+  const pageErrorCount = pageErrors.length;
   await switchQuality(page);
+  await becameHigh;
   expect((await effects).ok()).toBe(true);
   expect((await post).ok()).toBe(true);
+  expect(pageErrors.slice(pageErrorCount)).toEqual([]);
+  expect(consoleErrors.slice(consoleCount)).toEqual([]);
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'High quality' })).toBeVisible();
 });
