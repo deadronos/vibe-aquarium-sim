@@ -2,7 +2,7 @@ import { CameraControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { TANK, TANK_ORIGIN } from '../config/scene';
+import { TANK_ORIGIN } from '../config/scene';
 import { prefersReducedMotion } from '../state/motion';
 import { useAquarium } from '../state/store';
 import type { Viewpoint } from '../state/store';
@@ -10,11 +10,10 @@ import { simulation } from './fish/simulation';
 import { focus } from './focus';
 import { BASE_FOV } from './framing';
 import type { Framing } from './framing';
-import { REACH, SHOTS, frameFor } from './shots';
+import { REACH, SHOTS, followPosition, frameFor } from './shots';
 
 const [TX, TY, TZ] = TANK_ORIGIN;
 
-const FRONT_GLASS_Z = TZ + TANK.depth / 2;
 const fishWorld = new THREE.Vector3();
 const desired = new THREE.Vector3();
 const lookAt = new THREE.Vector3();
@@ -96,11 +95,7 @@ export const CameraRig = () => {
       const i = followIndex.current;
       const { pos } = simulation.school;
       fishWorld.set(pos[i * 3]! + TX, pos[i * 3 + 1]! + TY, pos[i * 3 + 2]! + TZ);
-      desired.set(
-        fishWorld.x * 0.7 + TX * 0.3,
-        fishWorld.y + 0.06,
-        Math.max(fishWorld.z + 0.5, FRONT_GLASS_Z + 0.2)
-      );
+      followPosition(fishWorld, desired);
       // Without reduced motion the camera drifts after the fish every frame. With it, the shot
       // holds still and cuts to the fish again only once it swims out of the middle of the frame.
       const reduced = prefersReducedMotion();
