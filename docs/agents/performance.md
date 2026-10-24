@@ -7,6 +7,10 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **No allocation in frame loops.** `useFrame` callbacks and `FishSchool.step` reuse
   module-level `Vector3`/`Quaternion`/`Matrix4`/`Euler` scratch objects and typed arrays.
   The daylight sample (`lightingAt`) is allocated at 5 Hz by design, never per frame.
+- **Fish neighbours scale linearly.** Each fish reacts to its 6 closest fish and 9 nearest mates,
+  never the whole school. From 200 fish `FishSchool` finds them through a uniform grid rebuilt
+  each step into typed arrays sized once, so a bigger school costs about the same per fish
+  (`tests/school.test.ts` counts the distance checks).
 - **Instancing for anything repeated**: fish (one `InstancedMesh` per species), food, plants,
   bubbles, books, leaves.
 - **Animation on the GPU where possible**: plant sway, fish tail wave, water motes and light
