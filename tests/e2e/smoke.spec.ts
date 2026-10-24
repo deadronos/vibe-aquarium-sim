@@ -31,8 +31,9 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   // Boot on software GL is longer than the HUD's 7s idle timer, and the click actionability
   // check can be too. Once the bar is idle its controls ignore hits, so Playwright reports the
   // bar itself as intercepting. Freeze the clock so the bar cannot fade again until the idle
-  // step below fast-forwards on purpose. The target is a little ahead: the fake clock keeps
-  // running until pauseAt lands, and pauseAt refuses a time in the past.
+  // step below fast-forwards on purpose. pauseAt jumps the clock to its target, firing any
+  // timers due on the way, and refuses a time in the past, so the target is a little ahead.
+  // While paused, requestAnimationFrame is frozen too: nothing renders until resume below.
   const pausedAt = (await page.evaluate(() => Date.now())) + 3000;
   await page.clock.pauseAt(pausedAt);
 
@@ -92,6 +93,22 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   await page.touchscreen.tap(closeAt.x, closeAt.y);
   await expect(close).toHaveAttribute('aria-checked', 'true');
 
+  // Let the scene render again so render-path errors from Feed, the viewpoints and the clock
+  // modes surface before the error check. In Day cycle mode the hour moves a few minutes per
+  // real second, and it is published from the frame loop, so a change proves frames are drawn.
+  await page.clock.resume();
+  const hour = page.locator('.hud__hour');
+  const hourBefore = await hour.textContent();
+  await expect(hour).not.toHaveText(hourBefore ?? '', { timeout: 30_000 });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let frames = 0;
+        const tick = () => (++frames >= 10 ? resolve() : requestAnimationFrame(tick));
+        requestAnimationFrame(tick);
+      })
+  );
+
   // Lite never mounts the post stack, so those chunks must stay unrequested for the whole visit.
   expect(
     scriptPaths.filter((pathname) => /\/(postprocessing|Effects)-[^/]+\.js$/.test(pathname))
@@ -103,13 +120,18 @@ test('high quality loads the post stack and keeps the room', async ({ page }) =>
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
 
-  const postStack = page.waitForResponse((response) =>
-    /\/(postprocessing|Effects)-[^/]+\.js$/.test(new URL(response.url()).pathname)
-  );
+  const chunk = (name: 'postprocessing' | 'Effects') =>
+    page.waitForResponse((response) =>
+      new RegExp(`/${name}-[^/]+\\.js$`).test(new URL(response.url()).pathname)
+    );
+  const post = chunk('postprocessing');
+  const effects = chunk('Effects');
   await page.goto('./');
-  expect((await postStack).ok()).toBe(true);
+  expect((await post).ok()).toBe(true);
+  expect((await effects).ok()).toBe(true);
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByRole('button', { name: 'High quality' })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.locator('.hud__notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

@@ -4,7 +4,13 @@ import { useAquarium } from '../state/store';
 import { CameraRig } from './CameraRig';
 import { ContextWatcher } from './ContextWatcher';
 import { DaylightDriver } from './DaylightDriver';
-import { effectsChunkUrl, importEffectsModule } from './effectsChunk';
+import {
+  EffectsChunkError,
+  effectsChunkUrl,
+  importEffectsModule,
+  isEffectsChunkError,
+  newVersionDeployed,
+} from './effectsChunk';
 import { ErrorBoundary } from './ErrorBoundary';
 import { FishLoader } from './fish/FishLoader';
 import { Lights } from './Lights';
@@ -20,14 +26,20 @@ type EffectsView = typeof import('./Effects').Effects;
  * Attempt 0 is the bundled dynamic import. After that fails, a new lazy component
  * loads the same chunk from a different URL. React and the browser both keep the rejection.
  */
+const loadEffects = async (attempt: number, chunkUrl: string | null): Promise<EffectsView> => {
+  if (attempt === 0) return (await import('./Effects')).Effects;
+  // Without the chunk URL the only option is the bundled import, which the browser has
+  // cached as failed, so this attempt reports that a reload is needed.
+  if (chunkUrl === null) throw new EffectsChunkError('Effects chunk URL is unknown', false);
+  return (await importEffectsModule(attempt, chunkUrl)).Effects as EffectsView;
+};
+
 const createEffects = (attempt: number, chunkUrl: string | null) =>
-  lazy(async (): Promise<{ default: EffectsView }> => {
-    if (attempt === 0 || chunkUrl === null) {
-      const module = await import('./Effects');
-      return { default: module.Effects };
-    }
-    const module = await importEffectsModule(attempt, chunkUrl);
-    return { default: module.Effects as EffectsView };
+  lazy(async () => {
+    const view = await loadEffects(attempt, chunkUrl);
+    // The post stack is in, so an earlier "did not download" notice no longer applies.
+    useAquarium.getState().setEffectsNotice(null);
+    return { default: view };
   });
 
 /** Rendered next to the post stack, so it mounts once the chunk has arrived. */
@@ -40,20 +52,41 @@ const HoldQuality = () => {
 export const Experience = () => {
   const quality = useAquarium((state) => state.quality);
   const setQuality = useAquarium((state) => state.setQuality);
+  const setEffectsNotice = useAquarium((state) => state.setEffectsNotice);
   const autoDowngrade = useAquarium((state) => state.autoDowngrade);
   const [effectsLoad, setEffectsLoad] = useState(() => ({
     attempt: 0,
+    chunkUrl: null as string | null,
     View: createEffects(0, null),
   }));
 
-  /** A missing or stale chunk drops to Lite. The next High mounts a fresh loader and tries again. */
+  /**
+   * Any post-stack error drops to Lite and says so in the HUD. Only a failed download gets a
+   * fresh loader: after the chunk has evaluated, a new loader would evaluate a second copy of
+   * `postprocessing`, so a runtime error keeps the loaded component.
+   */
   const onEffectsError = (error: unknown) => {
-    const chunkUrl = effectsChunkUrl(error);
-    setEffectsLoad((current) => ({
-      attempt: current.attempt + 1,
-      View: createEffects(current.attempt + 1, chunkUrl),
-    }));
     setQuality('low');
+    if (!isEffectsChunkError(error)) {
+      setEffectsNotice('crash');
+      return;
+    }
+    const retryable = !(error instanceof EffectsChunkError) || error.retryable;
+    const chunkUrl = effectsChunkUrl(error) ?? effectsLoad.chunkUrl;
+    if (!retryable || chunkUrl === null) {
+      setEffectsNotice('reload');
+    } else {
+      setEffectsNotice('retry');
+      setEffectsLoad((current) => ({
+        attempt: current.attempt + 1,
+        chunkUrl,
+        View: createEffects(current.attempt + 1, chunkUrl),
+      }));
+    }
+    // After a new deploy the old hashed chunks are gone for good, so retrying cannot help.
+    void newVersionDeployed().then((stale) => {
+      if (stale) setEffectsNotice('update');
+    });
   };
 
   const EffectsView = effectsLoad.View;

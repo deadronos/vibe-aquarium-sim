@@ -1,5 +1,3 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
@@ -65,7 +63,8 @@ const vendorGroups = [
   {
     name: 'r3f',
     // Fiber, Drei, and the Drei/Fiber helpers that are only there to support them.
-    // `maath` is omitted: this app reaches it through the post stack, which is lazy.
+    // `maath` is omitted: this app reaches it through the post stack, which is lazy. If app,
+    // Fiber or Drei code starts importing it, `check:bundle` fails and says to move it here.
     test: (id: string) =>
       isReactThree(id) ||
       isPackage(id, [
@@ -86,10 +85,13 @@ const vendorGroups = [
   },
 ];
 
-/** Records which packages landed in each chunk so the budget check is not matching minified source. */
+/**
+ * Records which packages landed in each chunk so the budget check is not matching minified source.
+ * It goes under `dist/.vite/` next to Vite's own build metadata; the Pages deploy drops that folder.
+ */
 const chunkManifest = (): Plugin => ({
   name: 'chunk-manifest',
-  generateBundle(options, bundle) {
+  generateBundle(_options, bundle) {
     const chunks: Record<string, string[]> = {};
     for (const output of Object.values(bundle)) {
       if (output.type !== 'chunk') continue;
@@ -97,9 +99,11 @@ const chunkManifest = (): Plugin => ({
       for (const id of Object.keys(output.modules)) owners.add(moduleOwner(id));
       chunks[output.fileName] = [...owners].sort();
     }
-    const directory = options.dir ?? path.resolve('dist');
-    mkdirSync(directory, { recursive: true });
-    writeFileSync(path.join(directory, 'chunk-manifest.json'), JSON.stringify(chunks, null, 2));
+    this.emitFile({
+      type: 'asset',
+      fileName: '.vite/chunk-manifest.json',
+      source: JSON.stringify(chunks, null, 2),
+    });
   },
 });
 

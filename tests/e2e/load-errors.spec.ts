@@ -44,6 +44,10 @@ const expectRoomKeptDrawing = async (page: Page) => {
   await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
 };
 
+/** The fallback to Lite is announced, not silent. */
+const expectEffectsNotice = (page: Page, text: RegExp) =>
+  expect(page.locator('.hud__notice[role="status"]')).toContainText(text, { timeout: 30_000 });
+
 test('a failed fish download shows an error with a working Retry', async ({ page }) => {
   // The failed fetch is reported within a couple of seconds, but software GL can block the
   // main thread long enough that React commits the alert after a 30s expect has given up.
@@ -105,6 +109,7 @@ test('a missing post-processing chunk on boot falls back to Lite', async ({ page
   expect((await missing).status()).toBe(404);
   expect(blocked.hits()).toBeGreaterThan(0);
   await expectRoomKeptDrawing(page);
+  await expectEffectsNotice(page, /did not download/);
 });
 
 test('switching to High survives a missing post-processing chunk', async ({ page }) => {
@@ -119,6 +124,7 @@ test('switching to High survives a missing post-processing chunk', async ({ page
   expect(blocked.hits()).toBeGreaterThan(0);
   await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
   await expectRoomKeptDrawing(page);
+  await expectEffectsNotice(page, /Choose High quality to try again/);
 });
 
 test('a later switch to High retries the post-processing download', async ({ page }) => {
@@ -169,4 +175,39 @@ test('a later switch to High retries the post-processing download', async ({ pag
   expect(consoleErrors.slice(consoleCount)).toEqual([]);
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  // A successful load clears the earlier notice.
+  await expect(page.locator('.hud__notice[role="status"]')).toHaveCount(0);
+});
+
+test('a missing chunk after a new deploy asks for a reload instead of retrying', async ({
+  page,
+}) => {
+  const blocked = await blockPostStack(page);
+  await page.goto('./?quality=lite');
+  await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
+
+  // The deployed index.html now loads a different entry script, as after a new release.
+  await page.route(
+    (url) => url.pathname.endsWith('/vibe-aquarium-sim/'),
+    (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: '<script type="module" src="/vibe-aquarium-sim/assets/index-NewBuild.js"></script>',
+      })
+  );
+  const missing = page.waitForResponse(postChunkResponse(404));
+  await switchQuality(page);
+  expect((await missing).status()).toBe(404);
+  await expectEffectsNotice(page, /new version/);
+  await expect(
+    page.locator('.hud__notice[role="status"]').getByRole('button', { name: 'Reload' })
+  ).toBeVisible();
+
+  // High stays off, so clicks do not keep requesting a chunk that no longer exists.
+  const hits = blocked.hits();
+  await expect(page.getByRole('button', { name: 'Lite' })).toBeDisabled();
+  await switchQuality(page);
+  await page.waitForTimeout(1000);
+  expect(blocked.hits()).toBe(hits);
+  await expect(page.getByRole('button', { name: 'Lite' })).toBeVisible();
 });

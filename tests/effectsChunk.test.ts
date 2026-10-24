@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { effectsChunkUrl, rewriteEffectsChunkSource } from '../src/scene/effectsChunk';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  EffectsChunkError,
+  effectsChunkUrl,
+  importEffectsModule,
+  isEffectsChunkError,
+  rewriteEffectsChunkSource,
+} from '../src/scene/effectsChunk';
+import { useAquarium } from '../src/state/store';
 
 const chunkUrl = new URL('https://example.com/vibe-aquarium-sim/assets/Effects-Dq9AUp6D.js');
 
@@ -50,5 +57,66 @@ describe('effects chunk retry', () => {
       'https://example.com/vibe-aquarium-sim/assets/Effects-Dq9AUp6D.js'
     );
     expect(effectsChunkUrl(new Error('something else'))).toBeNull();
+  });
+
+  it('refuses a chunk whose relative imports it cannot rewrite', () => {
+    for (const leftover of [
+      'const m=import("./lazy-abcd.js");',
+      "import{a}from'../up-abcd.js';",
+      'import{a}from"./not-a-js-file";',
+    ]) {
+      expect(() => rewriteEffectsChunkSource(source + leftover, chunkUrl, 2)).toThrow(
+        EffectsChunkError
+      );
+    }
+  });
+
+  it('tells a failed download from an error after the chunk loaded', () => {
+    for (const message of [
+      'Failed to fetch dynamically imported module: https://example.com/assets/Effects-x.js',
+      'error loading dynamically imported module: https://example.com/assets/Effects-x.js',
+      'Importing a module script failed.',
+    ]) {
+      expect(isEffectsChunkError(new TypeError(message))).toBe(true);
+    }
+    expect(isEffectsChunkError(new EffectsChunkError('Effects chunk responded 404', true))).toBe(
+      true
+    );
+    expect(isEffectsChunkError(new TypeError("Cannot read properties of null (reading 'x')"))).toBe(
+      false
+    );
+    expect(isEffectsChunkError(new Error('Failed to compile shader'))).toBe(false);
+  });
+
+  it('reports a retry that cannot reach the network as a retryable download failure', async () => {
+    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+    try {
+      const error: unknown = await importEffectsModule(2, chunkUrl.href).catch((e: unknown) => e);
+      expect(isEffectsChunkError(error)).toBe(true);
+      expect(error).toMatchObject({ retryable: true });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('effects notice', () => {
+  it('keeps High off once a reload is the only way back', () => {
+    const store = useAquarium.getState();
+    store.setQuality('low');
+    store.setEffectsNotice('retry');
+    store.setQuality('high');
+    expect(useAquarium.getState().quality).toBe('high');
+
+    store.setQuality('low');
+    store.setEffectsNotice('reload');
+    store.setQuality('high');
+    expect(useAquarium.getState().quality).toBe('low');
+
+    // A successful load elsewhere cannot clear it, but a newer deploy can replace it.
+    store.setEffectsNotice(null);
+    expect(useAquarium.getState().effectsNotice).toBe('reload');
+    store.setEffectsNotice('update');
+    expect(useAquarium.getState().effectsNotice).toBe('update');
   });
 });

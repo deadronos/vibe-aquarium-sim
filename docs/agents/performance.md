@@ -27,6 +27,13 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - A failed post-processing chunk download also drops to Lite. That failure stays inside the
   effects boundary, so the room keeps drawing. The browser keeps that failed URL, so the next
   switch to High loads the same file with a new query instead of repeating the rejected import.
+  That retry imports the rewritten chunk from a `blob:` URL, so a future Content Security Policy
+  must allow `blob:` in `script-src`.
+- Every drop to Lite from the post stack shows a HUD notice. Only a failed download gets a new
+  loader; a runtime error after the chunk loaded keeps the loaded module (a new loader would
+  evaluate a second `postprocessing`). If the retry cannot work (no chunk URL, or the deployed
+  `index.html` loads a different entry script after a new release), High is disabled and the
+  notice offers Reload.
 - `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
   the post-processing shaders very slowly). The default (High) path is a separate, shorter smoke
   test that only checks the lazy chunk arrives and the room stays up.
@@ -39,7 +46,7 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - First-paint JavaScript gzip (`MAX_FIRST_PAINT_JS_GZIP_BYTES`, default 570,000): the module
   script and `modulepreload` links in `dist/index.html`, counted once. The post-processing chunks
   are not in that set. Headroom over the current build is about 20%.
-- Chunk layout, from `dist/chunk-manifest.json` (package names, not minified source): `three`,
+- Chunk layout, from `dist/.vite/chunk-manifest.json` (package names, not minified source): `three`,
   `react`, `r3f` and `postprocessing` do not contain each other's libraries, no two chunks import
   each other, and the post stack is not preloaded. A new output chunk has to be added to
   `CHUNK_PREFIXES` and `CHUNK_RULES` in `scripts/check-bundle-budget.mjs`, or the check reports

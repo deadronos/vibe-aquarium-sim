@@ -83,6 +83,10 @@ jobs:
         # ensure correct base for GitHub project pages URL
         run: npm run build -- --base /vibe-aquarium-sim/
 
+      - name: Drop build metadata
+        # dist/.vite holds the chunk manifest for check:bundle; it is not part of the site.
+        run: rm -rf dist/.vite
+
       - name: Upload build artifact for Pages
         id: upload
         uses: actions/upload-pages-artifact@v5
