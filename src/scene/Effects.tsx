@@ -6,9 +6,10 @@ import {
   Vignette,
 } from '@react-three/postprocessing';
 import { useFrame } from '@react-three/fiber';
-import type { DepthOfFieldEffect } from 'postprocessing';
+import type { DepthOfFieldEffect, EffectComposer as Composer } from 'postprocessing';
 import { ToneMappingMode } from 'postprocessing';
-import { Fragment, useRef } from 'react';
+import { Fragment, useLayoutEffect, useRef } from 'react';
+import { disposeDeep, release, retain } from './dispose';
 import { useReducedMotion } from '../state/motion';
 import { focus } from './focus';
 
@@ -18,6 +19,21 @@ import { focus } from './focus';
  */
 export const Effects = () => {
   const dof = useRef<DepthOfFieldEffect>(null);
+  const composer = useRef<Composer>(null);
+  // The library never disposes its composer. A layout cleanup here runs before the composer's
+  // own, which removes the effect passes without disposing them, so take the passes first.
+  useLayoutEffect(() => {
+    const current = composer.current;
+    if (!current) return;
+    retain(current);
+    return () => {
+      const passes = [...current.passes];
+      release(current, () => {
+        disposeDeep(passes);
+        current.dispose();
+      });
+    };
+  }, []);
   const reducedMotion = useReducedMotion();
   useFrame((_, delta) => {
     const effect = dof.current;
@@ -28,7 +44,7 @@ export const Effects = () => {
     effect.bokehScale += (focus.bokeh - effect.bokehScale) * k;
   });
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer ref={composer} multisampling={4}>
       {/* EffectComposer only takes elements, so an empty Fragment stands in for no DoF. */}
       {reducedMotion ? (
         <Fragment />

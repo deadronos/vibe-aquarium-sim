@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { TANK, TANK_ORIGIN } from '../../config/scene';
 import { createRandom } from '../../sim/random';
 import { makeUnderwater, waterUniforms } from './underwater';
+import { useDispose } from '../dispose';
 
 const BUBBLES = 56;
 const STONE = { x: -0.52, z: -0.16 };
@@ -36,6 +37,7 @@ const Bubbles = () => {
       ),
     []
   );
+  useDispose(material);
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
     const t = waterUniforms.uTime.value;
@@ -90,6 +92,7 @@ const Motes = () => {
     geo.setAttribute('seed', new THREE.BufferAttribute(seeds, 1));
     return geo;
   }, []);
+  useDispose(geometry);
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -129,6 +132,7 @@ const Motes = () => {
       }),
     []
   );
+  useDispose(material);
   useFrame((state) => {
     material.uniforms.uPixelRatio!.value = state.gl.getPixelRatio();
   });
@@ -170,6 +174,7 @@ const LightShafts = () => {
       }),
     []
   );
+  useDispose(material);
   const SHAFTS = 7;
   return (
     <instancedMesh

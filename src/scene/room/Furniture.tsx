@@ -6,6 +6,7 @@ import { BACK_WALL_Z, CABINET, LAMP, PALETTE, ROOM, TANK, TANK_ORIGIN } from '..
 import { createRandom } from '../../sim/random';
 import { daylight } from '../daylight';
 import { artTexture, fabricTexture, rugTexture, woodGrainTexture } from '../textures';
+import { useDispose } from '../dispose';
 
 const tex = (texture: THREE.Texture, x: number, y: number, rotate = false) => {
   const copy = texture.clone();
@@ -278,6 +279,7 @@ const Rug = () => {
     () => new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }),
     []
   );
+  useDispose(material);
   return (
     <mesh
       rotation-x={-Math.PI / 2}
@@ -328,6 +330,7 @@ const PottedPlant = ({ m }: { m: Materials }) => {
     geo.computeVertexNormals();
     return geo;
   }, []);
+  useDispose(leafGeometry);
   const potGeometry = useMemo(() => {
     const profile = [
       new THREE.Vector2(0, 0),
@@ -340,6 +343,7 @@ const PottedPlant = ({ m }: { m: Materials }) => {
     ];
     return new THREE.LatheGeometry(profile, 40);
   }, []);
+  useDispose(potGeometry);
 
   useLayoutEffect(() => {
     const random = createRandom(42);
@@ -510,6 +514,7 @@ const WallArt = () => {
     () => new THREE.MeshStandardMaterial({ map: artTexture(), roughness: 0.85 }),
     []
   );
+  useDispose(material);
   const centerY = TANK_ORIGIN[1] + TANK.height + 0.68;
   return (
     <group position={[0, centerY, BACK_WALL_Z + 0.02]}>
@@ -526,6 +531,7 @@ const WallArt = () => {
 
 export const Furniture = () => {
   const m = useMaterials();
+  useDispose(m);
   return (
     <>
       <Cabinet m={m} />

@@ -6,15 +6,26 @@ import { createRandom } from '../sim/random';
  * assets beyond the fish models, and every surface still has some material character.
  */
 const cache = new Map<string, THREE.Texture>();
+const originals = new WeakSet<THREE.Texture>();
+const sources = new WeakSet<THREE.Source<unknown>>();
 
 const memo = (key: string, build: () => THREE.Texture) => {
   let texture = cache.get(key);
   if (!texture) {
     texture = build();
     cache.set(key, texture);
+    originals.add(texture);
+    sources.add(texture.source);
   }
   return texture;
 };
+
+/**
+ * A `clone()` of one of these textures shares its canvas but gets its own GPU texture, so the
+ * material holding it disposes it. The originals stay cached for the life of the page.
+ */
+export const isTextureCopy = (texture: THREE.Texture) =>
+  sources.has(texture.source) && !originals.has(texture);
 
 const canvas2d = (width: number, height: number) => {
   const canvas = document.createElement('canvas');
@@ -323,3 +334,8 @@ export const treelineTexture = () =>
     }
     return finish(canvas, { srgb: false, repeat: false });
   });
+
+// Editing this module rebuilds the cache, so free the textures of the copy being replaced.
+import.meta.hot?.dispose(() => {
+  for (const texture of cache.values()) texture.dispose();
+});

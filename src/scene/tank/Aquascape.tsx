@@ -7,6 +7,7 @@ import type { PlantClump } from '../../sim/aquascape';
 import { createRandom } from '../../sim/random';
 import { barkTexture, sandTexture } from '../textures';
 import { makeUnderwater } from './underwater';
+import { useDispose } from '../dispose';
 
 const W = TANK.width - TANK.glass * 2;
 const D = TANK.depth - TANK.glass * 2;
@@ -262,6 +263,7 @@ const PlantClumpView = ({ clump, index }: { clump: PlantClump; index: number }) 
   const mesh = useRef<THREE.InstancedMesh>(null);
   const points = useMemo(() => scatter(clump, 500 + index), [clump, index]);
   const geometry = useMemo(() => PLANT_GEOMETRY[clump.kind](), [clump.kind]);
+  useDispose(geometry);
   const material = useMemo(
     () =>
       plantMaterial(
@@ -270,6 +272,7 @@ const PlantClumpView = ({ clump, index }: { clump: PlantClump; index: number }) 
       ),
     [clump.kind]
   );
+  useDispose(material);
   useLayoutEffect(() => {
     const dummy = new THREE.Object3D();
     points.forEach((p, i) => {
@@ -322,6 +325,7 @@ export const Aquascape = () => {
       woodMaterial: wood,
     };
   }, []);
+  useDispose(assets);
 
   return (
     <group position={TANK_ORIGIN as unknown as [number, number, number]}>

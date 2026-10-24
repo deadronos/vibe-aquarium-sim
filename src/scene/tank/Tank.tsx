@@ -7,6 +7,7 @@ import { daylight } from '../daylight';
 import { simulation } from '../fish/simulation';
 import { backdropTexture } from '../textures';
 import { makeUnderwater, waterUniforms } from './underwater';
+import { useDispose } from '../dispose';
 
 const { width: W, height: H, depth: D, glass: G, waterLevel: WL } = TANK;
 const FIXTURE_Y = H + 0.13;
@@ -157,6 +158,7 @@ export const Tank = () => {
       outflow,
     };
   }, []);
+  useDispose(parts);
 
   useLayoutEffect(() => {
     // Spot targets are not in the scene graph, so their (world) matrices are set once by hand.
