@@ -23,7 +23,7 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   await page.clock.install();
   // Lite skips the post-processing shaders, which software GL on CI compiles very slowly.
   await page.goto('./?quality=lite');
-  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Interactive aquarium scene' })).toBeVisible();
   // The loading veil lifts once the fish models are in and the first frames have compiled.
   await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
   await expect(page.getByText(/\d+ fish/)).toBeVisible();
@@ -39,6 +39,7 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
 
   await page.mouse.move(400, 300);
   await page.getByRole('button', { name: 'Feed' }).click();
+  await expect(page.getByText('Food added to the tank.')).toBeVisible();
   await page.getByRole('radio', { name: /Tank/ }).click();
   await expect(page.getByRole('radio', { name: /Tank/ })).toHaveAttribute('aria-checked', 'true');
 
@@ -51,7 +52,7 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   // The idle steps fast-forward past the HUD's seven seconds instead of waiting them out.
   const hud = page.locator('.hud');
   const centre = async (name: RegExp) => {
-    const box = await page.getByRole('radio', { name }).boundingBox();
+    const box = await page.getByRole('radio', { name, includeHidden: true }).boundingBox();
     if (!box) throw new Error(`${name} viewpoint button has no box`);
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   };
@@ -76,22 +77,28 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
   await page.clock.fastForward(8000);
   await expect(hud).toHaveAttribute('data-idle', 'true');
 
-  // Touch has no hover: the first tap on the faded bar only wakes it. It lands on the bar, not
-  // the canvas, and does not press the control underneath.
-  const close = page.getByRole('radio', { name: /Up close/ });
+  // Touch has no hover: a visible wake button recovers the inert control bar without retargeting
+  // the tap to a control the visitor could not see.
+  const close = page.locator('.segmented--views button', { hasText: 'Up close' });
   const closeAt = await centre(/Up close/);
-  const hitsBar = await page.evaluate(
-    ([px, py]) => Boolean(document.elementFromPoint(px, py)?.closest('.hud__bar')),
-    [closeAt.x, closeAt.y]
-  );
-  expect(hitsBar).toBe(true);
-  await page.touchscreen.tap(closeAt.x, closeAt.y);
+  const wake = page.getByRole('button', { name: 'Show controls', exact: true });
+  await expect(wake).toBeVisible();
+  await expect(close).toHaveAttribute('aria-checked', 'false');
+  await wake.tap();
   await expect(hud).toHaveAttribute('data-idle', 'false');
   await expect(close).toHaveAttribute('aria-checked', 'false');
 
-  // Awake again, the same control works.
+  // Awake again, the same touch target selects the requested view.
   await page.touchscreen.tap(closeAt.x, closeAt.y);
   await expect(close).toHaveAttribute('aria-checked', 'true');
+
+  // H removes the controls from focus and offers an explicit keyboard recovery path.
+  await page.keyboard.press('h');
+  await expect(hud).toHaveAttribute('data-hidden', 'true');
+  await expect(page.locator('.hud__bar')).toHaveAttribute('inert', '');
+  await expect(page.getByRole('button', { name: 'Show controls (H)' })).toBeVisible();
+  await page.keyboard.press('h');
+  await expect(hud).toHaveAttribute('data-hidden', 'false');
 
   // Let the scene render again so render-path errors from Feed, the viewpoints and the clock
   // modes surface before the error check. In Day cycle mode the hour moves a few minutes per
@@ -119,6 +126,9 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
 test('high quality loads the post stack and keeps the room', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
 
   const chunk = (name: 'postprocessing' | 'Effects') =>
     page.waitForResponse((response) =>
@@ -130,7 +140,21 @@ test('high quality loads the post stack and keeps the room', async ({ page }) =>
   expect((await post).ok()).toBe(true);
   expect((await effects).ok()).toBe(true);
   await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.loading')).toHaveClass(/loading--done/, { timeout: 90_000 });
+  await expect(page.getByText(/\d+ fish/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'High quality' })).toBeVisible();
+  await page.getByRole('radio', { name: /Day cycle/ }).click();
+  const hour = page.locator('.hud__hour');
+  const hourBefore = await hour.textContent();
+  await expect(hour).not.toHaveText(hourBefore ?? '', { timeout: 30_000 });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let frames = 0;
+        const tick = () => (++frames >= 10 ? resolve() : requestAnimationFrame(tick));
+        requestAnimationFrame(tick);
+      })
+  );
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.locator('.hud__notice')).toHaveCount(0);
   expect(errors).toEqual([]);

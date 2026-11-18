@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import { formatHour, useAquarium } from '../state/store';
+import { onRadioGroupKeyDown } from './radioGroup';
 
 const periodOfDay = (hour: number) => {
   if (hour < 5) return 'Night';
@@ -24,20 +25,30 @@ export const Clock = () => {
       setManualHour: s.setManualHour,
     }))
   );
+  const displayTime = formatHour(displayHour);
+  const sliderHour = clockMode === 'manual' ? manualHour : displayHour;
+  const sliderTime = sliderHour === displayHour ? displayTime : formatHour(sliderHour);
+  const clockTabStop = clockMode === 'cycle' ? 'cycle' : 'live';
 
   return (
     <section className="hud__group hud__clock">
       <div className="hud__time">
-        <span className="hud__hour">{formatHour(displayHour)}</span>
+        <span className="hud__hour">{displayTime}</span>
         <span className="hud__period">{periodOfDay(displayHour)}</span>
       </div>
       <div className="hud__clock-controls">
-        <div className="segmented" role="radiogroup" aria-label="Clock">
+        <div
+          className="segmented"
+          role="radiogroup"
+          aria-label="Clock"
+          onKeyDown={onRadioGroupKeyDown}
+        >
           {(['live', 'cycle'] as const).map((mode) => (
             <button
               key={mode}
               role="radio"
               aria-checked={clockMode === mode}
+              tabIndex={clockTabStop === mode ? 0 : -1}
               className={clockMode === mode ? 'is-active' : ''}
               onClick={() => setClockMode(mode)}
               title={mode === 'live' ? 'Follow your local time' : 'A full day every six minutes'}
@@ -55,6 +66,7 @@ export const Clock = () => {
           value={clockMode === 'manual' ? manualHour : displayHour}
           onChange={(event) => setManualHour(Number(event.target.value))}
           aria-label="Time of day"
+          aria-valuetext={`${sliderTime}, ${periodOfDay(sliderHour)}`}
         />
       </div>
     </section>

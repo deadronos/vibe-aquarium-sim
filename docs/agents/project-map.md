@@ -37,7 +37,8 @@ src/
     tank/WaterFx.tsx    Bubbles, suspended particles, light shafts
     tank/underwater.ts  Water uniforms and the `makeUnderwater` material patch
     fish/FishLoader.tsx Error boundary, download timeout and Retry remount around FishView
-    fish/FishView.tsx   GLB loading, instanced fish and food, fixed-step sim loop
+    fish/SimulationDriver.tsx Fixed-step sim loop; handles feed/tap requests and scene readiness
+    fish/FishView.tsx   GLB loading and instanced fish/food rendering
     fish/assets.ts      Fish GLB URLs
     fish/simulation.ts  The running school + food pool
   ui/Hud.tsx            Clock, viewpoints, ambient, feed/sound/quality/fullscreen, keyboard shortcuts

@@ -37,7 +37,8 @@ src/ui/      DOM HUD driven by the zustand store in src/state/store.ts
 - `random.ts` — seeded PRNG; all layouts and the sim are deterministic for a seed.
 
 `src/scene/fish/simulation.ts` holds the single running school and food pool.
-`FishView` steps them on a fixed 60 Hz clock.
+`SimulationDriver` steps them on a fixed 60 Hz clock and answers feed/tap requests; `FishView`
+only reads the resulting state to update the instanced fish and food matrices.
 
 ## The daylight loop
 

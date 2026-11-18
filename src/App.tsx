@@ -33,6 +33,9 @@ export default function App() {
       {!noWebGL && (
         <ErrorBoundary onError={onSceneCrash}>
           <Canvas
+            role="img"
+            aria-label="Interactive aquarium scene"
+            aria-describedby="aquarium-scene-description"
             shadows="percentage"
             dpr={quality === 'low' ? 1 : [1, 1.5]}
             camera={{ fov: BASE_FOV, near: 0.03, far: 40, position: [0.55, 1.38, 2.3] }}
@@ -46,6 +49,10 @@ export default function App() {
           </Canvas>
         </ErrorBoundary>
       )}
+      <p id="aquarium-scene-description" className="sr-only">
+        A planted living-room aquarium with a swimming school of fish, viewed through a set of
+        camera controls.
+      </p>
       <Hud />
     </>
   );

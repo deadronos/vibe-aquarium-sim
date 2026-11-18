@@ -43,6 +43,21 @@ test('the phone bar fits in two rows of 44px targets and skips the fade', async 
   await expect(page.getByRole('button', { name: 'Feed' })).toBeVisible();
   await expect(page.getByRole('radio', { name: /Follow a fish/ })).toBeVisible();
 
+  const tank = page.getByRole('radio', { name: 'Tank' });
+  await tank.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('radio', { name: 'Up close' })).toHaveAttribute(
+    'aria-checked',
+    'true'
+  );
+
+  await page.keyboard.press('h');
+  const reveal = page.getByRole('button', { name: 'Show controls (H)' });
+  await expect(reveal).toBeVisible();
+  const revealBox = await reveal.boundingBox();
+  expect(revealBox?.height).toBeGreaterThanOrEqual(44);
+  await page.keyboard.press('h');
+
   // The idle fade is a cut: no transition on the bar.
   const transition = await bar.evaluate((el) => getComputedStyle(el).transitionDuration);
   expect(transition.split(',').every((d) => parseFloat(d) === 0)).toBe(true);

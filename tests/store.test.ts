@@ -186,9 +186,22 @@ describe('simple setters', () => {
   });
 
   it('counts feed requests so each one is seen as new', () => {
+    store().setReady();
     store().requestFeed();
     store().requestFeed();
     expect(store().feedRequest).toBe(2);
+  });
+
+  it('does not accept feed requests before the scene is ready', () => {
+    store().requestFeed();
+    expect(store().feedRequest).toBe(0);
+  });
+
+  it('does not accept feed requests while the scene has an error', () => {
+    store().setReady();
+    store().setLoadError('crash');
+    store().requestFeed();
+    expect(store().feedRequest).toBe(0);
   });
 
   it('records the fish count', () => {

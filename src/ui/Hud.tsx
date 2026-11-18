@@ -20,6 +20,7 @@ import {
 import { CareActions, FishName } from './Care';
 import { Clock } from './Clock';
 import { fullscreenSupported, toggleFullscreen, useFullscreen } from './fullscreen';
+import { onRadioGroupKeyDown } from './radioGroup';
 import './hud.css';
 
 const VIEWS: { id: Viewpoint; label: string; key: string; Icon: ComponentType }[] = [
@@ -35,6 +36,26 @@ const IDLE_MS = 7000;
 const NOTICE_MS = 8000;
 
 const reload = () => window.location.reload();
+
+const FeedAnnouncement = () => {
+  const feedRequest = useAquarium((state) => state.feedRequest);
+  const previous = useRef(feedRequest);
+  const [announcement, setAnnouncement] = useState<{ id: number; text: string } | null>(null);
+
+  useEffect(() => {
+    if (feedRequest === previous.current) return;
+    previous.current = feedRequest;
+    setAnnouncement({ id: feedRequest, text: 'Food added to the tank.' });
+    const timer = window.setTimeout(() => setAnnouncement(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [feedRequest]);
+
+  return (
+    <span className="hud__sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {announcement && <span key={announcement.id}>{announcement.text}</span>}
+    </span>
+  );
+};
 
 const LOAD_ERRORS: Record<
   LoadError,
@@ -110,6 +131,9 @@ export const Hud = () => {
   const [hint, setHint] = useState(true);
   const [hidden, setHidden] = useState(false);
   const barRef = useRef<HTMLElement>(null);
+  const revealRef = useRef<HTMLButtonElement>(null);
+  const wasHidden = useRef(false);
+  const previousControl = useRef<HTMLElement | null>(null);
   const reducedMotion = useReducedMotion();
   const fullscreen = useFullscreen();
   const [canFullscreen] = useState(fullscreenSupported);
@@ -144,43 +168,22 @@ export const Hud = () => {
       hovered = false;
       wake();
     };
-    // An idle bar's controls ignore hits, so a press that wakes it lands on the bar itself. A tap
-    // re-targets its click after that press has woken the bar, which would reach the control
-    // underneath, so drop that one click.
-    let swallowClick = false;
-    const press = (event: PointerEvent) => {
-      swallowClick = event.target === bar;
-    };
-    const click = (event: MouseEvent) => {
-      if (!swallowClick) return;
-      swallowClick = false;
-      event.stopPropagation();
-    };
-    const key = () => {
-      swallowClick = false;
-    };
     const hintTimer = window.setTimeout(() => setHint(false), 9000);
     window.addEventListener('pointermove', wake);
     window.addEventListener('pointerdown', wake);
-    window.addEventListener('pointerdown', press);
     window.addEventListener('keydown', wake);
-    window.addEventListener('keydown', key);
     bar?.addEventListener('pointerenter', enter);
     bar?.addEventListener('pointerleave', leave);
     bar?.addEventListener('focusout', wake);
-    bar?.addEventListener('click', click, true);
     return () => {
       window.clearTimeout(timer);
       window.clearTimeout(hintTimer);
       window.removeEventListener('pointermove', wake);
       window.removeEventListener('pointerdown', wake);
-      window.removeEventListener('pointerdown', press);
       window.removeEventListener('keydown', wake);
-      window.removeEventListener('keydown', key);
       bar?.removeEventListener('pointerenter', enter);
       bar?.removeEventListener('pointerleave', leave);
       bar?.removeEventListener('focusout', wake);
-      bar?.removeEventListener('click', click, true);
     };
   }, []);
 
@@ -204,6 +207,24 @@ export const Hud = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    if (hidden) {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && barRef.current?.contains(active)) {
+        previousControl.current = active;
+      }
+      revealRef.current?.focus();
+    } else if (wasHidden.current) {
+      const target =
+        previousControl.current?.isConnected === true
+          ? previousControl.current
+          : barRef.current?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
+      target?.focus();
+      previousControl.current = null;
+    }
+    wasHidden.current = hidden;
+  }, [hidden]);
+
   // The Lite notice clears itself; the Lite label on the quality button stays as the record.
   useEffect(() => {
     if (!state.qualityNotice) return;
@@ -215,6 +236,7 @@ export const Hud = () => {
   const effectsNotice = state.effectsNotice;
   const highBlocked = effectsBlocked(effectsNotice);
   const veiled = !state.ready || loadError !== null;
+  const controlsInactive = idle || hidden;
   const species = SPECIES.map((s) => s.label.toLowerCase()).join(', ');
 
   return (
@@ -242,7 +264,7 @@ export const Hud = () => {
         )}
       </div>
 
-      <header className="hud__title">
+      <header className="hud__title" aria-hidden={controlsInactive || undefined}>
         <h1>Vibe Aquarium</h1>
         {state.ready && (
           <p>
@@ -266,7 +288,10 @@ export const Hud = () => {
         </div>
       )}
 
-      <p className={`hud__hint ${hint && state.ready ? '' : 'hud__hint--gone'}`}>
+      <p
+        className={`hud__hint ${hint && state.ready ? '' : 'hud__hint--gone'}`}
+        aria-hidden={controlsInactive || undefined}
+      >
         Click the water to feed · drag to look around · scroll to zoom · H hides this panel
       </p>
 
@@ -283,19 +308,48 @@ export const Hud = () => {
         )}
       </div>
 
-      <FishName />
-      {state.ready && <CareActions />}
+      <FeedAnnouncement />
+      <div aria-hidden={controlsInactive || undefined} inert={controlsInactive}>
+        <FishName />
+        {state.ready && <CareActions />}
+      </div>
 
-      <nav className="hud__bar" aria-label="Aquarium controls" ref={barRef}>
+      {(idle || hidden) && (
+        <button
+          ref={revealRef}
+          className="button hud__reveal"
+          onClick={() => {
+            setIdle(false);
+            setHidden(false);
+          }}
+          aria-label={hidden ? 'Show controls (H)' : 'Show controls'}
+        >
+          Show controls
+        </button>
+      )}
+
+      <nav
+        className="hud__bar"
+        aria-label="Aquarium controls"
+        aria-hidden={controlsInactive || undefined}
+        inert={controlsInactive}
+        ref={barRef}
+      >
         <Clock />
 
         <section className="hud__group hud__views" aria-label="Viewpoint">
-          <div className="segmented segmented--views" role="radiogroup">
+          <div
+            className="segmented segmented--views"
+            role="radiogroup"
+            aria-label="Viewpoint"
+            onKeyDown={onRadioGroupKeyDown}
+          >
             {VIEWS.map((view) => (
               <button
                 key={view.id}
                 role="radio"
                 aria-checked={state.viewpoint === view.id}
+                tabIndex={state.viewpoint === view.id ? 0 : -1}
                 className={state.viewpoint === view.id ? 'is-active' : ''}
                 onClick={() => state.setViewpoint(view.id)}
                 title={`${view.label} (${view.key})`}
@@ -320,6 +374,7 @@ export const Hud = () => {
           <button
             className="button button--primary hud__feed"
             onClick={state.requestFeed}
+            disabled={veiled}
             title="Feed (F)"
           >
             <FeedIcon />

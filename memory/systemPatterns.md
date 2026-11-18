@@ -15,8 +15,9 @@ See `docs/agents/architecture.md` for the full write-up; this is the short versi
 
 1. `DaylightDriver` (`useFrame` priority −1) computes the hour, samples `lightingAt` at 5 Hz and
    eases the shared mutable `daylight` object; it also updates the shared water uniforms.
-2. `FishView` steps the school and food on a fixed 60 Hz clock (accumulator, capped catch-up),
-   then writes instance matrices and the per-fish swim attribute.
+2. `SimulationDriver` steps the school and food on a fixed 60 Hz clock (accumulator, capped
+   catch-up) and answers feed/tap requests. `FishView` then writes instance matrices and the
+   per-fish swim attribute from that shared state.
 3. Lights, sky, lamp, tank LED and camera read shared state in their own `useFrame` callbacks.
    Lighting changes never go through React state.
 
@@ -38,6 +39,7 @@ See `docs/agents/architecture.md` for the full write-up; this is the short versi
   materials, so lighting and shadows stay standard.
 - Shadows render on demand: `gl.shadowMap.autoUpdate` is off; `Lights` re-renders them when the
   sun moves (and for 2 frames at start-up).
-- Quality: High = DPR up to 1.75 plus post-processing (DoF, bloom, vignette, AgX); Lite = DPR 1,
-  no post-processing. drei `PerformanceMonitor` drops to Lite on decline; `?quality=lite` starts
+- Quality: High = DPR up to 1.5 plus post-processing (DoF, bloom, vignette, AgX); Medium keeps
+  post-processing but drops depth of field; Lite = DPR 1 with no post-processing. drei
+  `PerformanceMonitor` steps down within the manually selected ceiling; `?quality=lite` starts
   in Lite.

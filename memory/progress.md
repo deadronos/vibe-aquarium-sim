@@ -7,20 +7,22 @@
 - Planted rimless tank: sloped sand, rocks, driftwood, swaying plants, LED fixture, bubbles,
   light shafts, motes, water absorption and caustics.
 - Boids school (19 fish, 3 species) with feeding, obstacle avoidance and day/night activity.
-- Clock modes (live, 6-minute cycle, manual), five viewpoints, ambient audio, High/Lite quality.
-- 22 unit tests for the simulation, a Playwright smoke test, and the bundle budget check in CI.
+- Clock modes (live, 6-minute cycle, manual), five viewpoints, ambient audio, High/Medium/Lite
+  quality.
+- Tap-the-glass startle and wipe-glass care actions.
+- Vitest unit/component tests, Playwright smoke and PWA/error coverage, and the bundle budget check
+  in CI.
 
 ## What's left / next milestones
 
 1. Visual verification on real low-end devices and phones (touch controls, HUD layout).
 2. Optional: a Blender-baked room (lightmaps) replacing procedural furniture.
-3. Life around the tank (for example a cat at the glass), tap-the-glass startle, more species.
+3. Life around the tank (for example a cat at the glass) and more species.
 
 ## Known issues / technical debt
 
 - From the Sofa viewpoint the sofa itself is barely in frame.
 - The follow camera can look along the side glass when its fish swims near the edge.
-- While the HUD is auto-hidden, clicks land on the scene until the pointer moves.
 
 ## History
 

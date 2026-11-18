@@ -253,7 +253,10 @@ export const useAquarium = create<AquariumState>((set) => ({
     }),
   dismissQualityNotice: () => set({ qualityNotice: false }),
   toggleSound: () => set((state) => ({ sound: !state.sound })),
-  requestFeed: () => set((state) => ({ feedRequest: state.feedRequest + 1 })),
+  requestFeed: () =>
+    set((state) =>
+      state.ready && state.loadError === null ? { feedRequest: state.feedRequest + 1 } : {}
+    ),
   requestTap: () => set((state) => ({ tapRequest: state.tapRequest + 1 })),
   tickCare: (careNow) => set({ careNow }),
   wipeGlass: () =>
