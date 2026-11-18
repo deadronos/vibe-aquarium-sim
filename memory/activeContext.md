@@ -2,10 +2,12 @@
 
 ## Current focus
 
-- Branch: `claude/docs-audit`: bring README, AGENTS.md, agent docs, Copilot instructions and
-  the memory bank in line with the v0.2.0 living-room rebuild (TASK020).
-- The Pages deploy for `v0.2.0` failed because the boot check grepped the old smoke-test title;
-  the fix is PR #168. After it merges, a new tag (for example `v0.2.1`) redeploys.
+- Harden interaction and accessibility: hidden HUD controls are inert, with an explicit
+  Show controls recovery action; radio groups support roving keyboard focus.
+- Strengthen the render smoke gate so it waits for scene readiness and verifies continued frames
+  at both Lite and High quality.
+- Keep maintained architecture and memory-bank files aligned with `SimulationDriver`, the
+  current quality policy, and implemented tank-care actions.
 
 ## Recent changes
 
@@ -17,7 +19,7 @@
 
 - Blender-baked room (lightmaps) replacing the procedural furniture.
 - A cat that wanders up to the glass; fish react.
-- Tap-the-glass startle; more species; per-fish inspection.
+- More species and per-fish inspection.
 
 ## Active decisions / considerations
 
