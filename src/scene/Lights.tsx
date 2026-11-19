@@ -1,4 +1,3 @@
-import { Environment, Lightformer } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
@@ -97,40 +96,6 @@ export const Lights = () => {
         distance={7}
         decay={2}
       />
-      {/* Reflection-only environment: a window, a ceiling glow and a lamp. Rendered once. */}
-      <Environment resolution={256} frames={1}>
-        <Lightformer
-          form="rect"
-          intensity={3}
-          color="#fff4e2"
-          position={[-5, 1.4, -0.9]}
-          rotation-y={Math.PI / 2}
-          scale={[1.6, 1.4, 1]}
-        />
-        <Lightformer
-          form="rect"
-          intensity={0.6}
-          color="#fff7ee"
-          position={[0, 4, 0]}
-          rotation-x={Math.PI / 2}
-          scale={[5, 4, 1]}
-        />
-        <Lightformer
-          form="circle"
-          intensity={2}
-          color="#ffc27d"
-          position={[LAMP.x, LAMP.shadeY, LAMP.z]}
-          scale={0.4}
-        />
-        <Lightformer
-          form="rect"
-          intensity={0.25}
-          color="#cfd8d0"
-          position={[0, 1.2, 4]}
-          rotation-y={Math.PI}
-          scale={[6, 3, 1]}
-        />
-      </Environment>
     </>
   );
 };

@@ -144,6 +144,7 @@ export const Hud = () => {
   }, [state.sound]);
 
   useEffect(() => {
+    if (!state.ready) return;
     const bar = barRef.current;
     // A mouse or pen resting on the bar, or keyboard focus inside it, keeps the HUD awake: an
     // idle bar would swallow the click that is about to come. Touch has no hover, so a faded bar
@@ -185,7 +186,7 @@ export const Hud = () => {
       bar?.removeEventListener('pointerleave', leave);
       bar?.removeEventListener('focusout', wake);
     };
-  }, []);
+  }, [state.ready]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

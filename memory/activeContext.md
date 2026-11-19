@@ -14,6 +14,10 @@
   geometry and capsule collision data shared under `src/sim/`.
 - Ground Medium/High furniture with one static instanced contact-shadow batch and project every
   fish onto the sloped substrate with allocation-free instanced blob shadows.
+- Reflect the real room in glass, water, and shiny furniture with one 128² cube capture after
+  the base shader precompile, an explicitly owned PMREM target, and an environment-aware
+  precompile before scene readiness; later captures are throttled to five-second minimum
+  intervals.
 
 ## Recent changes
 
@@ -34,3 +38,4 @@
 - Zero allocation in frame loops; instancing and shader-driven motion for anything repeated.
 - Procedural contact-shadow masks stay cached; Lite omits the static room batch but keeps the
   single fish blob-shadow draw.
+- Room reflections share one captured cube texture; no reflection pass runs frame-by-frame.

@@ -15,6 +15,8 @@
   renderer benchmark/profiler.
 - Soft static furniture contact shadows in Medium/High and allocation-free fish blob shadows over
   the sloped substrate in every quality mode.
+- Actual room cubemap reflections in glass, the water shader, and shiny furniture, with an owned
+  PMREM target prepared before readiness and refreshed only after meaningful daylight changes.
 - Vitest unit/component tests, Playwright smoke and PWA/error coverage, and the bundle budget check
   in CI.
 

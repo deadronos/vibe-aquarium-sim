@@ -96,6 +96,21 @@ loss; the variation favoured the post-change run. Both runs reported zero frameb
 Sofa-view and Up close screenshots were inspected before and after the change for room/fish
 grounding.
 
+### #190 room-reflection A/B (2026-11-19)
+
+After the 128² room cube map was added and its initial capture was gated on scene readiness, the
+same Lite SwiftShader profile recorded:
+
+| Tree                      | Avg frame | p95 frame |   FPS | Draw calls | Triangles |
+| ------------------------- | --------: | --------: | ----: | ---------: | --------: |
+| v0.2.8 before reflections |  93.76 ms |  98.40 ms | 10.67 |        103 |    82,002 |
+| Room reflection build     |  92.70 ms |  97.20 ms | 10.79 |        103 |    82,002 |
+
+The first six-face capture and owned PMREM conversion complete before the loading veil lifts, then
+the benchmark excludes all startup work with its settling window. The normal Lite path retained
+identical draw/triangle counts and zero framebuffer warnings; repeated phone startup tests passed
+in parallel.
+
 ### 2026-11-19 — headed Chromium on Apple M4
 
 At 1024×768, the same High profile completed with an effective High quality of 60.0 FPS,
