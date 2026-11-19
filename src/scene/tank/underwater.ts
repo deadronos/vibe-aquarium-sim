@@ -23,6 +23,8 @@ export const waterUniforms = {
   uWaterColor: { value: new THREE.Color(PALETTE.water) },
   uTankLight: { value: 1 },
   uMoonLight: { value: 0 },
+  uRoomReflection: { value: null as THREE.CubeTexture | null },
+  uRoomReflectionStrength: { value: 0 },
 };
 
 const VERTEX_HEAD = /* glsl */ `

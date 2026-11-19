@@ -6,6 +6,7 @@ import { OBSTACLES } from '../../sim/aquascape';
 import { useAquarium } from '../../state/store';
 import { daylight } from '../daylight';
 import { precompile } from '../precompile';
+import { prepareRoomReflection } from '../roomReflection';
 import { simulation } from './simulation';
 
 const FIXED_STEP = 1 / 60;
@@ -29,9 +30,17 @@ export const SimulationDriver = () => {
     // lifts once its shaders are ready rather than hitching on the first frames.
     let mounted = true;
     const { gl, scene, camera } = getThree();
-    void precompile(gl, scene, camera).then(() => {
-      if (mounted) setReady();
-    });
+    void precompile(gl, scene, camera)
+      .then(prepareRoomReflection)
+      .then(
+        () => {
+          if (mounted) setReady();
+        },
+        (error: unknown) => {
+          console.error('Room reflection preparation failed', error);
+          if (mounted) useAquarium.getState().setLoadError('crash');
+        }
+      );
     const careTimer = window.setInterval(() => tickCare(Date.now()), CARE_TICK_MS);
     const unsubscribe = useAquarium.subscribe((state, previous) => {
       if (state.feedRequest !== previous.feedRequest) food.feed();

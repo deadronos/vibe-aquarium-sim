@@ -19,6 +19,10 @@ import { Furniture } from './room/Furniture';
 import { Room } from './room/Room';
 import { RoomContactShadows } from './room/RoomContactShadows';
 import { RenderProfiler } from './RenderProfiler';
+import {
+  AQUARIUM_REFLECTION_EXCLUSION,
+  RoomReflectionEnvironment,
+} from './RoomReflectionEnvironment';
 import { Aquascape } from './tank/Aquascape';
 import { Tank } from './tank/Tank';
 import { WaterFx } from './tank/WaterFx';
@@ -110,10 +114,13 @@ export const Experience = () => {
       <Room />
       <Furniture />
       {quality !== 'low' && <RoomContactShadows />}
-      <Aquascape />
-      <FishLoader />
-      <WaterFx />
-      <Tank />
+      <group name={AQUARIUM_REFLECTION_EXCLUSION}>
+        <Aquascape />
+        <FishLoader />
+        <WaterFx />
+        <Tank />
+      </group>
+      <RoomReflectionEnvironment />
       {quality !== 'low' && (
         <ErrorBoundary key={effectsLoad.attempt} onError={onEffectsError}>
           <Suspense fallback={null}>
