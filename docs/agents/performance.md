@@ -29,13 +29,14 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 
 ## Quality modes
 
-- **High**: DPR up to 1.5, `EffectComposer` (2x multisampling) with depth of field, bloom,
-  vignette and AgX tone mapping. Depth of field runs every pass at half the composer's size
+- **High**: DPR up to 1.5, `EffectComposer` with depth of field, bloom, vignette and AgX tone
+  mapping. The compositor uses no multisampling: this avoids multisampled depth-resolve blits
+  that some software drivers reject. Depth of field runs every pass at half the composer's size
   (`HalfResDepthOfField` in `Effects.tsx`).
 - **High without DoF** (`'medium'` in the store, `?quality=medium`): the same, minus depth of
   field. Only the performance monitor picks it; the HUD still shows it as High.
-- **Lite**: DPR 1, no post-processing (the renderer applies AgX itself). The post-processing
-  chunk is only requested above Lite.
+- **Lite**: DPR 1, no post-processing (the renderer applies AgX itself), and a 1024×1024 sun
+  shadow map. High/Medium keep 2048×2048. The post-processing chunk is only requested above Lite.
 - drei `PerformanceMonitor` steps one level at a time through `stepQuality` in the store:
   `onDecline` steps down, `onIncline` steps back up, never above the user's choice. It is
   remounted per level (samples at one level never count against another), ignored for
@@ -53,9 +54,13 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
   evaluate a second `postprocessing`). If the retry cannot work (no chunk URL, or the deployed
   `index.html` loads a different entry script after a new release), High is disabled and the
   notice offers Reload.
-- `?quality=lite` in the URL starts in Lite (used by the smoke test: software GL on CI compiles
-  the post-processing shaders very slowly). The default (High) path is a separate, shorter smoke
-  test that only checks the lazy chunk arrives and the room stays up.
+- `?quality=lite` in the URL starts in Lite. `?profile=1` mounts the fixed-capacity
+  `RenderProfiler` used by `npm run bench:render`; normal sessions do not mount it. See
+  [rendering-baseline.md](../performance/rendering-baseline.md) for environment-specific
+  measurements.
+- The default High smoke path waits for both lazy chunks, scene readiness and continued Day-cycle
+  frames, permits an adaptive step to Lite, and guards against repeated
+  `GL_INVALID_OPERATION: glBlitFramebuffer` warnings.
 
 ## Budgets
 

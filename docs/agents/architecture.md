@@ -31,7 +31,9 @@ src/ui/      DOM HUD driven by the zustand store in src/state/store.ts
 - `food.ts` — fixed-capacity `FoodPool`: flakes float, sink in a spiral, settle on the
   sand and dissolve.
 - `aquascape.ts` — rock, driftwood, plant and anemone layout shared by the renderer (geometry)
-  and the school (obstacles, the anemone and night rest spots).
+  and the school (obstacles, the anemone and night rest spots). Driftwood paths feed both the
+  tube builder and precomputed capsule obstacles; fish projection uses the capsules as a
+  deterministic backstop for fast turns.
 - `timeOfDay.ts` — `lightingAt(hour)` returns sun direction/colour, sky colours, the
   evening lamp, the tank LED schedule (09:00–21:00), moonlight and fish activity.
 - `random.ts` — seeded PRNG; all layouts and the sim are deterministic for a seed.

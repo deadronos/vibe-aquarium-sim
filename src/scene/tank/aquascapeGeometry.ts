@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TANK, substrateHeight } from '../../config/scene';
-import { DRIFTWOOD } from '../../sim/aquascape';
+import { DRIFTWOOD_PATHS } from '../../sim/aquascape';
 import { createRandom } from '../../sim/random';
 
 /** Geometry builders for the aquascape: plain functions of their inputs, built once at mount. */
@@ -168,22 +168,15 @@ export const taperedTube = (
 
 export const buildDriftwood = () => {
   const v = (p: readonly number[]) => new THREE.Vector3(p[0], p[1], p[2]);
-  const main = new THREE.CatmullRomCurve3(DRIFTWOOD.map(v));
-  const branchA = new THREE.CatmullRomCurve3([
-    v(DRIFTWOOD[2]!),
-    new THREE.Vector3(0.22, 0.33, -0.12),
-    new THREE.Vector3(0.17, 0.4, -0.09),
-  ]);
-  const branchB = new THREE.CatmullRomCurve3([
-    v(DRIFTWOOD[3]!),
-    new THREE.Vector3(0.44, 0.27, -0.09),
-    new THREE.Vector3(0.52, 0.22, -0.05),
-  ]);
-  return [
-    taperedTube(main, 60, 10, 0.03, 0.007),
-    taperedTube(branchA, 24, 8, 0.014, 0.004),
-    taperedTube(branchB, 24, 8, 0.013, 0.004),
-  ];
+  return DRIFTWOOD_PATHS.map((path) =>
+    taperedTube(
+      new THREE.CatmullRomCurve3(path.points.map(v)),
+      path.segments,
+      path.radial,
+      path.radiusStart,
+      path.radiusEnd
+    )
+  );
 };
 
 /** A blade strip from y = 0 to y = 1 with a tapering width and a base-to-tip colour ramp. */

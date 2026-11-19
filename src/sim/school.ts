@@ -1,6 +1,7 @@
 import { SWIM_BOUNDS, substrateHeight } from '../config/scene';
 import { ANEMONE, REST_SPOTS } from './aquascape';
 import type { Obstacle } from './aquascape';
+import { resolveCapsulePenetrations } from './collision';
 import type { FoodPool } from './food';
 import { FOOD_CAPACITY } from './food';
 import type { Random } from './random';
@@ -360,9 +361,22 @@ export class FishSchool {
       // Rocks and driftwood.
       for (let k = 0; k < env.obstacles.length; k++) {
         const ob = env.obstacles[k]!;
-        const dx = px - ob.x;
-        const dy = py - ob.y;
-        const dz = pz - ob.z;
+        let dx = px - ob.x;
+        let dy = py - ob.y;
+        let dz = pz - ob.z;
+        if (ob.kind === 'capsule') {
+          const sx = ob.bx - ob.ax;
+          const sy = ob.by - ob.ay;
+          const sz = ob.bz - ob.az;
+          const length2 = sx * sx + sy * sy + sz * sz;
+          const t =
+            length2 > 0
+              ? clamp(((px - ob.ax) * sx + (py - ob.ay) * sy + (pz - ob.az) * sz) / length2, 0, 1)
+              : 0;
+          dx = px - (ob.ax + sx * t);
+          dy = py - (ob.ay + sy * t);
+          dz = pz - (ob.az + sz * t);
+        }
         const d = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-5;
         const reach = ob.radius + sp.length * 0.6;
         if (d < reach) {
@@ -409,9 +423,32 @@ export class FishSchool {
       vel[o + 1] = nvy;
       vel[o + 2] = nvz;
 
-      pos[o] = clamp(px + nvx * dt, SWIM_BOUNDS.minX, SWIM_BOUNDS.maxX);
-      pos[o + 1] = clamp(py + nvy * dt, floor - 0.01, SWIM_BOUNDS.maxY);
-      pos[o + 2] = clamp(pz + nvz * dt, SWIM_BOUNDS.minZ, SWIM_BOUNDS.maxZ);
+      pos[o] = px + nvx * dt;
+      pos[o + 1] = py + nvy * dt;
+      pos[o + 2] = pz + nvz * dt;
+      pos[o] = clamp(pos[o]!, SWIM_BOUNDS.minX, SWIM_BOUNDS.maxX);
+      pos[o + 2] = clamp(pos[o + 2]!, SWIM_BOUNDS.minZ, SWIM_BOUNDS.maxZ);
+      // Soft steering prevents most approaches, but a deterministic projection is the backstop
+      // for fast food/startle turns crossing the visible branch itself.
+      for (let pass = 0; pass < 2; pass++) {
+        const collisionFloor = Math.max(
+          SWIM_BOUNDS.minY,
+          substrateHeight(pos[o]!, pos[o + 2]!) + 0.035
+        );
+        pos[o + 1] = Math.max(pos[o + 1]!, collisionFloor - 0.01);
+        resolveCapsulePenetrations(pos, vel, o, sp.length, env.obstacles, collisionFloor - 0.01);
+        pos[o] = clamp(pos[o]!, SWIM_BOUNDS.minX, SWIM_BOUNDS.maxX);
+        pos[o + 2] = clamp(pos[o + 2]!, SWIM_BOUNDS.minZ, SWIM_BOUNDS.maxZ);
+      }
+      nvx = vel[o]!;
+      nvy = vel[o + 1]!;
+      nvz = vel[o + 2]!;
+      const nx = pos[o]!;
+      const ny = pos[o + 1]!;
+      const nz = pos[o + 2]!;
+      pos[o] = clamp(nx, SWIM_BOUNDS.minX, SWIM_BOUNDS.maxX);
+      pos[o + 1] = clamp(ny, SWIM_BOUNDS.minY, SWIM_BOUNDS.maxY);
+      pos[o + 2] = clamp(nz, SWIM_BOUNDS.minZ, SWIM_BOUNDS.maxZ);
       if (grid) {
         // Fish further on in this loop find this fish where it is now, still in its old cell.
         const mx = pos[o]! - px;

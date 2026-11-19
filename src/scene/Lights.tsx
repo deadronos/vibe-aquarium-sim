@@ -4,7 +4,10 @@ import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { LAMP, ROOM, WINDOW } from '../config/scene';
+import { useAquarium } from '../state/store';
 import { daylight } from './daylight';
+import { shadowMapSizeForQuality } from './renderQuality';
+import { resizeShadowMap } from './shadowMap';
 
 RectAreaLightUniformsLib.init();
 
@@ -19,6 +22,10 @@ export const Lights = () => {
   const windowLight = useRef<THREE.RectAreaLight>(null);
   const lamp = useRef<THREE.PointLight>(null);
   const shadowFrames = useRef(2);
+  const quality = useAquarium((state) => state.quality);
+  const shadowMapSize = shadowMapSizeForQuality(quality);
+  const shadowResolution = shadowMapSize[0];
+  const appliedShadowSize = useRef(0);
 
   useLayoutEffect(() => {
     // The room is static, so shadows only re-render when the sun has moved noticeably.
@@ -33,6 +40,13 @@ export const Lights = () => {
       gl.shadowMap.autoUpdate = true;
     };
   }, [gl, scene]);
+
+  useLayoutEffect(() => {
+    if (appliedShadowSize.current === shadowResolution) return;
+    resizeShadowMap(sun.current!.shadow, gl.shadowMap, shadowResolution);
+    appliedShadowSize.current = shadowResolution;
+    shadowFrames.current = 2;
+  }, [gl, shadowResolution]);
 
   useFrame(() => {
     const light = sun.current!;
@@ -59,7 +73,7 @@ export const Lights = () => {
       <directionalLight
         ref={sun}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={shadowMapSize}
         shadow-bias={-0.0004}
         shadow-normalBias={0.025}
         shadow-camera-left={-4.2}

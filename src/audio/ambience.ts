@@ -6,10 +6,15 @@ export class Ambience {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
   private bubbleTimer: number | null = null;
+  private suspendTimer: number | null = null;
 
   start() {
     if (!this.context) this.build();
     const { context, master } = this;
+    if (this.suspendTimer !== null) {
+      window.clearTimeout(this.suspendTimer);
+      this.suspendTimer = null;
+    }
     void context!.resume();
     master!.gain.cancelScheduledValues(context!.currentTime);
     master!.gain.setTargetAtTime(0.5, context!.currentTime, 0.8);
@@ -21,6 +26,11 @@ export class Ambience {
     this.master.gain.setTargetAtTime(0, this.context.currentTime, 0.4);
     if (this.bubbleTimer !== null) window.clearTimeout(this.bubbleTimer);
     this.bubbleTimer = null;
+    if (this.suspendTimer !== null) window.clearTimeout(this.suspendTimer);
+    this.suspendTimer = window.setTimeout(() => {
+      this.suspendTimer = null;
+      void this.context?.suspend();
+    }, 400);
   }
 
   private build() {

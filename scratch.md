@@ -57,8 +57,8 @@ measurements.
 
 ### Issues
 
-- [ ] #230 — Suspend or stop the WebAudio graph when sound is muted
-- [ ] #236 — Benchmark and reduce Lite rendering cost on mobile
+- [x] #230 — Suspend or stop the WebAudio graph when sound is muted
+- [x] #236 — Benchmark and reduce Lite rendering cost on mobile
 
 **Why this batch:** #230 is a contained lifecycle fix. #236 provides the evidence needed for later
 quality-policy changes and can proceed without changing the visual design first.
@@ -78,7 +78,7 @@ postprocessing path without hiding failures.
 
 ### Issues
 
-- [ ] #234 — Investigate High-mode WebGL depth-stencil errors and fallback behavior
+- [x] #234 — Investigate High-mode WebGL depth-stencil errors and fallback behavior
 
 **Prerequisites:**
 
@@ -99,7 +99,7 @@ postprocessing path without hiding failures.
 
 ### Issues
 
-- [ ] #233 — Prevent fish from crossing visible driftwood branches
+- [x] #233 — Prevent fish from crossing visible driftwood branches
 
 **Why this batch comes later:** The fix touches simulation obstacle representation and aquascape
 visual geometry. It should build on the stronger test foundation from Batch 2 and remain isolated

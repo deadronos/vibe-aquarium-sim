@@ -10,6 +10,9 @@
 - Clock modes (live, 6-minute cycle, manual), five viewpoints, ambient audio, High/Medium/Lite
   quality.
 - Tap-the-glass startle and wipe-glass care actions.
+- Shared driftwood paths and capsule collision backstops so fish do not cross visible branches.
+- AudioContext suspension when muted, a lighter 1024×1024 Lite shadow map, and an opt-in
+  renderer benchmark/profiler.
 - Vitest unit/component tests, Playwright smoke and PWA/error coverage, and the bundle budget check
   in CI.
 

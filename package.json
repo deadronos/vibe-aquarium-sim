@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "bench:render": "npm run build && node scripts/benchmark-rendering.mjs",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "report:bundle": "node scripts/bundle-report.mjs --dist dist --output docs/performance/asset-transfer.md",
     "assets:optimize": "node scripts/optimize-fish-assets.mjs",

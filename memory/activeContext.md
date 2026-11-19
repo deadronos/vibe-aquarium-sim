@@ -8,6 +8,10 @@
   at both Lite and High quality.
 - Keep maintained architecture and memory-bank files aligned with `SimulationDriver`, the
   current quality policy, and implemented tank-care actions.
+- Suspend WebAudio while muted, benchmark quality modes with an opt-in sampler, and keep Lite
+  shadows at 1024 while rebuilding the actual render target on transitions.
+- Preserve High rendering without multisampled depth blits on software GL, and keep driftwood
+  geometry and capsule collision data shared under `src/sim/`.
 
 ## Recent changes
 
