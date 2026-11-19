@@ -147,6 +147,10 @@ test('high quality loads the post stack and keeps the room', async ({ page }) =>
   const quality = page.locator('.hud__quality');
   await expect(quality).toBeVisible();
   await expect(quality).toContainText(/High quality|Lite/);
+  // Software GL may take longer than the idle window to compile. A real pointer move wakes the
+  // inert controls before the user selects Day cycle; direct role lookup would hide them.
+  await page.mouse.move(400, 300);
+  await expect(page.locator('.hud')).toHaveAttribute('data-idle', 'false');
   await page.getByRole('radio', { name: /Day cycle/ }).click();
   const hour = page.locator('.hud__hour');
   const hourBefore = await hour.textContent();
