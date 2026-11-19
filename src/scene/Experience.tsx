@@ -17,6 +17,7 @@ import { FishLoader } from './fish/FishLoader';
 import { Lights } from './Lights';
 import { Furniture } from './room/Furniture';
 import { Room } from './room/Room';
+import { RenderProfiler } from './RenderProfiler';
 import { Aquascape } from './tank/Aquascape';
 import { Tank } from './tank/Tank';
 import { WaterFx } from './tank/WaterFx';
@@ -42,6 +43,9 @@ const createEffects = (attempt: number, chunkUrl: string | null) =>
     useAquarium.getState().setEffectsNotice(null);
     return { default: view };
   });
+
+const profileEnabled =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('profile');
 
 /** Rendered next to the post stack, so it mounts once the chunk has arrived. */
 const HoldQuality = () => {
@@ -95,6 +99,7 @@ export const Experience = () => {
   return (
     <>
       <ContextWatcher />
+      {profileEnabled && <RenderProfiler />}
       <DaylightDriver />
       {/* Remounted per quality so frames sampled at one level never count against another. */}
       <PerformanceMonitor key={quality} onDecline={autoDowngrade} onIncline={autoUpgrade} />

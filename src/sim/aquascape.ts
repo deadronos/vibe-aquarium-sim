@@ -51,6 +51,25 @@ export const DRIFTWOOD: readonly [number, number, number][] = [
   [0.47, 0.36, -0.18],
 ];
 
+export interface DriftwoodPath {
+  points: readonly (readonly [number, number, number])[];
+  radiusStart: number;
+  radiusEnd: number;
+  segments: number;
+  radial: number;
+}
+
+const DRIFTWOOD_BRANCH_A = [DRIFTWOOD[2]!, [0.22, 0.33, -0.12], [0.17, 0.4, -0.09]] as const;
+
+const DRIFTWOOD_BRANCH_B = [DRIFTWOOD[3]!, [0.44, 0.27, -0.09], [0.52, 0.22, -0.05]] as const;
+
+/** The exact control paths used by both the renderer and simulation obstacle builder. */
+export const DRIFTWOOD_PATHS: readonly DriftwoodPath[] = [
+  { points: DRIFTWOOD, radiusStart: 0.03, radiusEnd: 0.007, segments: 60, radial: 10 },
+  { points: DRIFTWOOD_BRANCH_A, radiusStart: 0.014, radiusEnd: 0.004, segments: 24, radial: 8 },
+  { points: DRIFTWOOD_BRANCH_B, radiusStart: 0.013, radiusEnd: 0.004, segments: 24, radial: 8 },
+];
+
 export const PLANTS: readonly PlantClump[] = [
   { kind: 'ribbon', x: -0.5, z: -0.17, count: 26, spread: 0.07, height: 0.4 },
   { kind: 'ribbon', x: 0.5, z: -0.16, count: 22, spread: 0.06, height: 0.38 },
@@ -60,24 +79,58 @@ export const PLANTS: readonly PlantClump[] = [
   { kind: 'carpet', x: 0, z: 0.1, count: 1400, spread: 0.52, height: 0.025 },
 ];
 
-export interface Obstacle {
+interface ObstacleBase {
+  /** Centre, used by tests and broad-phase/debug consumers. */
   x: number;
   y: number;
   z: number;
   radius: number;
 }
 
+export interface SphereObstacle extends ObstacleBase {
+  kind: 'sphere';
+}
+
+export interface CapsuleObstacle extends ObstacleBase {
+  kind: 'capsule';
+  ax: number;
+  ay: number;
+  az: number;
+  bx: number;
+  by: number;
+  bz: number;
+}
+
+export type Obstacle = SphereObstacle | CapsuleObstacle;
+
 const buildObstacles = (): Obstacle[] => {
   const obstacles: Obstacle[] = ROCKS.map((r) => ({
+    kind: 'sphere',
     x: r.x,
     y: r.y,
     z: r.z,
     radius: r.radius * 1.05,
   }));
-  for (let i = 0; i < DRIFTWOOD.length - 1; i++) {
-    const [ax, ay, az] = DRIFTWOOD[i]!;
-    const [bx, by, bz] = DRIFTWOOD[i + 1]!;
-    obstacles.push({ x: (ax + bx) / 2, y: (ay + by) / 2, z: (az + bz) / 2, radius: 0.045 });
+  for (const path of DRIFTWOOD_PATHS) {
+    for (let i = 0; i < path.points.length - 1; i++) {
+      const [ax, ay, az] = path.points[i]!;
+      const [bx, by, bz] = path.points[i + 1]!;
+      const t = (i + 0.5) / (path.points.length - 1);
+      const radius = path.radiusStart + (path.radiusEnd - path.radiusStart) * Math.pow(t, 0.8);
+      obstacles.push({
+        kind: 'capsule',
+        ax,
+        ay,
+        az,
+        bx,
+        by,
+        bz,
+        x: (ax + bx) / 2,
+        y: (ay + by) / 2,
+        z: (az + bz) / 2,
+        radius: radius * 1.1,
+      });
+    }
   }
   return obstacles;
 };

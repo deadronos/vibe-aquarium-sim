@@ -32,6 +32,7 @@ class FakeAudioContext {
   destination = { kind: 'destination' };
   nodes: FakeNode[] = [];
   resume = vi.fn(() => Promise.resolve());
+  suspend = vi.fn(() => Promise.resolve());
   constructor() {
     FakeAudioContext.instances.push(this);
   }
@@ -109,6 +110,33 @@ describe('ambience', () => {
     ambience.start();
     expect(FakeAudioContext.instances).toHaveLength(1);
     expect(context!.resume).toHaveBeenCalledTimes(2);
+  });
+
+  it('suspends the graph after fading out and resumes it without rebuilding', () => {
+    const ambience = new Ambience();
+    ambience.start();
+    const [context] = FakeAudioContext.instances;
+
+    ambience.stop();
+    vi.advanceTimersByTime(399);
+    expect(context!.suspend).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(context!.suspend).toHaveBeenCalledOnce();
+
+    ambience.start();
+    expect(context!.resume).toHaveBeenCalledTimes(2);
+    expect(FakeAudioContext.instances).toHaveLength(1);
+  });
+
+  it('cancels pending suspension when sound restarts during the fade', () => {
+    const ambience = new Ambience();
+    ambience.start();
+    const [context] = FakeAudioContext.instances;
+    ambience.stop();
+    vi.advanceTimersByTime(200);
+    ambience.start();
+    vi.advanceTimersByTime(1000);
+    expect(context!.suspend).not.toHaveBeenCalled();
   });
 
   it('fills a looping noise buffer with bounded brown noise', () => {

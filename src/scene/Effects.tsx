@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { disposeDeep, release, retain } from './dispose';
 import { useReducedMotion } from '../state/motion';
 import { focus } from './focus';
+import { EFFECT_COMPOSER_OPTIONS } from './renderQuality';
 
 /**
  * Depth of field with every pass at half the composer's size. The library already halves its
@@ -81,7 +82,7 @@ export const Effects = ({ depthOfField = true }: { depthOfField?: boolean }) => 
   }, []);
   const reducedMotion = useReducedMotion();
   return (
-    <EffectComposer ref={composer} multisampling={2}>
+    <EffectComposer ref={composer} {...EFFECT_COMPOSER_OPTIONS}>
       {/* EffectComposer only takes elements, so an empty Fragment stands in for no DoF. */}
       {depthOfField && !reducedMotion ? <DepthOfField /> : <Fragment />}
       <Bloom mipmapBlur luminanceThreshold={0.9} luminanceSmoothing={0.25} intensity={0.6} />

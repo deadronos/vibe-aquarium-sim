@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TANK, substrateHeight } from '../src/config/scene';
-import { OBSTACLES, PLANTS, ROCKS, scatter } from '../src/sim/aquascape';
+import { DRIFTWOOD_PATHS, OBSTACLES, PLANTS, ROCKS, scatter } from '../src/sim/aquascape';
 import { formatHour } from '../src/state/store';
 
 describe('aquascape layout', () => {
@@ -18,6 +18,30 @@ describe('aquascape layout', () => {
 
   it('keeps obstacles under water', () => {
     for (const ob of OBSTACLES) expect(ob.y).toBeLessThan(TANK.waterLevel);
+  });
+
+  it('gives every visible driftwood path segment a matching capsule obstacle', () => {
+    const capsules = OBSTACLES.filter((obstacle) => obstacle.kind === 'capsule');
+    expect(capsules).toHaveLength(
+      DRIFTWOOD_PATHS.reduce((total, path) => total + path.points.length - 1, 0)
+    );
+    for (const path of DRIFTWOOD_PATHS) {
+      for (let i = 0; i < path.points.length - 1; i++) {
+        const start = path.points[i]!;
+        const end = path.points[i + 1]!;
+        expect(
+          capsules.some(
+            (capsule) =>
+              capsule.ax === start[0] &&
+              capsule.ay === start[1] &&
+              capsule.az === start[2] &&
+              capsule.bx === end[0] &&
+              capsule.by === end[1] &&
+              capsule.bz === end[2]
+          )
+        ).toBe(true);
+      }
+    }
   });
 
   it('scatters plants deterministically inside the tank', () => {

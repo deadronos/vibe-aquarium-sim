@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SWIM_BOUNDS, substrateHeight } from '../src/config/scene';
-import { ANEMONE, OBSTACLES, REST_SPOTS } from '../src/sim/aquascape';
+import { ANEMONE, DRIFTWOOD_PATHS, OBSTACLES, REST_SPOTS } from '../src/sim/aquascape';
 import { FoodPool } from '../src/sim/food';
 import { createRandom } from '../src/sim/random';
 import { FishSchool, hungerSlump, restWeight } from '../src/sim/school';
@@ -116,6 +116,139 @@ describe('FishSchool', () => {
         expect(d).toBeGreaterThan(ob.radius * 0.6);
       }
     }
+  });
+
+  it.each(['ordinary', 'feeding', 'startle'])(
+    'projects a fish clear of a branch during %s motion',
+    (motion) => {
+      const one = [{ ...SPECIES[0]!, count: 1 }];
+      const school = new FishSchool(one, createRandom(8));
+      const food = new FoodPool(createRandom(9));
+      const env = { activity: 1, food, obstacles: OBSTACLES, viewer: 0 };
+      const branch = DRIFTWOOD_PATHS[1]!;
+      const [ax, ay, az] = branch.points[1]!;
+      const [bx, by, bz] = branch.points[2]!;
+      const px = (ax + bx) / 2;
+      const py = (ay + by) / 2;
+      const pz = (az + bz) / 2;
+      school.pos.set([px, py, pz], 0);
+      school.vel.set([0.01, 0, 0.01], 0);
+      if (motion === 'feeding') {
+        food.sprinkle(bx, bz, 1);
+        school.hunger[0] = 1;
+      } else if (motion === 'startle') {
+        school.startle(px - 0.02, py, pz);
+      }
+
+      run(school, env, 1);
+      const tx = school.pos[0]! - ax;
+      const ty = school.pos[1]! - ay;
+      const tz = school.pos[2]! - az;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const dz = bz - az;
+      const t = Math.max(
+        0,
+        Math.min(1, (tx * dx + ty * dy + tz * dz) / (dx * dx + dy * dy + dz * dz))
+      );
+      const clearance = Math.hypot(
+        school.pos[0]! - (ax + dx * t),
+        school.pos[1]! - (ay + dy * t),
+        school.pos[2]! - (az + dz * t)
+      );
+      expect(clearance).toBeGreaterThan(branch.radiusEnd);
+    }
+  );
+
+  it('keeps overlap projections clear of every driftwood capsule', () => {
+    const capsules = OBSTACLES.filter((obstacle) => obstacle.kind === 'capsule');
+    let worstPenetration = 0;
+    for (const capsule of capsules) {
+      for (const along of [0, 0.25, 0.5, 0.75, 1]) {
+        const one = [{ ...SPECIES[0]!, count: 1 }];
+        const school = new FishSchool(one, createRandom(19));
+        const env = {
+          activity: 1,
+          food: new FoodPool(createRandom(23)),
+          obstacles: OBSTACLES,
+          viewer: 0,
+        };
+        const ax = capsule.ax + (capsule.bx - capsule.ax) * along;
+        const ay = capsule.ay + (capsule.by - capsule.ay) * along;
+        const az = capsule.az + (capsule.bz - capsule.az) * along;
+        school.pos.set([ax, ay, az], 0);
+        school.vel.set([0.01, 0, 0], 0);
+        school.step(STEP, env);
+
+        for (const other of capsules) {
+          const sx = other.bx - other.ax;
+          const sy = other.by - other.ay;
+          const sz = other.bz - other.az;
+          const t = Math.max(
+            0,
+            Math.min(
+              1,
+              ((school.pos[0]! - other.ax) * sx +
+                (school.pos[1]! - other.ay) * sy +
+                (school.pos[2]! - other.az) * sz) /
+                (sx * sx + sy * sy + sz * sz)
+            )
+          );
+          const distance = Math.hypot(
+            school.pos[0]! - (other.ax + sx * t),
+            school.pos[1]! - (other.ay + sy * t),
+            school.pos[2]! - (other.az + sz * t)
+          );
+          worstPenetration = Math.max(
+            worstPenetration,
+            other.radius + one[0]!.length * 0.2 - distance
+          );
+        }
+      }
+    }
+    expect(worstPenetration).toBeLessThan(1e-6);
+  });
+
+  it('preserves driftwood clearance when a projected fish is constrained by the substrate', () => {
+    const one = [{ ...SPECIES[0]!, count: 1 }];
+    const school = new FishSchool(one, createRandom(31));
+    const food = new FoodPool(createRandom(32));
+    const env = { activity: 1, food, obstacles: OBSTACLES, viewer: 0 };
+    school.pos.set([0.116, 0.0902, -0.13], 0);
+    school.vel.set([0.01, 0, 0], 0);
+    school.step(STEP, env);
+
+    let worstPenetration = 0;
+    let worstObstacle = '';
+    for (const obstacle of OBSTACLES) {
+      if (obstacle.kind !== 'capsule') continue;
+      const sx = obstacle.bx - obstacle.ax;
+      const sy = obstacle.by - obstacle.ay;
+      const sz = obstacle.bz - obstacle.az;
+      const t = Math.max(
+        0,
+        Math.min(
+          1,
+          ((school.pos[0]! - obstacle.ax) * sx +
+            (school.pos[1]! - obstacle.ay) * sy +
+            (school.pos[2]! - obstacle.az) * sz) /
+            (sx * sx + sy * sy + sz * sz)
+        )
+      );
+      const distance = Math.hypot(
+        school.pos[0]! - (obstacle.ax + sx * t),
+        school.pos[1]! - (obstacle.ay + sy * t),
+        school.pos[2]! - (obstacle.az + sz * t)
+      );
+      const penetration = obstacle.radius + one[0]!.length * 0.2 - distance;
+      if (penetration > worstPenetration) {
+        worstPenetration = penetration;
+        worstObstacle = JSON.stringify(obstacle);
+      }
+    }
+    expect(worstPenetration, `${JSON.stringify([...school.pos])} ${worstObstacle}`).toBeLessThan(
+      1e-5
+    );
   });
 
   describe('clownfish and their anemone', () => {

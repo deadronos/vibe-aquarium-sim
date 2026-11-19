@@ -125,9 +125,16 @@ test('the living room boots, renders and feeds the fish', async ({ page }) => {
 
 test('high quality loads the post stack and keeps the room', async ({ page }) => {
   const errors: string[] = [];
+  const framebufferWarnings: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    const text = message.text();
+    if (message.type() === 'error') errors.push(text);
+    if (
+      /GL_INVALID_OPERATION.*glBlitFramebuffer|glBlitFramebuffer.*GL_INVALID_OPERATION/.test(text)
+    ) {
+      framebufferWarnings.push(text);
+    }
   });
 
   const chunk = (name: 'postprocessing' | 'Effects') =>
@@ -165,5 +172,6 @@ test('high quality loads the post stack and keeps the room', async ({ page }) =>
   );
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.locator('.hud__notice')).toHaveCount(0);
+  expect(framebufferWarnings.length).toBeLessThan(3);
   expect(errors).toEqual([]);
 });
