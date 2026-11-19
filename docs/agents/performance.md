@@ -18,6 +18,9 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
 - **Shadows render on demand.** `gl.shadowMap.autoUpdate` is off; `Lights` sets `needsUpdate`
   for 2 frames at start-up and then only when the sun has moved. Only the room and furniture cast
   shadows. Tank contents don't.
+- **Contact grounding stays instanced.** Medium/High add one static furniture contact-shadow batch.
+  Every quality gets one fish blob-shadow batch, updated inside the existing fish matrix loop with
+  shared scratch so Lite gains only the draw, not another simulation update or frame allocation.
 - **Shaders compile before the veil lifts.** Once the fish mount, `precompile`
   (`src/scene/precompile.ts`) runs `renderer.compileAsync` (parallel where
   `KHR_parallel_shader_compile` exists) and only then marks the scene ready. Without
@@ -37,6 +40,7 @@ Target: 60 FPS on typical laptops with the High post stack, falling back to Lite
   field. Only the performance monitor picks it; the HUD still shows it as High.
 - **Lite**: DPR 1, no post-processing (the renderer applies AgX itself), and a 1024×1024 sun
   shadow map. High/Medium keep 2048×2048. The post-processing chunk is only requested above Lite.
+  Static room contact shadows are omitted, but fish blob shadows remain available.
 - drei `PerformanceMonitor` steps one level at a time through `stepQuality` in the store:
   `onDecline` steps down, `onIncline` steps back up, never above the user's choice. It is
   remounted per level (samples at one level never count against another), ignored for

@@ -81,6 +81,21 @@ and was faster than the post-processed modes in the same environment. Re-run thi
 intended low-power physical device and append that environment's row set before making a
 device-specific threshold change.
 
+### #189 contact-shadow A/B (2026-11-19)
+
+The pre- and post-change trees were profiled back-to-back on the same machine and software
+renderer with the 390×844 Lite profile:
+
+| Tree         | Avg frame | p95 frame |   FPS | Draw calls | Triangles |
+| ------------ | --------: | --------: | ----: | ---------: | --------: |
+| Main 6e510ad |  95.71 ms |  98.80 ms | 10.45 |        102 |    81,964 |
+| Fish shadows |  93.76 ms |  98.40 ms | 10.67 |        103 |    82,002 |
+
+The one additional instanced draw and 38 shadow-plane triangles did not produce a measurable FPS
+loss; the variation favoured the post-change run. Both runs reported zero framebuffer warnings.
+Sofa-view and Up close screenshots were inspected before and after the change for room/fish
+grounding.
+
 ### 2026-11-19 — headed Chromium on Apple M4
 
 At 1024×768, the same High profile completed with an effective High quality of 60.0 FPS,

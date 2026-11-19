@@ -116,13 +116,13 @@ from renderer-policy work.
 
 Once #229-#236 are complete, resume the existing visual roadmap:
 
-1. #189 — Contact shadows / AO and fish grounding
+1. [x] #189 — Contact shadows / AO and fish grounding
 2. #192 — Material detail for rocks, plants, and water
 3. #190 — More convincing room reflections
 4. #191 — A livelier time-aware window
 5. #193 — Sofa viewpoint composition
 
-Keep those visual issues grouped so art-direction changes can be reviewed together without
+Keep the remaining visual issues grouped so art-direction changes can be reviewed together without
 conflicting with the simulation or quality-policy batches.
 
 ## Ordering summary

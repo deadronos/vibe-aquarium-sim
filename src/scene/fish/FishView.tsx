@@ -4,13 +4,16 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { TANK_ORIGIN } from '../../config/scene';
+import { PALETTE, TANK_ORIGIN } from '../../config/scene';
 import { fishGrowth } from '../../sim/care';
 import { FOOD_CAPACITY } from '../../sim/food';
 import { hungerSlump } from '../../sim/school';
 import { SPECIES } from '../../sim/species';
 import { useAquarium } from '../../state/store';
 import { makeUnderwater } from '../tank/underwater';
+import { softShadowTexture } from '../textures';
+import { writeFishShadowLayout, writeFishShadowMatrix } from '../shadows';
+import { daylight } from '../daylight';
 import { FISH_URLS } from './assets';
 import { simulation } from './simulation';
 import { useDispose } from '../dispose';
@@ -22,6 +25,19 @@ const scale = new THREE.Vector3();
 const matrix = new THREE.Matrix4();
 const tint = new THREE.Color();
 const FED = new THREE.Color(1, 1, 1);
+const SHADOW_FAR = new THREE.Color(PALETTE.sand);
+const SHADOW_NEAR = new THREE.Color('#243331');
+const SHADOW_LAYOUT = {
+  x: 0,
+  y: 0,
+  z: 0,
+  scaleX: 0,
+  scaleZ: 0,
+  strength: 0,
+  slopeX: 0,
+  slopeZ: 0,
+};
+const shadowMatrix = new THREE.Matrix4();
 /** A hungry fish looks a little duller and greyer. */
 const HUNGRY = new THREE.Color(0.8, 0.82, 0.86);
 /**
@@ -119,6 +135,21 @@ export const FishView = () => {
   );
   useDispose(foodMaterial);
   const foodMesh = useRef<THREE.InstancedMesh>(null);
+  const shadowMesh = useRef<THREE.InstancedMesh>(null);
+  const shadowMaterial = useMemo(
+    () =>
+      makeUnderwater(
+        new THREE.MeshBasicMaterial({
+          alphaMap: softShadowTexture(),
+          transparent: true,
+          opacity: 0.2,
+          depthWrite: false,
+          toneMapped: false,
+        })
+      ),
+    []
+  );
+  useDispose(shadowMaterial);
   // Fish names show on hover only in Follow mode, so the fish are not raycast the rest of the time.
   const following = useAquarium((state) => state.viewpoint === 'follow');
   const offsets = useMemo(
@@ -154,12 +185,33 @@ export const FishView = () => {
           entry.mesh.setColorAt(k, tint.lerpColors(FED, HUNGRY, hungerSlump(school.hunger[i]!)));
           swim[k * 2] = school.phase[i]!;
           swim[k * 2 + 1] = 0.07 + school.effort[i]! * 0.09;
+
+          const shadows = shadowMesh.current;
+          if (shadows) {
+            writeFishShadowLayout(
+              SHADOW_LAYOUT,
+              school.pos[i * 3]!,
+              school.pos[i * 3 + 1]!,
+              school.pos[i * 3 + 2]!,
+              school.scale[i]!,
+              growth
+            );
+            writeFishShadowMatrix(shadowMatrix, SHADOW_LAYOUT, school.yaw[i]!);
+            shadows.setMatrixAt(i, shadowMatrix);
+            shadows.setColorAt(i, tint.lerpColors(SHADOW_FAR, SHADOW_NEAR, SHADOW_LAYOUT.strength));
+          }
         }
         entry.mesh.instanceMatrix.needsUpdate = true;
         entry.mesh.instanceColor!.needsUpdate = true;
         entry.swim.needsUpdate = true;
       }
       offset += count;
+    }
+    const shadows = shadowMesh.current;
+    if (shadows) {
+      shadows.instanceMatrix.needsUpdate = true;
+      shadows.instanceColor!.needsUpdate = true;
+      shadowMaterial.opacity = 0.04 + daylight.tankLight * 0.24;
     }
 
     const flakes = foodMesh.current;
@@ -206,6 +258,17 @@ export const FishView = () => {
         frustumCulled={false}
       >
         <circleGeometry args={[0.0032, 6]} />
+      </instancedMesh>
+      <instancedMesh
+        ref={(mesh) => {
+          shadowMesh.current = mesh;
+          if (mesh && !mesh.instanceColor) mesh.setColorAt(0, SHADOW_FAR);
+        }}
+        args={[undefined, shadowMaterial, school.count]}
+        frustumCulled={false}
+        renderOrder={1}
+      >
+        <planeGeometry />
       </instancedMesh>
     </group>
   );
