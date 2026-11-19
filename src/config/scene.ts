@@ -55,6 +55,21 @@ export const substrateHeight = (x: number, z: number): number => {
   return 0.028 + back * 0.045 + mound * back;
 };
 
+/** Writes the height and x/z derivatives of the procedural substrate without allocating. */
+export const writeSubstrateSurface = (
+  output: { y: number; slopeX: number; slopeZ: number },
+  x: number,
+  z: number
+) => {
+  const back = (TANK.depth / 2 - z) / TANK.depth;
+  const leftMound = 0.012 * Math.exp(-((x + 0.32) ** 2) / 0.05);
+  const rightMound = 0.01 * Math.exp(-((x - 0.36) ** 2) / 0.04);
+  output.y = 0.028 + back * 0.045 + (leftMound + rightMound) * back;
+  output.slopeX =
+    ((-2 * (x + 0.32) * leftMound) / 0.05 - (2 * (x - 0.36) * rightMound) / 0.04) * back;
+  output.slopeZ = -(0.045 + leftMound + rightMound) / TANK.depth;
+};
+
 export const PALETTE = {
   wall: '#d9d2c5',
   wallAccent: '#5f7464',

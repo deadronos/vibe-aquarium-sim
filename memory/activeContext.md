@@ -12,6 +12,8 @@
   shadows at 1024 while rebuilding the actual render target on transitions.
 - Preserve High rendering without multisampled depth blits on software GL, and keep driftwood
   geometry and capsule collision data shared under `src/sim/`.
+- Ground Medium/High furniture with one static instanced contact-shadow batch and project every
+  fish onto the sloped substrate with allocation-free instanced blob shadows.
 
 ## Recent changes
 
@@ -30,3 +32,5 @@
 - Keep simulation pure TypeScript and unit-tested; keep the scene a thin reader.
 - No downloaded textures or room models unless a baked-room pipeline is adopted deliberately.
 - Zero allocation in frame loops; instancing and shader-driven motion for anything repeated.
+- Procedural contact-shadow masks stay cached; Lite omits the static room batch but keeps the
+  single fish blob-shadow draw.

@@ -13,6 +13,8 @@
 - Shared driftwood paths and capsule collision backstops so fish do not cross visible branches.
 - AudioContext suspension when muted, a lighter 1024×1024 Lite shadow map, and an opt-in
   renderer benchmark/profiler.
+- Soft static furniture contact shadows in Medium/High and allocation-free fish blob shadows over
+  the sloped substrate in every quality mode.
 - Vitest unit/component tests, Playwright smoke and PWA/error coverage, and the bundle budget check
   in CI.
 

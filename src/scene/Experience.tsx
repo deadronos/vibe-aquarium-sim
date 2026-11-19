@@ -17,6 +17,7 @@ import { FishLoader } from './fish/FishLoader';
 import { Lights } from './Lights';
 import { Furniture } from './room/Furniture';
 import { Room } from './room/Room';
+import { RoomContactShadows } from './room/RoomContactShadows';
 import { RenderProfiler } from './RenderProfiler';
 import { Aquascape } from './tank/Aquascape';
 import { Tank } from './tank/Tank';
@@ -108,6 +109,7 @@ export const Experience = () => {
       <Lights />
       <Room />
       <Furniture />
+      {quality !== 'low' && <RoomContactShadows />}
       <Aquascape />
       <FishLoader />
       <WaterFx />
